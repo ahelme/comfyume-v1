@@ -1,0 +1,42 @@
+# Claude Code - local/per-developer files
+.claude/*.local.*
+.claude/memories/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Docker volumes / data
+data/
+volumes/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# SSL certs (never commit)
+*.pem
+*.key
