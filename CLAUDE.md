@@ -1,4 +1,4 @@
-**Project:** ComfyUI Multi-User Workshop Platform
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **CURRENT Project Repository:** https://github.com/ahelme/comfyume-v1
 **OLDER Project Repository:** https://github.com/ahelme/comfyume
@@ -147,8 +147,7 @@ See [project_management.md](.claude/agent_docs/project_management.md) for commit
 All .md files must have this header:
 
 ```
-**Project Name:** ComfyuME
-**Project Desc:** ComfyUI Multi-User Workshop Platform
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)

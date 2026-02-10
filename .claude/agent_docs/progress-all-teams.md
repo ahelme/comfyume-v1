@@ -1,5 +1,5 @@
-**Project:** ComfyuME | **Repo:** github.com/ahelme/comfyume
-**Doc Updated:** 2026-02-09
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
+**Doc Updated:** 2026-02-10
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -8,15 +8,16 @@
 Newest at top. One line per commit. No fluff. Link issues.
 
 ## Team Progress Files (FULL DETAIL)
-- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `main`
-- **Verda:** [progress-verda-team-one-dev.md](./progress-verda-team-one-dev.md) | Branch: `main`
-- **Admin Panel:** [progress-admin-panel-team-dev.md](./progress-admin-panel-team-dev.md) | Branch: `admin-panel-team`
-- **Testing Scripts:** [progress-testing-scripts-team-dev.md](./progress-testing-scripts-team-dev.md) | Branch: `testing-scripts-team`
+- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `mello-team-one-*`
+- **Verda:** [progress-verda-team-one-dev.md](./progress-verda-team-one-dev.md) | Branch: `verda-team-one-*`
+- **Admin Panel:** [progress-admin-panel-team-dev.md](./progress-admin-panel-team-dev.md) | Branch: `admin-panel-team-*`
+- **Testing Scripts:** [progress-testing-scripts-team-dev.md](./progress-testing-scripts-team-dev.md) | Branch: `testing-scripts-team-*`
 
 ---
 
 ## 2026-02-10
 
+- [MELLO] d920010 feat: initial commit — project docs, Claude skills, agent config (comfyume-v1 #1)
 - [ADMIN] bb1de2a refactor: split CLAUDE.md into progressive disclosure modules (#124)
 - [ADMIN] -- refactor: migrate .claude/commands/ to .claude/skills/ format, remove archive/build_reports, rename mello-team to mello-team-one
 

@@ -1,39 +1,40 @@
-**Project:** ComfyUI Multi-User Workshop Platform
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
-**Repository:** github.com/ahelme/comfy-multi
-**Domain:** comfy.ahelme.net
+**Repository:** github.com/ahelme/comfyume-v1
+**Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-07 - restore-verda-instance.sh v0.4.0
+**Doc Updated:** 2026-02-10 - comfyume-v1 fresh start, TEMP CPU instance
 
 ---
-# Project Progress Tracker 
-**Target:** Workshop in ~2 weeks (early February 2026)
+# Project Progress Tracker
+**Target:** Workshop Feb 25 2026
 ### Implementation Phase
-**MAIN Repo:** comfyume (https://github.com/ahelme/comfyume)
-**Branch:** mello-track-2 > main
-**Phase:** Phase 3a - Infrastructure Testing 
+**MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
+**OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
+**Branch:** mello-team-one-new-temp-cpu-instance-01
+**Phase:** TEMP CPU Instance — restore working app from old GPU volume
 ---
 ## 0. Update Instructions
 
-   RE: PRIORITY TASKS 
-   **UPDATE:** 
+   RE: PRIORITY TASKS
+   **UPDATE:**
      - WHEN NEW TASKS EMERGE
      - AT END OF SESSION - YOU MUST UPDATE/CULL TASKS - carefully!!!
 
-   **ALWAYS reference issues in our TWO  Github Issue Trackers**
-      - 📋 MAIN COMFYUME REPO:   github.com/ahelme/comfyume/issues/
-      - 📋 PRIVATE SCRIPTS REPO: github.com/ahelme/comfymulti-scripts/issues/
-   
-   **FORMAT:** 
-          [🔴] [PRIORITY] [GH#s] [SHORT DESC.] 
+   **ALWAYS reference issues in our TWO Github Issue Trackers**
+      - comfyume-v1: github.com/ahelme/comfyume-v1/issues/
+      - private scripts: github.com/ahelme/comfymulti-scripts/issues/
+
+   **FORMAT:**
+          [🔴] [PRIORITY] [GH#s] [SHORT DESC.]
              - [DATE-CREATED] [DATE-UPDATED]
                - CONCISE NOTES INC. RELATED [GH#] (IF ANY)
-   **BE CONCISE** 
+   **BE CONCISE**
      - DETAIL BELONGS IN GH ISSUE! and in PROGRESS REPORT BELOW !!!
 
    RE: Progress Reports (NEWEST AT TOP!)
      **CRITICAL DETAIL - NO FLUFF/BOASTING**
-     **UPDATE OFTEN e.g. after RESEARCH, COMMITS, DECISIONS** 
+     **UPDATE OFTEN e.g. after RESEARCH, COMMITS, DECISIONS**
       - concise notes, refer to GH issues
       - new blockers / tasks / completed tasks
       - investigations needed
@@ -43,30 +44,13 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume #88 - Download models to new block storage + backup rewrite**
-    - Created: 2026-02-08
-    - New block storage provisioned, will mount at `/mnt/sfs` for compatibility
-    - Download 91GB models from R2 overnight
-    - Phase 2: rewrite backup scripts (may assign to another team)
-    - INFERENCE_MODE=serverless now set in Verda .env
-
-🟡 **(NEXT) - comfyume #87 - Backup cron + R2 upload fixes**
-    - Created: 2026-02-08
-    - Cron installed with `--backup-to-scratch`, R2 creds fixed
-    - `upload-backups-to-r2.sh` not yet deployed to new Verda
-    - Mello SSH trigger needs key setup
-
-🟡 **(NEXT) - comfyume #18 - End-to-end job submission test**
-    - Tests: frontend → queue-manager → serverless → output
-    - Blocked on models being available on Verda
-
-🟡 **(NEXT) - comfyume #71 - Downgrade Mello VPS after Verda stable**
-    - Created: 2026-02-07
-
-🔵 **(PENDING) - comfyume #20 - Workshop readiness checklist**
-
-  **Medium-term:**
-    - Issue #19: Multi-user load test (20 concurrent users)
+🔴 **(CURRENT) - comfyume-v1 #1 - Create TEMP CPU instance from old GPU volume**
+    - Created: 2026-02-10
+    - Provision fresh Verda CPU.8V.32G, attach old GPU OS volume + SFS
+    - Targeted copy: app code, Docker images, Tailscale, SSL, nginx from old volume
+    - DO NOT git pull, regenerate compose, or rebuild images — use old working state
+    - 11 phases: provision → setup → attach → mount → copy → symlinks → verify → DNS → start → test → cleanup
+    - See issue #1 for full plan and rules
 ---
 
 # Progress Reports

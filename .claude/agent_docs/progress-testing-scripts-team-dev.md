@@ -1,4 +1,4 @@
-**Project:** ComfyUI Multi-User Workshop Platform
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **Repository:** github.com/ahelme/comfyume
 **Domain:** comfy.ahelme.net (staging) / aiworkshop.art (production)
@@ -7,11 +7,11 @@
 
 ---
 # Project Progress Tracker
-**Target:** Testing Scripts
+**Target:** Workshop Feb 25 2026
 ### Implementation Phase
 **MAIN Repo:** comfyume (https://github.com/ahelme/comfyume)
-**Branch:** testing-scripts-team-2
-**Phase:** Issue #22 Phase 3 — Doc updates for serverless architecture
+**Branch:** testing-scripts-team-*
+**Phase:** Testing Scripts
 ---
 ## 0. Update Instructions
 

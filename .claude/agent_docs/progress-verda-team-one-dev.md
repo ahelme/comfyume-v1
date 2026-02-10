@@ -1,16 +1,15 @@
-**Project:** ComfyUI Multi-User Workshop Platform
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
-**Repository:** github.com/ahelme/comfy-multi
-**Domain:** comfy.ahelme.net
-**Doc Name:** progress-02.md 
-**Purpose:** progress file for dev on Verda server
+**Repository:** github.com/ahelme/comfyume
+**Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-31
-**Doc Updated:** 2026-01-31 (Session Verda 01)
+**Doc Updated:** 2026-02-10
 
 ---
 
-# Project Progress Tracker (Based on progress-02.md - Verda team's progress)
-**Target:** Workshop in ~1 week !!! (early February 2026)
+# Project Progress Tracker (Verda Team One)
+**Target:** Workshop Feb 25 2026
+**Branch:** verda-team-one-*
 
 ---
 
