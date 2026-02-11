@@ -1,16 +1,33 @@
 {
-  "last_updated": "2026-02-11T19:00:00Z",
+  "last_updated": "2026-02-11T19:10:00Z",
   "iteration": 1,
   "current_workflow": 1,
-  "phase": "observe",
+  "phase": "diagnose",
   "workflows": {
-    "1_flux2_klein_9b": { "status": "testing", "file": "flux2_klein_9b_text_to_image.json" },
+    "1_flux2_klein_9b": {
+      "status": "blocked:image-delivery",
+      "file": "flux2_klein_9b_text_to_image.json",
+      "criteria_passed": ["load", "queue_response", "status_banner", "qm_serverless", "no_js_errors"],
+      "criteria_failed": ["output_display", "queue_history"],
+      "notes": "5/7 pass. GPU processes successfully (HTTP 200, node_errors:{}). 40s total (cold start + inference). Images exist on serverless container but never fetched."
+    },
     "2_flux2_klein_4b": { "status": "untested", "file": "flux2_klein_4b_text_to_image.json" },
     "3_ltx2_video": { "status": "untested", "file": "ltx2_text_to_video.json" },
     "4_ltx2_distilled": { "status": "untested", "file": "ltx2_text_to_video_distilled.json" },
     "5_example": { "status": "untested", "file": "example_workflow.json" }
   },
-  "bugs_found": [],
+  "bugs_found": [
+    {
+      "id": "BUG-001",
+      "title": "Image delivery gap — QM never fetches generated images from serverless",
+      "root_cause": "submit_to_serverless() only POSTs /prompt, never fetches /api/history/{prompt_id} or /api/view to get actual images",
+      "evidence": "Console shows job completed with node_errors:{}, but no image appears in UI. Serverless response only has prompt_id/number metadata.",
+      "proposed_fix": "After getting prompt_id from serverless, QM should: 1) GET /api/history/{prompt_id} to find image filenames, 2) GET /api/view?filename=...&type=output to download images, 3) Save to user output dir or return base64 in response",
+      "files_to_modify": ["queue-manager/main.py", "comfyume-extensions/queue_redirect/web/redirect.js"],
+      "severity": "blocker",
+      "affects_all_workflows": true
+    }
+  ],
   "fixes_applied": [
     "redirect.js: status banner for GPU progress feedback (PR #14)",
     "Dockerfile: self-healing custom nodes mechanism (c613a06)",
@@ -20,6 +37,7 @@
   "known_issues": [
     "IMAGE DELIVERY GAP: serverless GPU generates images but they stay on the remote container. ComfyUI /prompt returns {prompt_id, number} only — images normally come via WebSocket which we don't relay. This is the MAIN blocker for criteria #4 (output display in UI).",
     "default_workflow_loader DISABLED: canvas null errors. Users must load workflows manually from Load menu.",
-    "WebSocket: ComfyUI frontend tries to connect WebSocket to local container (CPU-only). No bridge to serverless container."
+    "WebSocket: ComfyUI frontend tries to connect WebSocket to local container (CPU-only). No bridge to serverless container.",
+    "Queue history empty: local ComfyUI has no record of serverless jobs (QueueRedirect bypasses local queue)"
   ]
 }
