@@ -1,9 +1,10 @@
 {
-  "last_updated": "2026-02-11T18:15:00Z",
-  "iteration": 0,
+  "last_updated": "2026-02-11T19:00:00Z",
+  "iteration": 1,
   "current_workflow": 1,
+  "phase": "observe",
   "workflows": {
-    "1_flux2_klein_9b": { "status": "untested", "file": "flux2_klein_9b_text_to_image.json" },
+    "1_flux2_klein_9b": { "status": "testing", "file": "flux2_klein_9b_text_to_image.json" },
     "2_flux2_klein_4b": { "status": "untested", "file": "flux2_klein_4b_text_to_image.json" },
     "3_ltx2_video": { "status": "untested", "file": "ltx2_text_to_video.json" },
     "4_ltx2_distilled": { "status": "untested", "file": "ltx2_text_to_video_distilled.json" },

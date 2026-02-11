@@ -117,7 +117,9 @@ Before testing anything, understand where things stand.
 Pick the next untested workflow from the state file (or start with #1).
 
 ```
-1. Navigate to https://aiworkshop.art/user011/ (test user)
+1. Navigate to test user (user001):
+   → Read credentials from `.env` line 367 (USER_CREDENTIALS_USER001)
+   → URL-encode the password, then use: https://user001:<encoded-pass>@aiworkshop.art/user001/
    → Use Chrome DevTools: navigate_page
 
 2. Take a snapshot of the page
@@ -163,7 +165,7 @@ Pick the next untested workflow from the state file (or start with #1).
    - Browser console errors (full stack trace)
    - Network requests (failed fetches, 4xx/5xx responses)
    - QM logs (job received? sent to serverless? response?)
-   - Container logs for the user (docker logs comfy-user011)
+   - Container logs for the user (docker logs comfy-user001)
    - Current state of the page (snapshot + screenshot)
 
 2. TRACE THE CODE PATH:

@@ -32,4 +32,4 @@ If resuming manually, read qa-state.json to see where you left off.
 
 **Deploy:** `./scripts/deploy.sh` (NEVER SCP — rule #5)
 **Server:** root@65.108.33.101, project at /home/dev/comfyume-v1
-**Test user:** https://aiworkshop.art/user011/
+**Test user:** user001 — credentials in `.env` line 367 (URL-encode password for auth)
