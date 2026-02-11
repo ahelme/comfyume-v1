@@ -474,19 +474,20 @@ See [Admin Backup & Restore Guide - Troubleshooting](./docs/admin-backup-restore
 
 ## Agent Docs (Progressive Disclosure)
 
-Read these files when their topic is relevant to your current task:
+Read these when their trigger matches your task. TL;DR uses: `·` sep `@` location `!` danger `:` port `→` consequence
+**Maintenance:** When updating an agent_doc, also update its TL;DR here — it's a second source of truth.
 
-| File | Contents |
-|------|----------|
-| [models_and_data.md](.claude/agent_docs/models_and_data.md) | Workshop templates, ML models, LoRAs, model inventory |
-| [project_structure.md](.claude/agent_docs/project_structure.md) | File trees, directory layouts (both repos) |
-| [project_management.md](.claude/agent_docs/project_management.md) | Git workflow, commit conventions, issue tracking |
-| [security.md](.claude/agent_docs/security.md) | Firewall, auth, Tailscale VPN, SSL, R2 buckets |
-| [infrastructure.md](.claude/agent_docs/infrastructure.md) | Servers, backups, Docker, services |
-| [monitoring.md](.claude/agent_docs/monitoring.md) | Portainer, Prometheus, Grafana, Loki, skills |
-| [storage.md](.claude/agent_docs/storage.md) | Verda SFS and block storage options |
-| [gotchas.md](.claude/agent_docs/gotchas.md) | Non-critical known issues and workarounds |
-| [external-references.md](.claude/agent_docs/external-references.md) | Research references and related projects |
+| File | Read when... | TL;DR |
+|------|-------------|-------|
+| [models_and_data.md](.claude/agent_docs/models_and_data.md) | models, templates, downloads | Flux+LTX-2 · 22 models 172GB@/mnt/sfs · yaml key = folder type verbatim |
+| [project_structure.md](.claude/agent_docs/project_structure.md) | finding files, dir layout | data/user_data/userXXX/ · .users.yml auto-gen · scripts/ admin/ nginx/ qm/ |
+| [project_management.md](.claude/agent_docs/project_management.md) | commits, issues, PRs | conventional commits · ref GH# always · `gh issue` needs --json |
+| [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-04-10 · !R2 needs .eu |
+| [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | Verda=prod Mello=staging · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 |
+| [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |
+| [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · block=single-instance · !WIPED if attached@provisioning |
+| [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent |
+| [external-references.md](.claude/agent_docs/external-references.md) | architecture research | Visionatrix · SaladTech · Modal · 9elements — multi-user patterns |
 
 ---
 
