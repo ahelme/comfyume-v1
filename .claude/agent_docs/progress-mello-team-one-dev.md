@@ -51,7 +51,10 @@
     - DISCOVERY: old-gpu-instance (135.181.8.213) has worker image in GHCR + serverless container
     - DISCOVERY: Mello comfyume repo has serverless queue-manager code (never committed, Feb 3-10)
     - DONE: Froze Mello comfyume repo (chmod 000 .git), imported full app code into comfyume-v1 (2c42279)
-    - NEXT: Adapt restore-verda-instance.sh → restore-verda-instance-comfyume-v1.sh, run on quiet-city
+    - DONE: Adapted restore script v0.5.0, added safety flags, created GH issues #2 #3
+    - DONE: Created setup-monitoring.sh for Prometheus/Grafana/Loki/Promtail/cAdvisor/Dry
+    - DONE: Attached 50GB block storage, SFS, running restore on quiet-city
+    - NEXT: Verify restore script completes, test app stack, update DNS
 ---
 
 # Progress Reports
@@ -76,10 +79,30 @@
   - Excluded: .env, .env.mello, .claude/, CLAUDE.md, README.md
 - Created README.md for comfyume-v1 (updated branding: ComfyUMe, Verda ex. DataCrunch)
 - Pushed branch to GitHub
+- Made Mello comfyume repo fully read-only (`chmod -R a-w`)
+- Created GH issues: #2 (restore script adaptation), #3 (working edition master plan)
+- Restructured restore script from 16 → 12 steps with phase markers
+- Added `--format-scratch` flag (explicit opt-in for mkfs.ext4, no silent formatting)
+- Added `--build-containers` flag (skip tarball loading, build from source)
+- Created `restore-verda-instance-comfyume-v1.sh` v0.5.0 with v1-specific edits:
+  - PROJECT_DIR → /home/dev/comfyume-v1, GH_APP_REPO → ahelme/comfyume-v1
+  - VERDA_HOSTNAME → quiet-city-purrs-fin-01, VERDA_PUBLIC_IP → 65.108.33.101
+  - DataCrunch → Verda (ex. DataCrunch) throughout
+- Created `setup-monitoring.sh` v0.1.0 (Prometheus, Grafana, Loki, Promtail, cAdvisor, Dry)
+- Added Portainer EDGE_KEY/EDGE_ID to comfyume-v1 .env
+- Deleted old Tailscale node from Tailnet admin (user action)
+- Attached 50GB block storage + SFS to quiet-city (user action)
+- Running restore script on quiet-city with `--build-containers`
+
+**Scripts repo commits:** 6d619c3 (merged via PR to main)
 
 **Decision:** Instead of mounting old GPU OS volume read-only and copying files,
-clone comfyume-v1 on quiet-city and adapt restore-verda-instance.sh to build from repo.
-Tests the restore script AND sets up the server in one pass.
+given that the working state is actually on Mello, we copied the /comfyume dir
+from Mello to /comfyume-v1/ and rebuilt a clean repo with that state plus our
+project docs. GitHub repo is now ahelme/comfyume-v1 and the scripts repo is
+updated with the changes above. Now we have copied restore-verda-instance.sh
+to new instance quiet-city and will run the restore to this working point in
+one pass. DNS updated: aiworkshop.art A record → 65.108.33.101 (quiet-city).
 
 ---
 
