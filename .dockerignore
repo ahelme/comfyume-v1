@@ -1,0 +1,11 @@
+# Docker build context filter for comfyume-frontend image
+# Build context is project root (.) to access comfyume-extensions/
+# Only include what the Dockerfile actually needs.
+
+# Exclude everything by default
+*
+
+# Include only what the frontend Dockerfile needs
+!comfyui-frontend/Dockerfile
+!comfyui-frontend/docker-entrypoint.sh
+!comfyume-extensions/

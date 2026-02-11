@@ -34,15 +34,14 @@ RUN pip install --no-cache-dir -r requirements.txt requests
 # Solution: Backup defaults, restore in entrypoint if volume is empty
 RUN cp -r /comfyui/custom_nodes /tmp/custom_nodes_backup
 
-# 4. Copy our custom extensions to build staging area
-# These get deployed to the volume-mounted /comfyui/custom_nodes/ on every
-# container start (see docker-entrypoint.sh Step 2). This is necessary because
-# the volume mount overwrites the container's directory with the host directory.
-# Extensions: queue_redirect (redirects jobs to QM), default_workflow_loader
-COPY custom_nodes/ /build/custom_nodes/
+# 4. Copy ComfyuME customisations (extensions + config)
+# Build context is project root (.), so paths are relative to repo root.
+# extensions.conf controls which extensions get deployed on container start.
+# Only uncommented extensions are copied to /comfyui/custom_nodes/ by the entrypoint.
+COPY comfyume-extensions/ /build/comfyume-extensions/
 
 # 5. Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY comfyui-frontend/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # 6. Health check

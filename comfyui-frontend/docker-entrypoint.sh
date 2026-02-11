@@ -20,16 +20,30 @@ else
     echo "✅ ComfyUI default custom nodes already present"
 fi
 
-# 2. Deploy our workshop extensions (from /build/custom_nodes/ → mounted volume)
-# Dockerfile Step 4 copies queue_redirect + default_workflow_loader into /build/custom_nodes/
-# This step copies them into the volume-mounted directory on EVERY start (idempotent).
-# This is how our extensions survive the volume mount overwrite.
-echo "🔧 Installing workshop extensions..."
-if [ -d "/build/custom_nodes" ] && [ "$(ls -A /build/custom_nodes 2>/dev/null)" ]; then
-    cp -r /build/custom_nodes/* /comfyui/custom_nodes/
-    echo "✅ Workshop extensions installed: $(ls -d /build/custom_nodes/*/ 2>/dev/null | xargs -I{} basename {} | tr '\n' ' ')"
+# 2. Deploy ComfyuME extensions (config-driven, from /build/comfyume-extensions/)
+# extensions.conf controls which extensions are deployed. Only uncommented lines are installed.
+# This runs on EVERY container start (idempotent) — extensions survive volume mount overwrite.
+echo "🔧 Installing ComfyuME extensions..."
+CUSTOMISATIONS_DIR="/build/comfyume-extensions"
+EXTENSIONS_CONF="$CUSTOMISATIONS_DIR/extensions.conf"
+
+if [ -f "$EXTENSIONS_CONF" ]; then
+    enabled_count=0
+    while IFS= read -r ext || [ -n "$ext" ]; do
+        # Skip comments and empty lines
+        case "$ext" in \#*|"") continue ;; esac
+        ext=$(echo "$ext" | tr -d '[:space:]')  # trim whitespace
+        if [ -d "$CUSTOMISATIONS_DIR/$ext" ]; then
+            cp -r "$CUSTOMISATIONS_DIR/$ext" /comfyui/custom_nodes/
+            echo "   ✅ Enabled: $ext"
+            enabled_count=$((enabled_count + 1))
+        else
+            echo "   ⚠️  Not found: $ext"
+        fi
+    done < "$EXTENSIONS_CONF"
+    echo "✅ $enabled_count extension(s) installed"
 else
-    echo "⚠️  No workshop extensions found in /build/custom_nodes/"
+    echo "⚠️  No extensions.conf found — no ComfyuME extensions installed"
 fi
 
 # 3. Version-aware workflow setup (v0.11.0 uses /comfyui/user/default/workflows/)
