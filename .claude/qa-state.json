@@ -1,0 +1,24 @@
+{
+  "last_updated": "2026-02-11T18:15:00Z",
+  "iteration": 0,
+  "current_workflow": 1,
+  "workflows": {
+    "1_flux2_klein_9b": { "status": "untested", "file": "flux2_klein_9b_text_to_image.json" },
+    "2_flux2_klein_4b": { "status": "untested", "file": "flux2_klein_4b_text_to_image.json" },
+    "3_ltx2_video": { "status": "untested", "file": "ltx2_text_to_video.json" },
+    "4_ltx2_distilled": { "status": "untested", "file": "ltx2_text_to_video_distilled.json" },
+    "5_example": { "status": "untested", "file": "example_workflow.json" }
+  },
+  "bugs_found": [],
+  "fixes_applied": [
+    "redirect.js: status banner for GPU progress feedback (PR #14)",
+    "Dockerfile: self-healing custom nodes mechanism (c613a06)",
+    "extensions.conf: config-driven extension deployment (PR #15)",
+    "nginx: dynamic DNS resolution (93bf1a1)"
+  ],
+  "known_issues": [
+    "IMAGE DELIVERY GAP: serverless GPU generates images but they stay on the remote container. ComfyUI /prompt returns {prompt_id, number} only — images normally come via WebSocket which we don't relay. This is the MAIN blocker for criteria #4 (output display in UI).",
+    "default_workflow_loader DISABLED: canvas null errors. Users must load workflows manually from Load menu.",
+    "WebSocket: ComfyUI frontend tries to connect WebSocket to local container (CPU-only). No bridge to serverless container."
+  ]
+}
