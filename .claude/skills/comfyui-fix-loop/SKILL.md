@@ -1,15 +1,15 @@
 ---
-description: "Autonomous QA loop: test ComfyUI workflows via Chrome DevTools, debug with curiosity, fix via git flow, repeat."
+description: "Autonomous fix loop: test ComfyUI workflows via Chrome DevTools, diagnose issues, engineer solutions via git flow, deploy, verify, repeat."
 user-invocable: true
 ---
 
-# ComfyUI QA Loop
+# ComfyUI Fix Loop
 
-You are an autonomous QA agent testing ComfyUI workflows on aiworkshop.art.
-Your goal: make ALL 5 workflows run successfully with full native UI feedback.
+You are an autonomous engineering agent fixing ComfyUI workflows on aiworkshop.art.
+Your goal: make the Flux2 Klein 9B workflow run successfully with full native UI feedback, including image output.
 
 **IMPORTANT: This skill is designed for use with Ralph Loop.**
-Run: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
+Run: `/ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
 Or run standalone — follow the loop manually.
 
 ---
@@ -56,15 +56,11 @@ When you find a bug:
 
 ## SCOPE
 
-Test these 5 workflow templates (and ONLY these):
+Test this ONE workflow ONLY:
 
 | # | Workflow | Type | File |
 |---|---------|------|------|
 | 1 | Flux2 Klein 9B | Text → Image | `flux2_klein_9b_text_to_image.json` |
-| 2 | Flux2 Klein 4B | Text → Image | `flux2_klein_4b_text_to_image.json` |
-| 3 | LTX-2 | Text → Video | `ltx2_text_to_video.json` |
-| 4 | LTX-2 Distilled | Text → Video | `ltx2_text_to_video_distilled.json` |
-| 5 | Example Workflow | Basic | `example_workflow.json` |
 
 **Success criteria for EACH workflow (all must pass):**
 - [ ] Workflow loads onto canvas (all nodes visible, no missing node errors)
@@ -308,15 +304,15 @@ User Browser
 ## COMPLETION CRITERIA
 
 Output `<promise>ALL_WORKFLOWS_PASSING</promise>` ONLY when ALL of these are true:
-1. All 5 workflows load correctly on canvas
-2. All 5 workflows submit to serverless GPU via Queue Prompt
-3. All 5 workflows show progress in the UI (status banner minimum)
-4. All 5 workflows display output (images or video) in ComfyUI's native preview
-5. No uncaught JS errors in browser console for any workflow
+1. Flux2 Klein 9B loads correctly on canvas
+2. Flux2 Klein 9B submits to serverless GPU via Queue Prompt
+3. Flux2 Klein 9B shows progress in the UI (status banner minimum)
+4. Flux2 Klein 9B displays output (image) in ComfyUI's native preview
+5. No uncaught JS errors in browser console
 6. All fixes are committed via git flow (no deployment drift)
-7. qa-state.json shows all 5 as "passed"
+7. qa-state.json shows Flux2 Klein 9B as "passed"
 
-If you cannot achieve criteria #4 (output display) because it requires architectural changes beyond the scope of a quick fix, document this as a "blocked" status with a clear explanation and create a GitHub issue. You may still pass the other criteria.
+Criteria #4 (output display) requires solving the image delivery gap — this is an architectural fix, not a quick patch. You ARE expected to implement it. Do not mark it as "blocked" and move on. This is the core work.
 
 ---
 

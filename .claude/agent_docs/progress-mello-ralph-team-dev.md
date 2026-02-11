@@ -10,7 +10,7 @@
 **Target:** Workshop Feb 25 2026
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **Branch:** mello-ralph-team
-**Phase:** QA TESTING — autonomous workflow testing via Ralph Loop
+**Phase:** FIX LOOP — autonomous workflow testing via Ralph Loop
 ---
 ## 0. Update Instructions
 
@@ -37,7 +37,7 @@
 
 🔴 **(CURRENT) - QA Loop: Test all 5 workflows end-to-end**
     - Created: 2026-02-11
-    - See /comfyui-qa-loop skill for full protocol
+    - See /comfyui-fix-loop skill for full protocol
     - State tracked in .claude/qa-state.json
     - Workflows to test:
       1. Flux2 Klein 9B (text → image)
@@ -54,13 +54,13 @@
 
 ---
 
-## Progress Report 1 - 2026-02-11 - Team created, QA loop ready
+## Progress Report 1 - 2026-02-11 - Team created, fix loop ready
 
 **Date:** 2026-02-11
 
 ### Team setup:
 - Mello Ralph Team created with full skill structure (resume, handover, progress)
-- QA loop skill created with 6-phase protocol (PR #17, #18)
+- fix loop skill created with 6-phase protocol (PR #17, #18)
 - qa-state.json initialized with all 5 workflows as "untested"
 - Ralph Loop recommended: `--max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
 

@@ -21,7 +21,7 @@
 1. **`./CLAUDE.md`** — Project instructions (rules #4 and #5 are critical for you)
 2. **`.claude/qa-state.json`** — YOUR test progress state
 3. **`.claude/agent_docs/progress-mello-ralph-team-dev.md`** — YOUR progress log
-4. **`.claude/skills/comfyui-qa-loop/SKILL.md`** — YOUR full testing protocol
+4. **`.claude/skills/comfyui-fix-loop/SKILL.md`** — YOUR full testing protocol
 
 ---
 

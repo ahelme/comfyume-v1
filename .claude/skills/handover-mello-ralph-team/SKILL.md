@@ -1,5 +1,5 @@
 ---
-description: Handover tasks at 80% context for the Mello Ralph Team (QA loop)
+description: Handover tasks at 80% context for the Mello Ralph Team (fix loop)
 user-invocable: true
 ---
 
@@ -23,4 +23,4 @@ user-invocable: true
 
    - add, commit, push, PR
 
-   - take a moment to feel PROUD of your QA work :)
+   - take a moment to feel PROUD of your engineering work :)

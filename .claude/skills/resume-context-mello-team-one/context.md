@@ -29,9 +29,9 @@ Please read:
 
 ## IMMEDIATE NEXT STEPS
 
-1. **Run QA loop** (the main goal of this handover):
+1. **Run fix loop** (the main goal of this handover):
    ```
-   /ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"
+   /ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"
    ```
    This tests all 5 workflows via Chrome DevTools, debugs issues with curiosity, fixes via git flow.
 
@@ -69,7 +69,7 @@ Browser → redirect.js intercepts Queue Prompt
 | `comfyui-frontend/Dockerfile` | Build context is project root (.) |
 | `comfyui-frontend/docker-entrypoint.sh` | Config-driven extension deployment |
 | `scripts/deploy.sh` | Git-based deploy: push → pull → rebuild → recreate |
-| `.claude/qa-state.json` | QA loop state (persists between Ralph Loop iterations) |
+| `.claude/qa-state.json` | fix loop state (persists between Ralph Loop iterations) |
 
 **Deploy:** `./scripts/deploy.sh` (NEVER SCP — CLAUDE.md rule #5)
 
@@ -81,4 +81,4 @@ Browser → redirect.js intercepts Queue Prompt
 
 - [ ] `git status` — should be clean
 - [ ] SSH to Verda: `ssh root@65.108.33.101 'docker ps --format "table {{.Names}}\t{{.Status}}" | grep -c healthy'` (expect 24)
-- [ ] Read `.claude/qa-state.json` for QA loop state
+- [ ] Read `.claude/qa-state.json` for fix loop state
