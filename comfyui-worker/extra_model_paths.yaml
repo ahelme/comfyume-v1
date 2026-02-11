@@ -1,0 +1,11 @@
+# Extra model paths for ComfyUI worker
+# Handles /models/ mount point (from restored container images)
+# If models are mounted at /workspace/ComfyUI/models/ (compose default), this is harmless
+comfyume:
+    base_path: /models/
+    checkpoints: checkpoints/
+    diffusion_models: diffusion_models/
+    text_encoders: text_encoders/
+    vae: vae/
+    loras: loras/
+    latent_upscale_models: latent_upscale_models/

@@ -1,0 +1,50 @@
+# Docker Compose for ComfyUI v0.11.0 Worker Testing
+# Copied from comfy-multi and simplified for standalone testing
+# Issue: comfyume #2
+
+version: '3.8'
+
+services:
+  worker-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: comfyume-worker-1
+    environment:
+      - WORKER_ID=worker-1
+      - REDIS_HOST=${INFERENCE_SERVER_REDIS_HOST:-100.99.216.71}  # Mello VPS via Tailscale
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - QUEUE_MANAGER_URL=${QUEUE_MANAGER_URL:-http://100.99.216.71:3000}
+      - COMFYUI_URL=http://localhost:8188
+      - COMFYUI_TIMEOUT=900  # 15 minutes
+      - JOB_TIMEOUT=1800  # 30 minutes
+      - WORKER_POLL_INTERVAL=2
+      - OUTPUTS_PATH=/outputs
+      - ENABLE_VRAM_MONITORING=true
+      - VRAM_SAFETY_MARGIN_MB=2048
+      - LOG_FORMAT=text
+    volumes:
+      # Models from SFS (read-only)
+      - /mnt/sfs/models:/workspace/ComfyUI/models:ro
+      # Outputs to scratch disk (read-write)
+      - /mnt/scratch/outputs:/outputs
+      # Inputs from scratch disk (read-only)
+      - /mnt/scratch/inputs:/inputs:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8188/"]
+      interval: 60s
+      timeout: 10s
+      start_period: 120s  # Longer for v0.11.0 model loading (Issue #5)
+      retries: 3
+
+# Note: No network definition needed for standalone worker
+# Worker connects to queue-manager on Mello via Tailscale VPN

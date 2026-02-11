@@ -1,0 +1,40 @@
+# Docker build ignore
+# Keep Docker builds clean and fast
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# Testing
+test_*.py
+*_test.py
+tests/
+.pytest_cache
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile.*
+docker-compose*.yml
+.dockerignore

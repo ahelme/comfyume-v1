@@ -1,0 +1,24 @@
+# Admin Dashboard V2 Dependencies
+# Latest stable versions as of January 2026
+
+# Web framework
+fastapi==0.128.0
+uvicorn[standard]==0.40.0
+
+# HTTP client
+httpx==0.28.1
+
+# Utilities
+python-dotenv==1.2.1
+
+# Docker SDK for container management (Phase 1 - Issue #65)
+docker==7.1.0
+
+# Redis for direct status checks (Phase 1 - Issue #65)
+redis==5.2.1
+
+# AWS S3-compatible client for R2 storage (Phase 3 - Issue #67)
+boto3==1.35.86
+
+# SSE for model download progress streaming (Phase 4 - Issue #88)
+sse-starlette==2.2.1

@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-10 - comfyume-v1 fresh start, TEMP CPU instance
+**Doc Updated:** 2026-02-11 - comfyume-v1 fresh start, new CPU instance
 
 ---
 # Project Progress Tracker
@@ -12,7 +12,7 @@
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
 **Branch:** mello-team-one-new-temp-cpu-instance-01
-**Phase:** TEMP CPU Instance — restore working app from old GPU volume
+**Phase:** New CPU Instance — restore working app from old GPU volume
 ---
 ## 0. Update Instructions
 
@@ -44,7 +44,7 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #1 - Create TEMP CPU instance from old GPU volume**
+🔴 **(CURRENT) - comfyume-v1 #1 - Create new CPU instance from old GPU volume**
     - Created: 2026-02-10
     - Provision fresh Verda CPU.8V.32G, attach old GPU OS volume + SFS
     - Targeted copy: app code, Docker images, Tailscale, SSL, nginx from old volume

@@ -1,0 +1,91 @@
+ComfyUme Infrastructure Test Report - Issue #39
+================================================
+Date: 2026-02-01 17:52:00 UTC
+Test Duration: ~15 minutes (container startup)
+Environment: Development (mello VPS - no GPU workers)
+
+SUMMARY
+=======
+Status: MOSTLY PASSING (4/5 tests)
+Containers Running: 20/20 ✓
+Containers Healthy: 20/20 ✓  
+Core Services: All healthy ✓
+
+DETAILED RESULTS
+================
+
+Test 1: Container Startup
+--------------------------
+✅ PASS: All 20 user containers running
+  - Batched startup worked correctly
+  - Batch leaders: user001, 006, 011, 016
+  - All containers reached healthy status
+  - Startup time: ~5-7 minutes total
+
+Test 2: Queue Manager Health
+----------------------------
+✅ PASS: Queue manager is healthy
+  - Health endpoint responding: 200 OK
+  - Redis connected: true
+  - Version: 0.1.0
+  - Queue depth: 0 (expected - no jobs submitted yet)
+
+Test 3: Queue Status
+--------------------
+✅ PASS: Zero failed jobs
+  - Mode: FIFO
+  - Pending: 0
+  - Running: 0
+  - Completed: 0
+  - Failed: 0
+  - Active Workers: 0 (expected - no GPU workers for infrastructure test)
+
+Test 4: Output Directory Isolation
+-----------------------------------
+❌ FAIL: Only 0/20 output directories exist
+  - Missing: data/outputs/user001/ through user020/
+  - Missing: data/inputs/user001/ through user020/
+  - Issue: init-user-data.sh only creates user_data/ directories
+  - Impact: When jobs process, outputs will go to shared directory
+  - Fix needed: Create per-user subdirectories in outputs/ and inputs/
+
+Test 5: Container Resource Limits
+----------------------------------
+✅ PASS: All containers have memory limits
+  - Memory limit per container: 2G
+  - CPU limit per container: 1.0
+  - All 20 containers properly constrained
+
+KNOWN ISSUES
+============
+1. Output/Input Directory Creation
+   - Severity: HIGH  
+   - Status: Identified, not blocking infrastructure test
+   - Description: Per-user subdirectories in outputs/ and inputs/ not created
+   - Workaround: Can be created manually before load testing
+   - Permanent fix: Update init-user-data.sh or create separate setup step
+
+RECOMMENDATIONS
+===============
+1. Create output/input directories before load testing
+2. Consider adding directory creation to init-user-data.sh
+3. Document this prerequisite in testing guide
+4. Proceed with load test (Issue #19) after directory creation
+
+CONCLUSION
+==========
+Infrastructure is READY for load testing with one prerequisite:
+Create per-user output/input directories before submitting jobs.
+
+All critical components are functioning:
+- ✅ Container orchestration
+- ✅ Queue management
+- ✅ Health checks
+- ✅ Resource limits
+- ⚠️ Directory isolation (needs setup)
+
+The batched startup pattern works excellently - containers started
+in controlled waves without overwhelming the system.
+
+Ready to proceed to Issue #18 (end-to-end testing) after creating
+missing directories.

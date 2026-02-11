@@ -1,0 +1,9 @@
+{
+  "templates": [
+    "flux2_klein_9b_text_to_image.json",
+    "flux2_klein_4b_text_to_image.json",
+    "ltx2_text_to_video.json",
+    "ltx2_text_to_video_distilled.json",
+    "example_workflow.json"
+  ]
+}

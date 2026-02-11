@@ -1,0 +1,23 @@
+# Minimal docker-compose for workflow testing
+# Test single frontend container to validate v0.11.0 workflows
+
+services:
+  test-frontend:
+    image: comfyume-frontend:v0.11.0
+    container_name: comfyume-test-frontend
+    ports:
+      - "8199:8188"
+    volumes:
+      # Mount workflows for testing
+      - ./data/workflows:/workflows:ro
+      # Mount user data directory for testing
+      - ./data/user_data/test:/comfyui/user
+      # Mount custom nodes from image default
+      - comfyui-custom-nodes:/comfyui/custom_nodes
+    environment:
+      - COMFYUI_PORT=8188
+    restart: "no"
+    command: python main.py --listen 0.0.0.0 --port 8188 --cpu
+
+volumes:
+  comfyui-custom-nodes:

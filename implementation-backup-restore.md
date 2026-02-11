@@ -1,0 +1,452 @@
+**Project:** ComfyUI Multi-User Workshop Platform
+**Project Started:** 2026-01-02
+**Repository:** github.com/ahelme/comfyume
+**Domain:** comfy.ahelme.net
+**Doc Created:** 2026-01-14
+**Doc Updated:** 2026-02-01
+
+---
+
+> **Note:** For operational backup/restore procedures, see **[Admin Backup & Restore](./admin-backup-restore.md)**.
+> This document is the implementation plan and history.
+
+---
+
+# Implementation: Verda Backup, Restore & Serverless Migration
+
+Implementation plan and phase tracking for backup/restore infrastructure. For step-by-step operational procedures, see [Admin Backup & Restore](./admin-backup-restore.md).
+
+---
+
+## Overview
+
+This document covers Phases 9-13 of the ComfyUI Multi-User Workshop implementation:
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| **Phase 9** | Emergency Backup Verda | ✅ Complete |
+| **Phase 10** | Research Verda Containers & Serverless | ✅ Complete |
+| **Phase 11** | Test Single GPU Instance (Restore & Verify) | 🔨 Current |
+| **Phase 12** | Docker Container Registry | Pending |
+| **Phase 13** | Serverless Container Development | Pending |
+
+**Architecture Options:**
+- **Single GPU Instance:** Fallback, open-source friendly, small workshops
+- **Serverless Containers:** Production, 20+ filmmakers, auto-scaling
+
+---
+
+## Backup Locations Summary
+
+| Data | Location | Size | Notes |
+|------|----------|------|-------|
+| **Models (LTX-2, Flux.2 Klein)** | Cloudflare R2 | ~45GB | `comfyume-model-vault-backups` bucket |
+| **Configs** | Cloudflare R2 | ~14MB | `comfyume-cache-backups` bucket |
+| **Worker Container** | Cloudflare R2 | ~2.5GB | `comfyume-worker-container-backups` bucket |
+| **Tailscale identity** | Verda SFS | 5KB | Preserves IP 100.89.38.43 |
+| **oh-my-zsh custom** | Verda SFS | 9KB | bullet-train theme |
+| **.zshrc** | Verda SFS | 14KB | Full shell config |
+| **.env** | Verda SFS | 1.6KB | Environment variables |
+
+### Cloudflare R2 Details
+
+- **Bucket:** `comfy-multi-model-vault-backup`
+- **Endpoint:** `https://f1d627b48ef7a4f687d6ac469c8f1dea.r2.cloudflarestorage.com`
+- **Location:** Oceania (OC)
+- **Cost:** ~$0.68/month (no egress fees)
+- **Contents:**
+  - `checkpoints/ltx-2-19b-dev-fp8.safetensors` (26GB)
+  - `text_encoders/gemma_3_12B_it.safetensors` (19GB)
+
+---
+
+## Phase 9: Emergency Backup Verda
+
+### Prerequisites
+
+- VPS (mello) running at 157.180.76.189
+- SSH access to Verda configured (`ssh dev@verda` works)
+- Verda instance must be RUNNING (start from Verda console)
+
+### Backup Script
+
+**Location:** `scripts/backup-verda.sh`
+
+**Run from:** VPS mello (NOT from Verda!)
+
+```bash
+cd ~/projects/comfyui
+
+# Config-only backup (default)
+./scripts/backup-verda.sh
+
+# Full backup including models to Cloudflare R2
+./scripts/backup-verda.sh --with-models
+```
+
+**Flags:**
+| Flag | Description |
+|------|-------------|
+| `--with-models` or `-m` | Sync .safetensors files to Cloudflare R2 (compares sizes, only uploads if different) |
+
+### What Gets Backed Up
+
+| Item | Source | Purpose |
+|------|--------|---------|
+| Tailscale identity | /var/lib/tailscale/ | Preserves IP 100.89.38.43 |
+| SSH host keys | /etc/ssh/ssh_host_* | Preserves server identity |
+| Ubuntu Pro config | /etc/ubuntu-advantage/ | ESM updates |
+| Fail2ban config | /etc/fail2ban/ | SSH protection |
+| UFW rules | /etc/ufw/ | Firewall config |
+| Home directory | /home/dev/ | User configs, .zshrc |
+| oh-my-zsh custom | ~/.oh-my-zsh/custom/ | Themes, plugins |
+| ComfyUI project | ~/comfy-multi/ | App code |
+| Tailscale IP | tailscale ip -4 | Reference |
+| Models (--with-models) | ~/comfy-multi/data/models/ | Synced to Cloudflare R2 |
+
+### Backup Location
+
+```
+~/backups/verda/
+├── tailscale-identity-YYYYMMDD-HHMMSS.tar.gz
+├── ssh-host-keys-YYYYMMDD-HHMMSS.tar.gz
+├── ubuntu-pro-YYYYMMDD-HHMMSS.tar.gz
+├── fail2ban-YYYYMMDD-HHMMSS.tar.gz
+├── ufw-YYYYMMDD-HHMMSS.tar.gz
+├── home-dev-YYYYMMDD-HHMMSS.tar.gz
+├── ohmyzsh-custom-YYYYMMDD-HHMMSS.tar.gz
+├── comfy-project-YYYYMMDD-HHMMSS.tar.gz
+├── tailscale-ip.txt
+└── RESTORE.sh
+```
+
+### RESTORE.sh Capabilities
+
+The generated restore script performs:
+
+1. **Package Installation**
+   - fail2ban, ufw, redis-tools, zsh, docker, git, curl, wget
+
+2. **Security Hardening**
+   - Restore Tailscale with same IP (100.89.38.43)
+   - Disable SSH over Tailscale
+   - Configure Fail2ban (SSH brute-force protection)
+   - Configure UFW (SSH + Tailscale ports only)
+
+3. **User Environment**
+   - Create dev user with zsh shell
+   - Restore home directory
+   - Install oh-my-zsh if needed
+   - Restore/install bullet-train theme
+   - Restore custom oh-my-zsh plugins
+
+4. **Project Setup**
+   - Restore ComfyUI project
+   - Instructions for block storage mounting
+   - Instructions for model download
+
+---
+
+## Phase 10: Research Verda Containers & Serverless
+
+### Research Tasks
+
+1. **Verda Containers** (https://docs.verda.com/containers/overview)
+   - Pricing model (per-second? per-minute?)
+   - Billing intervals
+   - Cold start times
+   - Storage integration (SFS/Block mounting)
+   - GPU availability (V100, H100)
+
+2. **Competitor Pricing**
+   - RunPod Serverless
+   - Vast.ai
+   - Modal
+   - Banana.dev
+   - Replicate
+
+### Documentation to Create
+
+- `docs/serverless-comparison.md`
+- `docs/verda-instance-serverless-price-comparison.md`
+
+### Current Strategy Costs (Dedicated Instance)
+
+| Storage | Size | Monthly |
+|---------|------|---------|
+| SFS (System) | 50GB | $10.00 |
+| Block (Models) | 40GB | $4.00 |
+| Block (Scratch) | 10GB | $1.00 |
+| **Total Storage** | 100GB | **$15.00** |
+
+| Compute | Rate | Hours | Cost |
+|---------|------|-------|------|
+| V100 Testing | $0.14/hr | 10 | $1.40 |
+| H100 Workshop | $4.00/hr | 6 | $24.00 |
+| **Total Compute** | | 16 | **$25.40** |
+
+**Grand Total:** ~$40-50 for workshop
+
+---
+
+## Phase 11: Test Single GPU Instance (Restore & Verify)
+
+### Storage Setup (Verda Console)
+
+0. **Provision V100 16GB** - $0.14/hr for testing (COMES WITH OWN BLOCK STORAGE FOR OS)
+1. **Shut machine down** - (to attach storage without wipe)
+2. **Create 50GB SFS** - "Model Vault", ComfyMulti, user config
+3. **Create 10GB Block Storage** - "Scratch Disk"
+4. **Attach SFS & Block Storage & Start Server**
+5. **Restore with Scripts**
+
+## Mount SFS and create new block storage
+
+SFS network drive is for models, local backups.
+Block storage is for scratch (user uploads/outputs).
+
+**Note:** Mount point can be customized (e.g., `/mnt/models` or `/mnt/sfs`).
+
+See: [Deploy/Backup Guide](.docs/admin-backup-restore.md) - Deploy/restore/backups
+
+### Restore Data
+
+If SFS needs re-creating or block storage needs restoring from backup (if lost).
+
+See: [Deploy/Backup Guide](.docs/admin-backup-restore.md) - Deploy/restore/backups
+
+### Model Restore
+
+**Option A: Restore from Cloudflare R2 (Recommended - faster)**
+
+Models are backed up to Cloudflare R2 for fast restore:
+
+See: [Deploy/Backup Guide](.docs/admin-backup-restore.md) - Deploy/restore/backups
+
+**Option B: Download from HuggingFace (Fallback)**
+
+If R2 backup unavailable, download fresh from HuggingFace (~45GB, ~30 min):
+
+```bash
+cd /mnt/models
+mkdir -p checkpoints text_encoders latent_upscale_models loras
+
+# Main checkpoint (~26GB)
+wget https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-19b-dev-fp8.safetensors \
+  -O checkpoints/ltx-2-19b-dev-fp8.safetensors
+
+# Text encoder (~19GB)
+wget https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it.safetensors \
+  -O text_encoders/gemma_3_12B_it.safetensors
+
+# Upscaler (~2GB)
+wget https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-spatial-upscaler-x2-1.0.safetensors \
+  -O latent_upscale_models/ltx-2-spatial-upscaler-x2-1.0.safetensors
+
+# LoRAs (~4GB)
+wget https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-19b-distilled-lora-384.safetensors \
+  -O loras/ltx-2-19b-distilled-lora-384.safetensors
+
+wget https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Dolly-Left/resolve/main/ltx-2-19b-lora-camera-control-dolly-left.safetensors \
+  -O loras/ltx-2-19b-lora-camera-control-dolly-left.safetensors
+```
+
+### Verification Checklist
+
+- [ ] Tailscale authenticated (visited browser URL)
+- [ ] Tailscale IP is 100.89.38.43
+- [ ] SSH access works
+- [ ] UFW active (SSH + Tailscale only)
+- [ ] Fail2ban active
+- [ ] zsh is default shell
+- [ ] oh-my-zsh with bullet-train working
+- [ ] Block storage mounted at /mnt/models and /mnt/scratch
+- [ ] Symlinks created to ComfyUI directories
+- [ ] Redis connectivity to VPS (100.99.216.71:6379)
+- [ ] Docker containers start successfully
+- [ ] Test workflow runs on user01
+
+---
+
+## Phase 12: Docker Container Registry
+
+### Container Registry Options
+
+1. **GitHub Container Registry** (ghcr.io) - Free for public repos, recommended
+2. **Docker Hub** - Free tier available
+3. **Verda Registry** - If available
+
+### Build and Push
+
+```bash
+# Build worker image
+cd ~/projects/comfyui
+docker build -t comfyui-worker:latest -f comfyui-worker/Dockerfile .
+
+# Tag for GitHub Container Registry
+docker tag comfyui-worker:latest ghcr.io/ahelme/comfyui-worker:latest
+
+# Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u ahelme --password-stdin
+
+# Push
+docker push ghcr.io/ahelme/comfyui-worker:latest
+```
+
+### Success Criteria
+- [ ] Worker image builds successfully
+- [ ] Image pushed to registry
+- [ ] Image can be pulled from registry
+- [ ] Image runs on fresh Verda instance
+
+---
+
+## Phase 13: Serverless Container Development
+
+### Overview
+
+Build and deploy ComfyUI workers as Verda Serverless Containers for auto-scaling workshop infrastructure.
+
+**Target:** 16-40 concurrent containers for filmmaker workshop
+
+### Prerequisites
+
+- Phase 11 complete (single instance verified working)
+- Phase 12 complete (container in registry)
+- Verda account with Containers access
+
+### Container Requirements
+
+1. **Base Image:** ComfyUI worker from Phase 12
+2. **Model Loading:** From shared Verda Block Storage or R2
+3. **Health Check:** HTTP endpoint for autoscaling
+4. **API Compatibility:** OpenAI-style or custom endpoint
+
+### Development Tasks
+
+1. [ ] Adapt worker Dockerfile for serverless
+   - Add health check endpoint
+   - Configure model path from environment
+   - Optimize startup time
+
+2. [ ] Create serverless configuration
+   ```yaml
+   # verda-container.yaml (example)
+   name: comfyui-worker
+   image: ghcr.io/ahelme/comfyui-worker:latest
+   gpu: H100-SXM5-80GB
+   replicas:
+     min: 0
+     max: 40
+   scaling:
+     metric: queue_length
+     target: 1
+   storage:
+     - type: block
+       path: /mnt/models
+   ```
+
+3. [ ] Test cold start times
+   - Baseline measurement
+   - Optimize if >30 seconds
+   - Consider warm pool (2-3 replicas)
+
+4. [ ] Configure autoscaling
+   - Queue-based scaling sensitivity
+   - Scale-down delay (avoid thrashing)
+   - Max replicas limit
+
+5. [ ] Integration testing
+   - Deploy to Verda Containers
+   - Test with simulated 15 concurrent requests
+   - Monitor metrics (Prometheus/Loki)
+
+6. [ ] Update queue-manager integration
+   - Route jobs to serverless endpoint
+   - Handle async responses
+   - Update status webhooks
+
+### Cost Optimization
+
+- **Acceptable scenario:** Max 16 containers, ~$80-100/workshop
+- **Ideal scenario:** Max 40 containers, ~$200-250/workshop
+- Scale to zero between rounds/breaks
+
+### Success Criteria
+
+- [ ] Container deploys to Verda Containers
+- [ ] Autoscaling responds to queue length
+- [ ] Cold start <30 seconds
+- [ ] 15 concurrent jobs complete successfully
+- [ ] Scale to zero when idle
+- [ ] Integrated with existing queue-manager
+
+### Related Documentation
+
+- [Serverless GPU Research](./research-serverless-gpu.md) - Cost analysis
+- [Verda Containers Docs](https://docs.verda.com/containers/overview)
+
+---
+
+## Quick Reference Commands
+
+### Backup (from mello)
+```bash
+cd ~/projects/comfyui
+
+# Config only
+./scripts/backup-verda.sh
+
+# Config + models to R2
+./scripts/backup-verda.sh --with-models
+```
+
+### Restore (on new Verda)
+```bash
+cd ~/verda
+sudo bash RESTORE.sh
+```
+
+### Check Tailscale
+```bash
+tailscale status
+tailscale ip -4
+```
+
+### Check Security
+```bash
+sudo ufw status
+sudo fail2ban-client status
+```
+
+### Check Storage
+```bash
+df -h /mnt/models /mnt/scratch
+ls -la ~/comfy-multi/data/
+```
+
+---
+
+## Related Documentation
+
+- [Budget Strategy](./admin-budget-strategy.md) - Cost optimization
+- [CPU Testing Guide](./admin-cpu-testing-guide.md) - Free development
+- [GPU Environment Backup](./admin-gpu-environment-backup.md) - Dotfiles approach
+- [Scripts Reference](./admin-scripts.md) - All available scripts
+- [Verda Setup](./admin-verda-setup.md) - Verda configuration
+
+---
+
+## Risk Mitigation
+
+| Risk | Mitigation |
+|------|------------|
+| Data loss | Run backup IMMEDIATELY when Verda restarts |
+| IP change | Backup Tailscale identity preserves 100.89.38.43 |
+| Cost overrun | Test on V100 ($0.14/hr) before H100 ($4/hr) |
+| Storage full | Start with 40GB models + 10GB scratch, expand as needed |
+
+---
+
+```
+**Last Updated:** 2026-01-14

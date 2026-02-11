@@ -1,0 +1,234 @@
+**Doc Title:** Admin Workflow - Workshop Month
+**Project:** ComfyUI Multi-User Workshop Platform
+**Project Started:** 2026-01-02
+**Repository:** github.com/ahelme/comfy-multi
+**Domain:** comfy.ahelme.net
+**Doc Created:** 2026-01-15
+**Doc Updated:** 2026-01-15
+
+---
+
+# Workshop Month Workflow
+
+Quick reference for setting up and running the workshop infrastructure using Verda Shared File System (SFS).
+
+---
+
+## Storage Strategy
+
+| Storage | Purpose | Cost (AUD/month) |
+|---------|---------|------------------|
+| **Verda SFS 50GB** | Models + Container (workshop month only) | ~$14 |
+| **Cloudflare R2** | Permanent backup of models | ~$1 |
+| **Hetzner VPS** | Configs, setup-verda-solo-script.sh, container backup | (existing) |
+
+---
+
+## JAN 31: Initial Setup (~45 min)
+
+### 1. Create Shared File System
+
+```
+Verda Dashboard → Storage → Shared File System → Create
+- Size: 50GB (expandable in 1GB increments)
+- Note the mount endpoint (e.g., 10.x.x.x:/share)
+```
+
+### 2. Get SFS Mount Endpoint
+
+```
+Verda Dashboard → Storage → Shared File Systems → SFS-Model-Vault
+Copy the mount command - note Verda adds a random ID suffix
+Example: nfs.fin-01.datacrunch.io:/SFS-Model-Vault-273f8ad9
+```
+
+### 3. Create GPU Instance
+
+```
+Verda Dashboard → Instances → Create
+- Type: A100 80GB or H100 (spot for cost savings)
+- Attach SFS: SFS-Model-Vault
+- Add SSH keys: Your key + mello VPS key
+- Add provisioning script: setup-verda-solo-script.sh
+```
+
+### 4. Mount SFS & Restore
+
+```bash
+# SSH to instance
+ssh root@<instance-ip>
+
+# Mount SFS (use YOUR endpoint from Step 2)
+mkdir -p /mnt/models
+mount -t nfs -o nconnect=16 <sfs-endpoint> /mnt/models
+
+# Add to fstab for persistence
+echo "<sfs-endpoint> /mnt/models nfs defaults 0 0" >> /etc/fstab
+
+# Transfer backup from mello
+scp -r mello:~/backups/verda/ ~/
+
+# Run restore script
+cd /root
+sudo bash setup-verda-solo-script.sh
+```
+
+### 5. Authenticate Tailscale
+
+After setup-verda-solo-script.sh runs, Tailscale is installed but needs authentication:
+
+```bash
+# Authenticate Tailscale (opens browser URL)
+sudo tailscale up --ssh=false
+
+# You'll see a URL like: https://login.tailscale.com/a/abc123xyz
+# Visit this URL in your browser to authenticate the device
+
+# Verify connection (should show mello VPS)
+tailscale status
+tailscale ip -4  # Should be 100.89.38.43
+```
+
+**Note:** `--ssh=false` disables Tailscale SSH - we use regular SSH instead.
+
+### 6. Verify Setup
+
+```bash
+# Check models (~45GB)
+ls -lh /mnt/models/checkpoints/
+ls -lh /mnt/models/text_encoders/
+
+# Check container image (~3GB)
+ls -lh /mnt/models/worker-image.tar.gz
+
+# Test worker
+su - dev
+cd ~/comfy-multi
+docker compose up worker-1
+
+# If worker looks good, restart in detached mode and set restart policy
+docker compose up -d worker-1
+sudo docker update --restart=unless-stopped $(sudo docker ps -q --filter "name=comfy")
+```
+
+### 7. Run End-of-Day Backups
+
+**From Mello VPS:**
+```bash
+cd ~/projects/comfymulti-scripts
+
+# Step 1: Backup Verda → Mello + R2
+./backup-verda.sh
+
+# Step 2: Backup Mello user files → R2
+./backup-mello.sh
+```
+
+See [Admin Backup Routines](./admin-backup-routines.md) for details.
+
+---
+
+## FEB 1-28: Daily Startup (~30 seconds!)
+
+**See [Admin Backup & Restore](./admin-backup-restore.md)** for complete provisioning steps.
+
+**Summary:**
+1. Get `setup-verda-solo-script.sh` from GitHub repo `ahelme/comfymulti-scripts`
+2. Paste into Verda startup script field, add both SSH keys, provision
+3. SSH in, get MOUNT COMMAND from Verda Dashboard (Storage → SFS dropdown)
+4. Run: `bash /root/setup-verda-solo-script.sh "<MOUNT_COMMAND>"`
+5. Authenticate: `sudo tailscale up --ssh=false`
+
+### If Instance Was Terminated Overnight
+
+Same as Quick Start - SFS persists independently of instances!
+
+### If SFS Needs Recreation
+
+```bash
+# Transfer backup from mello and run restore
+scp -r mello:~/backups/verda/* /root/
+sudo bash /root/setup-verda-solo-script.sh
+# Follow NEXT STEPS output for R2 model download (~45 min)
+```
+
+---
+
+## MAR 1: Post-Workshop Cleanup
+
+```bash
+# 1. Terminate any running Verda instances
+
+# 2. Delete SFS (Verda Dashboard)
+#    Storage → Shared File System → Delete
+#    $14/month → $0
+
+# 3. Keep backups (minimal cost)
+#    - R2: ~$1/month (models)
+#    - Mello: Free (configs + container)
+
+# Next workshop? Start from JAN 31 steps again.
+```
+
+---
+
+## Cost Summary
+
+| Period | Verda Compute | Verda SFS | R2 | Total |
+|--------|--------------|-----------|-----|-------|
+| **Setup (Jan 31)** | ~€2 (A100 spot, 2hrs) | €0.35 (1 day) | $0 | ~$5 |
+| **Workshop (Feb)** | Variable (spot) | ~$14 | $1 | $15 + compute |
+| **Off-season** | $0 | $0 | $1 | $1/month |
+
+---
+
+## Troubleshooting
+
+### SFS Won't Mount
+```bash
+# Check NFS client installed
+apt-get install -y nfs-common
+
+# Check endpoint is correct
+ping <sfs-endpoint>
+
+# Try manual mount with verbose
+mount -v -t nfs <sfs-endpoint> /mnt/models
+```
+
+### Container Image Not Found
+```bash
+# Check SFS is mounted
+df -h /mnt/models
+
+# If missing, copy from mello backup
+scp mello:~/backups/verda/worker-image.tar.gz /mnt/models/
+```
+
+### Models Missing
+```bash
+# Re-download from R2
+export AWS_ACCESS_KEY_ID=<key>
+export AWS_SECRET_ACCESS_KEY=<secret>
+aws --endpoint-url https://...r2.cloudflarestorage.com \
+    s3 sync s3://comfy-multi-model-vault-backup/ /mnt/models/
+```
+
+---
+
+## Quick Reference
+
+| Task | Command |
+|------|---------|
+| Mount SFS | `mount -t nfs <endpoint>:/share /mnt/models` |
+| Load container | `docker load < /mnt/models/worker-image.tar.gz` |
+| Start worker | `cd ~/comfy-multi && docker compose up -d worker-1 && sudo docker update --restart=unless-stopped $(sudo docker ps -q)` |
+| Check models | `ls -lh /mnt/models/checkpoints/` |
+| Check Redis | `redis-cli -h $REDIS_HOST -a $REDIS_PASSWORD ping` |
+
+---
+
+**Related Docs:**
+- [Backup & Restore](./admin-backup-restore.md)
+- [Verda Setup](./admin-verda-setup.md)
+- [Budget Strategy](./admin-budget-strategy.md)

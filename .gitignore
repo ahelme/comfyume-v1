@@ -1,42 +1,40 @@
-# Claude Code - local/per-developer files
-.claude/*.local.*
-.claude/memories/
-
-# Environment / secrets
-.env
-.env.*
-!.env.example
-
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
-dist/
-build/
-.venv/
+*$py.class
+*.so
+.Python
+env/
 venv/
+ENV/
 
-# Node
-node_modules/
-npm-debug.log*
+# Docker
+.env
+*.log
 
-# Docker volumes / data
-data/
-volumes/
+# Data directories (user files, outputs, models)
+data/user_data/
+data/inputs/
+data/outputs/
+data/models/
 
-# OS
-.DS_Store
-Thumbs.db
+# Credentials
+USER_CREDENTIALS.txt
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# Logs
-*.log
+# OS
+.DS_Store
+Thumbs.db
 
-# SSL certs (never commit)
-*.pem
-*.key
+# Temporary files
+*.tmp
+temp/
+
+# Prevent nested .claude (Claude Code auto-creates this - ignore it)
+.claude/.claude/
