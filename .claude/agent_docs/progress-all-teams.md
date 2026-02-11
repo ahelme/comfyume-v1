@@ -17,6 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [MELLO-ONE-TEAM] 5ecbaa4 fix: remove unused redis.conf volume mount (comfyume-v1 #1, #7)
+- [MELLO-ONE-TEAM] f38f260 docs: update progress — worker gpu profile fix, branch rename (comfyume-v1 #1, #2, #5)
 - [MELLO-ONE-TEAM] 749def7 fix: add gpu profile to worker-1, only starts on GPU instances (comfyume-v1 #1, #5)
 - [MELLO-ONE-TEAM] 445577a fix: remove leftover worker container before starting app stack [private scripts repo] (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] c2e75d5 fix: skip worker build on CPU instance [private scripts repo] (comfyume-v1 #1, #5)

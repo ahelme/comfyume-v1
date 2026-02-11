@@ -63,11 +63,55 @@
     - DONE: Renamed default branch to `main` (was mello-team-one-new-temp-cpu-instance-01)
     - DONE: Restore script removes leftover worker container before starting stack [private scripts repo 445577a]
     - DONE: Saved worker image to SFS as comfyume-v1-worker-2026-02-11.tar.gz
-    - RUNNING: Third restore run with all fixes (Redis, worker profile, single build, Tailscale auth key)
-    - NEXT: Verify containers healthy, test endpoints, run setup-monitoring.sh
+    - DONE: Removed unused redis.conf volume mount (was empty dir, caused mount error) (5ecbaa4)
+    - DONE: Discovered stale tarball overrides git fixes (scripts #42), diverged git history (scripts #41)
+    - DONE: Disabled host nginx (Verda default, blocks port 80) (scripts #43)
+    - DONE: Core stack running — Redis, QM, admin, 20 frontends ALL HEALTHY
+    - BLOCKING: Nginx container can't resolve upstream `user001:8188` — not joining Docker network
+    - BLOCKING: No SSL cert — certbot failed during restore
+    - INVESTIGATE: Variable warnings in .env on server (unescaped $ in values?) (#7)
+    - NEXT: Fix nginx upstream resolution (Docker service names vs container names)
+    - NEXT: Get SSL cert (certbot certonly --standalone -d aiworkshop.art)
+    - NEXT: Test end-to-end: browser → nginx → frontend → QM → serverless
+    - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 42 - 2026-02-11 - Core stack healthy, nginx/SSL remaining
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #4, #5, #6, #7 | scripts #41, #42, #43
+
+**Multiple restore runs — issues found and fixed:**
+1. QM unhealthy: REDIS_HOST=100.99.216.71 (Mello) → fixed to REDIS_HOST=redis (Docker)
+2. Worker nvidia crash: added `profiles: [gpu]` to docker-compose.yml
+3. 20 identical builds: changed to single `comfyume-frontend:v0.11.0` build
+4. Stale tarball: restore script used cached tarball over git clone (scripts #42)
+5. Diverged git: local main vs renamed remote main (scripts #41)
+6. redis.conf mount: empty directory instead of file (removed mount entirely)
+7. Host nginx: Verda OS default blocks port 80 (scripts #43)
+8. Tailscale auth: added auth key for non-interactive login
+
+**Current state on quiet-city:**
+- Redis, queue-manager, admin: HEALTHY
+- 20 user frontends: ALL HEALTHY (batched startup working perfectly)
+- Worker: not running (correct — serverless mode)
+- Nginx: FAILING — can't resolve upstream `user001:8188`, not on Docker network
+- SSL: no cert (certbot failed, needs retry)
+- Tailscale: connected at 100.89.38.43
+
+**GH issues created this session:**
+- comfyume-v1 #4: GitHub Actions builds
+- comfyume-v1 #5: Single shared frontend image
+- comfyume-v1 #6: CPU-only PyTorch in frontend (save ~2GB)
+- comfyume-v1 #7: Redis config cleanup + variable warnings
+- scripts #41: git pull fails silently on diverged history
+- scripts #42: stale tarball overrides git fixes
+- scripts #43: stop host nginx before container nginx
+
+**Key learning:** Restore script has multiple caching layers (tarball > SFS > git) that can serve stale code. Need version checks or force-git option.
 
 ---
 
