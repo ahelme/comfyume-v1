@@ -120,6 +120,7 @@ app.add_middleware(
 # ============================================================================
 
 @app.get("/health", response_model=HealthCheck)
+@app.get("/api/health", response_model=HealthCheck, include_in_schema=False)
 async def health_check():
     """Health check endpoint"""
     uptime = (datetime.now(timezone.utc) - app_start_time).total_seconds()
