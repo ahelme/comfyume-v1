@@ -15,9 +15,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ---
 
+## 2026-02-11
+
+- [MELLO-ONE] 2c42279 feat: import working app code from comfyume repo, Mello frozen state (comfyume-v1 #1)
+
 ## 2026-02-10
 
-- [MELLO] d920010 feat: initial commit — project docs, Claude skills, agent config (comfyume-v1 #1)
+- [MELLO-ONE] d920010 feat: initial commit — project docs, Claude skills, agent config (comfyume-v1 #1)
 - [ADMIN] bb1de2a refactor: split CLAUDE.md into progressive disclosure modules (#124)
 - [ADMIN] -- refactor: migrate .claude/commands/ to .claude/skills/ format, remove archive/build_reports, rename mello-team to mello-team-one
 
@@ -62,7 +66,7 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [TEST] 6721430 docs: update CLAUDE.md with Mello staging role and aiworkshop.art links (#71)
 - [TEST] 07032a2 feat: add Mello container cleanup script (#71)
 - [ADMIN] PENDING feat: add Templates & Models management tab to admin panel (#88)
-- [MELLO] (no comfyume commit) fix: R2 creds, backup cron, wiki pages, model storage plan (#87, #88)
+- [MELLO-ONE] (no comfyume commit) fix: R2 creds, backup cron, wiki pages, model storage plan (#87, #88)
 - [SCRIPTS] 8261a19 fix: backup-cron --backup-to-scratch flag (#87)
 - [SCRIPTS] e0b4a72 fix: persist AWS/R2 credentials in restore script
 - [ADMIN] 3ac3f56 docs: move user prefs to bottom of CLAUDE.md, add branch rule (#22)
@@ -71,27 +75,27 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [ADMIN] -- restore-verda-instance.sh: Termius keys, root→dev key copy, full .env sync, MELLO_PUBLIC_IP (PR #32)
 - [ADMIN] -- copied commands to claude-settings/all-teams/commands/ in private scripts repo
 - [ADMIN] -- merged 34 commits from main, resolved merge conflict in resume file
-- [MELLO] bb838ce feat: add /update-progress command for team-aware progress updates (#22) - PR #81
-- [MELLO] 367c36f feat: add /pull-main command to merge latest main into current branch - PR #82
+- [MELLO-ONE] bb838ce feat: add /update-progress command for team-aware progress updates (#22) - PR #81
+- [MELLO-ONE] 367c36f feat: add /pull-main command to merge latest main into current branch - PR #82
 
 ## 2026-02-07
 
-- [MELLO] a9c3c42 fix: admin routing, QM event loop block, health check IPv6 (#64)
+- [MELLO-ONE] a9c3c42 fix: admin routing, QM event loop block, health check IPv6 (#64)
 - [TEST] 5dbfad0 docs: update README with serverless architecture (#22)
 - [TEST] e5ee2a5 docs: update worker README with serverless note (#22)
 - [TEST] 849ef58 docs: update .env.example to v0.3.5 with serverless config (#22)
 - [TEST] c21cdc3 chore: archive obsolete GPU deployment scripts (#22)
-- [MELLO] a9d7cd2 fix: admin routing, QM event loop block, health check IPv6 (#64)
-- [MELLO] bc647b2 fix: nginx auth, CORS domain, user-maps include for Verda restore (#64)
-- [MELLO] 367c36f feat: add /pull-main command (#22) - PR #82
-- [MELLO] bb838ce feat: add /update-progress command (#22) - PR #81
-- [MELLO] 5b0c8ec docs: session 36 progress - resume/handover cleanup, smart hooks (#22, #8) - PR #80
+- [MELLO-ONE] a9d7cd2 fix: admin routing, QM event loop block, health check IPv6 (#64)
+- [MELLO-ONE] bc647b2 fix: nginx auth, CORS domain, user-maps include for Verda restore (#64)
+- [MELLO-ONE] 367c36f feat: add /pull-main command (#22) - PR #82
+- [MELLO-ONE] bb838ce feat: add /update-progress command (#22) - PR #81
+- [MELLO-ONE] 5b0c8ec docs: session 36 progress - resume/handover cleanup, smart hooks (#22, #8) - PR #80
 - [ADMIN] -- closed GH issues #65, #66, #67 with implementation comments referencing PR #69
 
-- [MELLO] 7664d83 docs: add gh CLI Projects Classic workaround to CLAUDE.md (#22) - PR #79
-- [MELLO] 5ba904e chore: slim down all resume files, fix testing-scripts paths (#22) - PR #78
-- [MELLO] 66a6fe0 chore: fix file paths in resume/handover files, archive ARCHITECTURE-ASCII (#22) - PR #76
-- [MELLO] 9e7ff1f feat: daily R2 upload with rotation, max 10 copies [private scripts repo]
+- [MELLO-ONE] 7664d83 docs: add gh CLI Projects Classic workaround to CLAUDE.md (#22) - PR #79
+- [MELLO-ONE] 5ba904e chore: slim down all resume files, fix testing-scripts paths (#22) - PR #78
+- [MELLO-ONE] 66a6fe0 chore: fix file paths in resume/handover files, archive ARCHITECTURE-ASCII (#22) - PR #76
+- [MELLO-ONE] 9e7ff1f feat: daily R2 upload with rotation, max 10 copies [private scripts repo]
 - [TEST] -- PR #75 created, issue #6 updated and closed
 - [TEST] 421e989 docs: update testing-scripts-team progress (#6)
 - [TEST] 0731e29 fix: update docker-compose references across scripts (#6)
@@ -101,15 +105,15 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [TEST] ddda4e0 test: rewrite integration test suite for serverless architecture (#6)
 - [TEST] bd49f8c test: add shared test helper library (#6)
 - [TEST] f7a9574 docs: add testing-scripts-team onboarding files
-- [MELLO] 4212e0f docs: archive stale .claude files (#22) - PR #73
-- [MELLO] dcd0e96 docs: update all references setup-verda-solo-script → restore-verda-instance (#64, #71) - PR #72
-- [MELLO] 28eda1c docs: update refs for restore-verda-instance.sh v0.4.0 (#64, #71) - PR #72
-- [MELLO] ea6549b feat: add restore-verda-instance.sh v0.4.0 for production app server (#64, #71) [private scripts repo]
-- [MELLO] 38a28da docs: session 34 - Verda instance setup, central progress log in CLAUDE.md (#64, #71)
-- [MELLO] 05eb063 feat: add production nginx configs from old Verda instance (#64) [private scripts repo]
-- [MELLO] -- backed up old OS drive to scratch: nginx, SSL, .env, tarballs, worker image
-- [MELLO] -- SFS mount BLOCKED: CPU instance has no private network to reach NFS (10.1.78.10)
-- [MELLO] -- created #71 (Mello VPS downgrade), updated #64 with full backup/restore tasks
+- [MELLO-ONE] 4212e0f docs: archive stale .claude files (#22) - PR #73
+- [MELLO-ONE] dcd0e96 docs: update all references setup-verda-solo-script → restore-verda-instance (#64, #71) - PR #72
+- [MELLO-ONE] 28eda1c docs: update refs for restore-verda-instance.sh v0.4.0 (#64, #71) - PR #72
+- [MELLO-ONE] ea6549b feat: add restore-verda-instance.sh v0.4.0 for production app server (#64, #71) [private scripts repo]
+- [MELLO-ONE] 38a28da docs: session 34 - Verda instance setup, central progress log in CLAUDE.md (#64, #71)
+- [MELLO-ONE] 05eb063 feat: add production nginx configs from old Verda instance (#64) [private scripts repo]
+- [MELLO-ONE] -- backed up old OS drive to scratch: nginx, SSL, .env, tarballs, worker image
+- [MELLO-ONE] -- SFS mount BLOCKED: CPU instance has no private network to reach NFS (10.1.78.10)
+- [MELLO-ONE] -- created #71 (Mello VPS downgrade), updated #64 with full backup/restore tasks
 
 ## 2026-02-06
 
@@ -117,47 +121,47 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [ADMIN] e8787bf feat: admin dashboard v2 - system status, GPU switching, storage mgmt (#65, #66, #67)
 - [ADMIN] -- team initialized: progress file, handover, resume context, onboarding
 - [ADMIN] -- PR #69: https://github.com/ahelme/comfyume/pull/69
-- [MELLO] f134ff5 docs: session 33 - Verda CPU instance provisioned, handover update
-- [MELLO] d0fd975 docs: CRITICAL - aiworkshop.art PRODUCTION is on Verda, not Mello
-- [MELLO] -- provisioned Verda CPU instance soft-wolf-shines-fin-01 (CPU.8V.32G, €34/mth) (#64)
-- [MELLO] -- restructured nginx configs: staging vs production in private scripts repo
+- [MELLO-ONE] f134ff5 docs: session 33 - Verda CPU instance provisioned, handover update
+- [MELLO-ONE] d0fd975 docs: CRITICAL - aiworkshop.art PRODUCTION is on Verda, not Mello
+- [MELLO-ONE] -- provisioned Verda CPU instance soft-wolf-shines-fin-01 (CPU.8V.32G, €34/mth) (#64)
+- [MELLO-ONE] -- restructured nginx configs: staging vs production in private scripts repo
 
 ## 2026-02-05
 
-- [MELLO] 060e0c4 fix: resolve workflow save/load 405 error (#54)
-- [MELLO] -- root cause: nginx proxy_pass trailing slash decodes %2F in userdata API
-- [MELLO] -- created comfyui-userdata-maps.conf, updated 20 user proxy_pass lines
+- [MELLO-ONE] 060e0c4 fix: resolve workflow save/load 405 error (#54)
+- [MELLO-ONE] -- root cause: nginx proxy_pass trailing slash decodes %2F in userdata API
+- [MELLO-ONE] -- created comfyui-userdata-maps.conf, updated 20 user proxy_pass lines
 
 ## 2026-02-04
 
-- [MELLO] 4706846 docs: session handover - all 4 serverless deployments complete
-- [MELLO] 02e8043 docs: add Verda console deployment steps for serverless
-- [MELLO] 00f6571 docs: update progress log - phase 11 serverless complete
-- [MELLO] 9475024 feat: add serverless API key authentication support (#62)
-- [MELLO] -- created 4 DataCrunch deployments: H200/B300 x spot/on-demand
-- [MELLO] -- terraform configs + GitHub Actions workflow for mobile GPU switching
+- [MELLO-ONE] 4706846 docs: session handover - all 4 serverless deployments complete
+- [MELLO-ONE] 02e8043 docs: add Verda console deployment steps for serverless
+- [MELLO-ONE] 00f6571 docs: update progress log - phase 11 serverless complete
+- [MELLO-ONE] 9475024 feat: add serverless API key authentication support (#62)
+- [MELLO-ONE] -- created 4 DataCrunch deployments: H200/B300 x spot/on-demand
+- [MELLO-ONE] -- terraform configs + GitHub Actions workflow for mobile GPU switching
 - [VERDA] 9475024 feat: serverless inference WORKING on Verda (#62)
 - [VERDA] -- fixed: API key auth, python→python3 CMD, SERVERLESS_API_KEY config
 
 ## 2026-02-03
 
-- [MELLO] -- #62 serverless multi-GPU implementation: config.py, switch-gpu.sh, h200.env, b300.env
+- [MELLO-ONE] -- #62 serverless multi-GPU implementation: config.py, switch-gpu.sh, h200.env, b300.env
 
 ## 2026-02-02
 
-- [MELLO] -- fix: add ComfyUI favicon and frontend assets for presentation (247 files)
-- [MELLO] -- #54 workaround: disabled broken custom nodes for boss meeting
-- [MELLO] -- #40 backup: worker container built, config backup to SFS, silent failures discovered
+- [MELLO-ONE] -- fix: add ComfyUI favicon and frontend assets for presentation (247 files)
+- [MELLO-ONE] -- #54 workaround: disabled broken custom nodes for boss meeting
+- [MELLO-ONE] -- #40 backup: worker container built, config backup to SFS, silent failures discovered
 - [VERDA] -- #40 downloaded 7 models (77GB) + gemma (8.8GB), R2 upload 98GB total
 - [VERDA] -- fixed R2 endpoint: .r2. → .eu.r2.
 
 ## 2026-02-01
 
-- [MELLO] ea844ee test: complete infrastructure test for #39 (4/5 passing, 20 containers)
-- [MELLO] 17cea21 feat: add multi-user load testing framework (#19)
-- [MELLO] 67afebe feat: validate 5 workflow templates for v0.11.0 (#17) - 49% JSON reduction
-- [MELLO] -- #21 COMFYUI_MODE implementation, .env v0.3.2
-- [MELLO] -- PR #37, PR #31 merged to main
+- [MELLO-ONE] ea844ee test: complete infrastructure test for #39 (4/5 passing, 20 containers)
+- [MELLO-ONE] 17cea21 feat: add multi-user load testing framework (#19)
+- [MELLO-ONE] 67afebe feat: validate 5 workflow templates for v0.11.0 (#17) - 49% JSON reduction
+- [MELLO-ONE] -- #21 COMFYUI_MODE implementation, .env v0.3.2
+- [MELLO-ONE] -- PR #37, PR #31 merged to main
 - [VERDA] -- .env v0.3.2 migration across both repos (#22, #14)
 - [VERDA] -- CLAUDE.md cleanup, R2 buckets update (3→7), file organization
 - [VERDA] -- PR #32 merged to main

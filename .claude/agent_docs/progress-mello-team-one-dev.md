@@ -44,16 +44,42 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #1 - Create new CPU instance from old GPU volume**
-    - Created: 2026-02-10
-    - Provision fresh Verda CPU.8V.32G, attach old GPU OS volume + SFS
-    - Targeted copy: app code, Docker images, Tailscale, SSL, nginx from old volume
-    - DO NOT git pull, regenerate compose, or rebuild images — use old working state
-    - 11 phases: provision → setup → attach → mount → copy → symlinks → verify → DNS → start → test → cleanup
-    - See issue #1 for full plan and rules
+🔴 **(CURRENT) - comfyume-v1 #1 - New CPU instance via restore script**
+    - Created: 2026-02-10, Updated: 2026-02-11
+    - NEW APPROACH: Import Mello's frozen comfyume repo into comfyume-v1, adapt restore script
+    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04, OS updated
+    - DISCOVERY: old-gpu-instance (135.181.8.213) has worker image in GHCR + serverless container
+    - DISCOVERY: Mello comfyume repo has serverless queue-manager code (never committed, Feb 3-10)
+    - DONE: Froze Mello comfyume repo (chmod 000 .git), imported full app code into comfyume-v1 (2c42279)
+    - NEXT: Adapt restore-verda-instance.sh → restore-verda-instance-comfyume-v1.sh, run on quiet-city
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 40 - 2026-02-11 - Discovery, Mello repo import, new approach
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1
+
+**Discovery:**
+- old-gpu-instance-fin-01 (135.181.8.213) still exists — CPU instance, not GPU
+- Has comfyume-worker:v0.11.0 + comfyui-serverless:v0.11.0 images pushed to GHCR
+- Queue-manager on old instance is Jan 14 code — NO serverless support
+- Mello comfyume repo has uncommitted work from Feb 3-10 INCLUDING serverless QM code
+- Containers deleted from Mello (#71) but Dockerfiles + code still intact
+
+**Done:**
+- Updated quiet-city OS (apt upgrade, removed nvidia-firmware, rebooted)
+- Froze Mello comfyume repo: `chmod 000 .git` (reversible with `chmod 755`)
+- Imported full app stack from comfyume → comfyume-v1 (commit 2c42279, 425 files)
+  - Excluded: .env, .env.mello, .claude/, CLAUDE.md, README.md
+- Created README.md for comfyume-v1 (updated branding: ComfyUMe, Verda ex. DataCrunch)
+- Pushed branch to GitHub
+
+**Decision:** Instead of mounting old GPU OS volume read-only and copying files,
+clone comfyume-v1 on quiet-city and adapt restore-verda-instance.sh to build from repo.
+Tests the restore script AND sets up the server in one pass.
 
 ---
 
