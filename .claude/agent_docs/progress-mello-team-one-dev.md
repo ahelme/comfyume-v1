@@ -47,34 +47,77 @@
 🔴 **(CURRENT) - comfyume-v1 #1 - New CPU instance via restore script**
     - Created: 2026-02-10, Updated: 2026-02-11
     - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
-    - PHASE: Serverless inference works, but output images don't reach UI yet
-    - DONE: Full list in Progress Reports 44-46 below. Key milestones:
+    - PHASE: Serverless inference works, UI feedback partial, image delivery gap is main blocker
+    - DONE: Full list in Progress Reports 44-47 below. Key milestones:
       - Core stack running (Redis, QM, admin, nginx, 20 frontends — all healthy)
       - Nginx dynamic DNS, SSL cert (2026-05-12), .htpasswd restored
       - Serverless inference confirmed: QM → DataCrunch H200 → HTTP 200 OK
-      - Dockerfile self-healing custom nodes mechanism (c613a06)
-      - default_workflow_loader: DISABLED on server (causing canvas errors, not blocking inference)
-      - redirect.js: status banner for GPU progress feedback (deployed, not yet committed)
-    - **DEPLOYMENT DRIFT**: See Progress Report 46 "Deployment Inventory" for full details
-    - INVESTIGATE: Output images stranded on serverless container (never reach browser UI)
-    - INVESTIGATE: WebSocket connectivity issue reported by user
+      - Extensions refactored to `comfyume-extensions/` with `extensions.conf` (PR #15)
+      - `scripts/deploy.sh` — git-based deploy, replaces SCP (PR #14, #15)
+      - Status banner: floating GPU progress indicator in redirect.js (PR #14)
+      - QA loop skill created for autonomous testing with Ralph Loop (PR #17, #18)
+      - CLAUDE.md rules: extensions separation + git flow deploy (PR #16)
+    - **DEPLOYMENT DRIFT RESOLVED**: All code committed, server in sync with git (6714c79)
+    - BLOCKER: Output images stranded on serverless container (never reach browser UI)
+    - INVESTIGATE: WebSocket connectivity — ComfyUI frontend WebSocket connects to local container, not serverless
     - INVESTIGATE: Variable warnings in .env on server (#7)
-    - NEXT: Commit redirect.js + QM logging changes, rebuild images, sync git ↔ server
-    - NEXT: Solve image delivery: serverless → user browser
+    - NEXT: **Run QA loop**: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
+    - NEXT: Solve image delivery: serverless → user browser (the BIG problem)
     - NEXT: Complete app flow doc (#8), infrastructure config map (#9)
-    - NEXT: Factor out comfyume layer (#12)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
 
-🟡 **TECH DEBT - Deployment drift between git, dev, and production**
-    - Created: 2026-02-11
-    - See Progress Report 46 "Deployment Inventory" for full divergence map
-    - RISK: Server has files SCP'd directly that don't match git — fragile, unreproducible
-    - TO FIX: Commit all changes, rebuild images, push to git, pull on server
-    - TO FIX: Create a deployment script that syncs git → server properly
-    - RELATED: #9 (infrastructure config map), #12 (comfyume layer refactor)
+🟢 **RESOLVED - Deployment drift between git, dev, and production**
+    - Created: 2026-02-11, Resolved: 2026-02-11
+    - All code committed via git flow (PRs #14-#18), server synced via deploy.sh
+    - `scripts/deploy.sh` created — git-based deploy, refuses uncommitted code
+    - CLAUDE.md rule #5: "Deploy via git flow, never SCP"
+
+🟢 **RESOLVED - Factor out comfyume extensions (#12)**
+    - Created: 2026-02-11, Resolved: 2026-02-11 (PR #15)
+    - Extensions in `comfyume-extensions/` with `extensions.conf` enable/disable
+    - CLAUDE.md rule #4: "All ComfyUI customisations go in comfyume-extensions/"
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 47 - 2026-02-11 - Extensions refactor, deploy script, QA loop (#1, #12, #13)
+
+**Date:** 2026-02-11 (evening) | **Issues:** comfyume-v1 #1, #12, #13 | **PRs:** #14-#18
+
+### Summary
+Resolved deployment drift, factored out extensions, created proper deploy tooling, built autonomous QA loop.
+
+### PRs merged this session:
+1. **#14** `fix: GPU progress banner + sync deployment drift` — redirect.js status banner, synced all 6 surgical SCP deployments back to git
+2. **#15** `refactor: factor out extensions to comfyume-extensions/` — moved custom nodes out of comfyui-frontend/, added extensions.conf enable/disable, deploy.sh, .dockerignore
+3. **#16** `docs: CLAUDE.md rules` — Critical Instruction #4 (extensions separation) and #5 (git flow deploy)
+4. **#17** `feat: ComfyUI QA loop skill` — autonomous testing with Chrome DevTools, designed for Ralph Loop
+5. **#18** `fix: QA loop improvements` — 50 max iterations, Phase 0 auto-resume, context management, stuck handler
+
+### Architecture changes:
+- **`comfyume-extensions/`** — new project-root directory for all ComfyUI customisations
+- **`extensions.conf`** — comment/uncomment to enable/disable extensions. Entrypoint reads this on every container start.
+- **`scripts/deploy.sh`** — git-based deploy: push → pull on server → rebuild images → recreate containers. Refuses uncommitted code. Supports `--pull-only` and `--rebuild` flags.
+- **`.dockerignore`** — whitelist-based (build context is now project root `.`)
+- **Dockerfile** — `COPY comfyume-extensions/ /build/comfyume-extensions/` (was `COPY custom_nodes/`)
+- **Entrypoint** — config-driven extension deployment (reads extensions.conf, only deploys uncommented)
+
+### Deployment state:
+- All code committed via git flow (PRs #14-#18)
+- Server in sync: SHA 6714c79 on both local and server
+- 24 containers healthy (Redis, QM, admin, nginx, 20 users)
+- extensions.conf: queue_redirect ENABLED, default_workflow_loader DISABLED
+
+### Known blockers:
+- **Image delivery gap**: THE BIG ONE. Serverless GPU processes workflows and returns HTTP 200 OK. But ComfyUI's `/prompt` endpoint returns `{prompt_id, number}` only — actual images are saved on the serverless container's filesystem. ComfyUI delivers images via WebSocket to the connected client, but in our architecture QM is the HTTP client, not the user's browser. Images never reach the UI.
+- **WebSocket**: ComfyUI frontend connects WebSocket to local container (CPU-only). No bridge to serverless.
+
+### Next steps:
+- Run QA loop: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
+- Solve image delivery (serverless → user browser)
+- Complete app flow doc (#8), infrastructure config map (#9)
 
 ---
 
