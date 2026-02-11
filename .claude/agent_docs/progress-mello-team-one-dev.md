@@ -83,18 +83,64 @@
     - FOUND: v0.11.0 API has `app.loadGraphData(jsonObject)` instead — our custom extension code is wrong
     - NOTE: default_workflow_loader is a convenience add-on (auto-loads a workflow so workshop participants don't start with blank canvas). ComfyUI's built-in Load menu works fine without it — not a blocker for inference.
     - FOUND: Workflow files DO exist on disk (flux2_klein_9b, 4b, ltx2, etc.) — just not loaded onto canvas
-    - FIX READY: Update loader.js: fetch JSON, then call `app.loadGraphData(data)` — ~3 line change
+    - DONE: Fixed loader.js: fetch() + app.loadGraphData() for v0.11.0, relative URL for nginx routing (c613a06)
+    - DONE: Fixed Dockerfile + entrypoint + loader in single commit, rebuilt frontend image on server
+    - DONE: Rebuilt nginx image with dynamic DNS fix, redeployed all containers
+    - DONE: Created GH issue #12 (refactor: factor out comfyume customisation layer)
+    - DONE: QM logs confirm jobs reaching serverless! HTTP 200 OK from DataCrunch H200
+    - FOUND: Canvas null error — loader.js calls loadGraphData before canvas is initialised
+    - DONE: Fixed loader.js to poll for app.canvas before loading workflow, deployed to all 20 user dirs
+    - INVESTIGATE: Run button not responding for user — may be canvas error cascading, needs hard refresh + localStorage clear
     - INVESTIGATE: WebSocket connectivity issue reported by user
     - INVESTIGATE: Variable warnings in .env on server (unescaped $ in values?) (#7)
-    - NEXT (PRIORITY): Fix default_workflow_loader to use v0.11.0 API (loadGraphData)
-    - NEXT: Rebuild frontend image with Dockerfile fix + loader fix, redeploy
+    - NEXT: Commit canvas-wait fix for loader.js, rebuild image (or just test with deployed file first)
+    - NEXT: User testing — hard refresh, clear localStorage, try Queue Prompt with loaded workflow
     - NEXT: Complete app flow doc (#8) — trace full path from Queue Prompt to serverless inference
     - NEXT: Complete infrastructure config map (#9) — declarative checklist of all server config
-    - NEXT: Rebuild nginx image on server with dynamic DNS fix (current image still has old entrypoint)
+    - NEXT: Factor out comfyume layer (#12) — move custom nodes + entrypoint to comfyui-comfyume-layer/
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 45 - 2026-02-11 - Frontend rebuild, serverless jobs confirmed, canvas bug (#1, #8, #12)
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #8, #9, #12
+
+### Fixes committed and deployed (c613a06):
+1. **Dockerfile** — `COPY custom_nodes/ /build/custom_nodes/` so entrypoint self-heals volume mount
+2. **docker-entrypoint.sh** — improved comments, changed existence check to websocket_image_save.py
+3. **loader.js** — v0.11.0 API: `fetch()` + `app.loadGraphData()` instead of `app.loadWorkflowFromURL()`. Also changed URL from absolute `/api/` to relative `api/` so it routes to user container not QM.
+
+### Rebuilt and redeployed:
+- Frontend image `comfyume-frontend:v0.11.0` rebuilt with all fixes
+- Nginx image rebuilt with dynamic DNS resolver (93bf1a1)
+- All 20 user containers + nginx recreated with `docker compose --profile container-nginx up -d`
+- Batched startup worked perfectly, all containers healthy
+- Entrypoint now shows: `✅ Workshop extensions installed: default_workflow_loader queue_redirect`
+
+### Serverless inference CONFIRMED working:
+- QM logs: `Serverless job from user user001` → `HTTP Request: POST .../prompt "HTTP/1.1 200 OK"` → `201 Created`
+- DataCrunch H200 spot instance responded successfully
+- Second user011 job also submitted to serverless
+
+### New bug found — canvas null error:
+- `getCanvas: canvas is null` error in browser console
+- Cause: `app.loadGraphData()` called before LiteGraph canvas is created
+- `setup()` hook fires before canvas init, need to wait
+- Fix: poll for `app.canvas` before calling loadGraphData (deployed to user dirs, not yet committed)
+
+### GH issues:
+- #12 created: refactor comfyume customisation layer out of comfyui-frontend/
+
+### Testing instructions for next session:
+1. Hard refresh browser (Cmd+Shift+R) to clear cached JS
+2. Open browser console, run `localStorage.removeItem('comfy_workflow_loaded')` to reset loader flag
+3. Reload page — workflow should auto-load onto canvas
+4. Click Queue Prompt — should POST to /api/jobs, QM sends to serverless
+5. Check QM logs: `docker logs comfy-queue-manager 2>&1 | grep -v "GET /health" | tail -20`
 
 ---
 

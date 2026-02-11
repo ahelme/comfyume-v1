@@ -38,6 +38,24 @@ app.registerExtension({
                 throw new Error(`Failed to fetch workflow (HTTP ${response.status})`);
             }
             const workflowData = await response.json();
+
+            // Wait for canvas to be ready — setup() fires before the LiteGraph
+            // canvas is created, and loadGraphData triggers graph configuration
+            // which needs the canvas. Poll until app.canvas exists.
+            await new Promise((resolve, reject) => {
+                let attempts = 0;
+                const check = () => {
+                    if (app.canvas) {
+                        resolve();
+                    } else if (attempts++ > 50) {
+                        reject(new Error("Canvas not ready after 5s"));
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                };
+                check();
+            });
+
             await app.loadGraphData(workflowData);
 
             // Mark as loaded (prevents re-loading on refresh)

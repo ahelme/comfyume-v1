@@ -10,8 +10,9 @@
 
 **Production:** aiworkshop.art runs on quiet-city (65.108.33.101), a Verda CPU instance.
 
-**Current state:** Site is LIVE (HTTPS, auth, all containers healthy). Inference pipeline
-is almost working but blocked by a bug in our custom extension code.
+**Current state:** PRODUCTION LIVE. Full stack running, HTTPS, all containers healthy.
+Serverless inference CONFIRMED — QM sends to DataCrunch H200, gets 200 OK.
+BUT: default_workflow_loader has a canvas null bug preventing auto-load.
 
 ---
 
@@ -26,83 +27,38 @@ Please read:
 
 ---
 
-## IMMEDIATE NEXT STEPS (IN ORDER)
+## IMMEDIATE NEXT STEPS
 
-### 1. Fix default_workflow_loader (PRIORITY — 3 line change)
-
-**File:** `comfyui-frontend/custom_nodes/default_workflow_loader/web/loader.js`
-
-**Problem:** Uses `app.loadWorkflowFromURL(url)` which doesn't exist in ComfyUI v0.11.0.
-This is OUR custom code, not ComfyUI's — a previous Claude wrote it targeting a wrong API.
-
-**Fix:** Replace the `app.loadWorkflowFromURL()` call with:
-```javascript
-const response = await fetch(apiUrl);
-if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-const workflowData = await response.json();
-await app.loadGraphData(workflowData);
-```
-
-**v0.11.0 API reference** (discovered via Chrome DevTools):
-- `app.loadGraphData(jsonObject)` — loads workflow graph data
-- `app.loadApiJson(apiData, name)` — loads API format
-- `app.graphToPrompt()` — converts graph to API format
-- `app.queuePrompt` — our queue_redirect overrides this (WORKING)
-
-**Workflow files exist** at `data/user_data/user001/default/workflows/`:
-flux2_klein_9b_text_to_image.json, flux2_klein_4b_text_to_image.json, etc.
-
-### 2. Rebuild frontend image + redeploy
-
-Dockerfile has been updated (COPY custom_nodes/ to /build/custom_nodes/) but NOT committed yet.
-After fixing loader.js:
-```bash
-# Commit changes
-git add comfyui-frontend/ && git commit
-
-# On server: rebuild and redeploy
-ssh root@65.108.33.101
-cd /home/dev/comfyume-v1 && git pull
-docker build -t comfyume-frontend:v0.11.0 comfyui-frontend/
-docker compose restart user001  # test one first
-# verify in browser, then restart all
-```
-
-### 3. Also rebuild nginx image (dynamic DNS fix from 93bf1a1)
-```bash
-docker compose build nginx
-docker compose --profile container-nginx up -d nginx
-```
-
-### 4. Continue app flow doc (#8) and infrastructure map (#9)
-
-### 5. Remaining cleanup
-- .env variable warnings (y1w, HUFr7 — #7)
-- Old Docker images (~80GB)
-- Monitoring stack (setup-monitoring.sh)
+1. **Commit canvas-wait fix** — `loader.js` has been fixed (polls for `app.canvas` before `loadGraphData`), deployed to user dirs but NOT yet committed. File: `comfyui-frontend/custom_nodes/default_workflow_loader/web/loader.js`
+2. **Test the fix** — User needs to: hard refresh (Cmd+Shift+R), clear localStorage (`localStorage.removeItem('comfy_workflow_loaded')`), reload. Workflow should auto-load.
+3. **Test inference end-to-end** — Queue Prompt should POST to /api/jobs → QM → serverless GPU. Check QM logs: `docker logs comfy-queue-manager 2>&1 | grep -v "GET /health" | tail -20`
+4. **Factor out comfyume layer (#12)** — Move custom nodes + entrypoint to `comfyui-comfyume-layer/` for clean separation from upstream ComfyUI
+5. **Complete app flow doc (#8)** — trace full path from Queue Prompt to serverless inference
+6. **Complete infrastructure config map (#9)** — declarative checklist of all server config
+7. **Investigate .env variable warnings (#7)** — y1w, HUFr7 etc.
+8. **Run setup-monitoring.sh** — Prometheus, Grafana, Loki, Promtail, cAdvisor
 
 ---
 
-## WHAT WE DEBUGGED THIS SESSION
+## KEY FINDINGS THIS SESSION
 
-**Full inference flow traced via code + Chrome DevTools:**
+**Volume mount gotcha (CRITICAL):**
+- docker-compose.users.yml mounts host dir over container's custom_nodes/
+- Host dir was empty → queue_redirect and default_workflow_loader missing
+- Fix: Dockerfile COPY to staging area + entrypoint deploys on every start (self-healing)
 
-1. User clicks "Run" in ComfyUI browser UI
-2. `queue_redirect/web/redirect.js` intercepts `app.queuePrompt` — **WORKING**
-3. Calls `app.graphToPrompt()` → returns `{output: {}}` because canvas is empty
-4. POSTs to `/api/jobs` via fetch — **WORKING**
-5. Nginx routes `/api/` to queue-manager:3000 — **WORKING**
-6. QM `main.py:submit_job()` validates workflow — rejects empty dict with 422
-7. In serverless mode: would call `submit_to_serverless()` → POST to DataCrunch endpoint
+**Nginx startup crash (CRITICAL):**
+- Static upstream blocks require DNS at startup → crash if users not ready
+- Fix: resolver 127.0.0.11 + variables for request-time DNS resolution
 
-**Root cause of empty canvas:** `default_workflow_loader` fails because
-`app.loadWorkflowFromURL` doesn't exist in v0.11.0. Without a default workflow
-loaded, the canvas is empty and Run submits `{}`.
+**Docker creates directories for missing file mounts:**
+- Hit THREE times: redis.conf, SSL certs, .htpasswd
+- Fix: ensure files exist before compose up, or use configs/secrets
 
-**Also fixed this session:**
-- Nginx: dynamic DNS resolution (resolver 127.0.0.11), SSL cert, .htpasswd
-- Custom nodes: volume mount gotcha — copied to all 20 user dirs
-- Dockerfile: added COPY custom_nodes/ for self-healing entrypoint
+**Serverless inference works:**
+- QM at https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot
+- API key configured, H200 spot, 300s timeout
+- Confirmed 200 OK response from DataCrunch
 
 ---
 
@@ -110,13 +66,13 @@ loaded, the canvas is empty and Run submits `{}`.
 
 | File | Purpose |
 |------|---------|
-| `comfyui-frontend/custom_nodes/queue_redirect/web/redirect.js` | JS override of queuePrompt — WORKING |
-| `comfyui-frontend/custom_nodes/default_workflow_loader/web/loader.js` | Auto-loads workflow — BROKEN (needs fix) |
-| `comfyui-frontend/Dockerfile` | Build — UPDATED (COPY custom_nodes/) but not committed |
-| `comfyui-frontend/docker-entrypoint.sh` | Runtime — UPDATED (improved comments) but not committed |
-| `queue-manager/main.py` | FastAPI — submit_job() at line 200, serverless at line 172 |
-| `queue-manager/config.py` | Pydantic settings — serverless endpoints, inference_mode |
-| `nginx/docker-entrypoint.sh` | Dynamic DNS resolver — committed (93bf1a1) |
+| `comfyui-frontend/Dockerfile` | Frontend build — includes self-healing custom nodes mechanism |
+| `comfyui-frontend/docker-entrypoint.sh` | Two-stage custom nodes: restore defaults + deploy extensions |
+| `comfyui-frontend/custom_nodes/queue_redirect/web/redirect.js` | Intercepts Queue Prompt → POST /api/jobs |
+| `comfyui-frontend/custom_nodes/default_workflow_loader/web/loader.js` | Auto-loads Flux2 Klein 9B workflow (canvas-wait fix pending commit) |
+| `queue-manager/main.py` | FastAPI app — submit_job() routes to serverless |
+| `queue-manager/config.py` | Pydantic settings — serverless endpoint config |
+| `nginx/docker-entrypoint.sh` | Dynamic DNS resolver for user containers |
 
 ---
 
