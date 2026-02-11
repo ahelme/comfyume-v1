@@ -10,7 +10,7 @@
 **Target:** Workshop Feb 25 2026
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **Branch:** mello-ralph-team
-**Phase:** QA TESTING — autonomous workflow testing via Ralph Loop
+**Phase:** FIX LOOP — autonomous workflow testing via Ralph Loop
 ---
 ## 0. Update Instructions
 
@@ -37,7 +37,7 @@
 
 🔴 **(CURRENT) - QA Loop: Test all 5 workflows end-to-end**
     - Created: 2026-02-11
-    - See /comfyui-qa-loop skill for full protocol
+    - See /comfyui-fix-loop skill for full protocol
     - State tracked in .claude/qa-state.json
     - Workflows to test:
       1. Flux2 Klein 9B (text → image)
@@ -54,13 +54,13 @@
 
 ---
 
-## Progress Report 1 - 2026-02-11 - Team created, QA loop ready
+## Progress Report 1 - 2026-02-11 - Team created, fix loop ready
 
 **Date:** 2026-02-11
 
 ### Team setup:
 - Mello Ralph Team created with full skill structure (resume, handover, progress)
-- QA loop skill created with 6-phase protocol (PR #17, #18)
+- fix loop skill created with 6-phase protocol (PR #17, #18)
 - qa-state.json initialized with all 5 workflows as "untested"
 - Ralph Loop recommended: `--max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
 
@@ -72,5 +72,27 @@
 - Image delivery gap is the main unsolved problem
 
 ### Ready to start testing!
+
+---
+
+## Progress Report 2 - 2026-02-11 - Ralph Loop first run, credential fix
+
+**Date:** 2026-02-11
+
+### Changes:
+- Ralph Loop plugin activated and tested — `/ralph-loop:ralph-loop` invocation confirmed working (PR #21)
+- Switched QA test user from user011 → user001
+- Removed hardcoded credentials from tracked skill files — now references `.env` line 367 at runtime
+- qa-state.json updated: iteration 1, workflow 1 set to "testing"
+
+### Observations:
+- All 24 containers healthy on quiet-city
+- QM running: serverless mode, H200-141GB-SPOT, Redis connected
+- HTTP Basic Auth requires URL-encoded credentials for Chrome DevTools automation
+- Ralph Loop `/help` confirms: stop hook intercepts exit, feeds same prompt back
+
+### Next:
+- Continue Ralph Loop iteration 1: test Flux2 Klein 9B workflow via Chrome DevTools
+- Navigate to user001 with auth, load workflow, queue prompt, observe results
 
 ---

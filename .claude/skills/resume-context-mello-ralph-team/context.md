@@ -21,7 +21,7 @@
 1. **`./CLAUDE.md`** — Project instructions (rules #4 and #5 are critical for you)
 2. **`.claude/qa-state.json`** — YOUR test progress state
 3. **`.claude/agent_docs/progress-mello-ralph-team-dev.md`** — YOUR progress log
-4. **`.claude/skills/comfyui-qa-loop/SKILL.md`** — YOUR full testing protocol
+4. **`.claude/skills/comfyui-fix-loop/SKILL.md`** — YOUR full testing protocol
 
 ---
 
@@ -32,4 +32,4 @@ If resuming manually, read qa-state.json to see where you left off.
 
 **Deploy:** `./scripts/deploy.sh` (NEVER SCP — rule #5)
 **Server:** root@65.108.33.101, project at /home/dev/comfyume-v1
-**Test user:** https://aiworkshop.art/user011/
+**Test user:** user001 — credentials in `.env` line 367 (URL-encode password for auth)

@@ -38,3 +38,6 @@ temp/
 
 # Prevent nested .claude (Claude Code auto-creates this - ignore it)
 .claude/.claude/
+
+# Claude Code local/session files (Ralph Loop state, hooks, etc.)
+.claude/*.local.md

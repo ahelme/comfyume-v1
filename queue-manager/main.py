@@ -13,6 +13,7 @@ import httpx
 from datetime import datetime, timezone
 from typing import List, Optional
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -169,8 +170,103 @@ async def get_queue_status():
 # Job Management Endpoints
 # ============================================================================
 
+async def poll_serverless_history(prompt_id: str, max_wait: int = 240, poll_interval: float = 2.0) -> dict:
+    """Poll serverless /api/history/{prompt_id} until execution completes."""
+    if not serverless_client:
+        raise HTTPException(status_code=503, detail="Serverless client not initialized")
+
+    elapsed = 0.0
+    while elapsed < max_wait:
+        try:
+            response = await serverless_client.get(f"/history/{prompt_id}")
+            if response.status_code == 200:
+                history = response.json()
+                if prompt_id in history:
+                    entry = history[prompt_id]
+                    status = entry.get("status", {})
+                    if status.get("completed", False):
+                        return entry
+        except Exception as e:
+            logger.warning(f"History poll error (will retry): {e}")
+
+        await asyncio.sleep(poll_interval)
+        elapsed += poll_interval
+
+    raise HTTPException(status_code=504, detail=f"Serverless execution timed out after {max_wait}s")
+
+
+async def fetch_serverless_images(history_entry: dict) -> list:
+    """Download output images from serverless container based on history entry."""
+    if not serverless_client:
+        return []
+
+    images = []
+    outputs = history_entry.get("outputs", {})
+
+    for node_id, node_output in outputs.items():
+        for img_info in node_output.get("images", []):
+            filename = img_info.get("filename")
+            subfolder = img_info.get("subfolder", "")
+            img_type = img_info.get("type", "output")
+
+            if not filename:
+                continue
+
+            try:
+                params = {"filename": filename, "type": img_type}
+                if subfolder:
+                    params["subfolder"] = subfolder
+
+                response = await serverless_client.get("/view", params=params)
+                if response.status_code == 200:
+                    images.append({
+                        "data": response.content,
+                        "filename": filename,
+                        "subfolder": subfolder,
+                        "type": img_type,
+                        "node_id": node_id,
+                        "content_type": response.headers.get("content-type", "image/png"),
+                    })
+                    logger.info(f"Downloaded image: {filename} ({len(response.content)} bytes)")
+                else:
+                    logger.warning(f"Failed to download {filename}: HTTP {response.status_code}")
+            except Exception as e:
+                logger.error(f"Error downloading {filename}: {e}")
+
+    return images
+
+
+async def save_output_images(user_id: str, images: list) -> dict:
+    """Save downloaded images to the shared output directory.
+    Returns ComfyUI-compatible output metadata (node_id -> {images: [...]}).
+    """
+    output_dir = Path(settings.outputs_path) / user_id
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_outputs = {}
+
+    for img in images:
+        node_id = img["node_id"]
+        filename = img["filename"]
+
+        save_path = output_dir / filename
+        save_path.write_bytes(img["data"])
+        logger.info(f"Saved: {save_path}")
+
+        if node_id not in saved_outputs:
+            saved_outputs[node_id] = {"images": []}
+
+        saved_outputs[node_id]["images"].append({
+            "filename": filename,
+            "subfolder": user_id,
+            "type": "output",
+        })
+
+    return saved_outputs
+
+
 async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
-    """Submit workflow directly to serverless endpoint (bypasses Redis queue)"""
+    """Submit workflow to serverless, wait for completion, fetch and save output images."""
     if not serverless_client:
         raise HTTPException(
             status_code=503,
@@ -178,21 +274,58 @@ async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
         )
 
     try:
-        # ComfyUI API expects POST /prompt with {"prompt": workflow}
-        logger.info(f"Sending to serverless: {len(workflow)} nodes, keys: {list(workflow.keys())[:10]}")
+        # 1. Submit prompt to serverless ComfyUI
+        logger.info(f"Sending to serverless: {len(workflow)} nodes")
         response = await serverless_client.post(
             "/prompt",
             json={"prompt": workflow, "client_id": user_id}
         )
         response.raise_for_status()
         result = response.json()
-        logger.info(f"Serverless response keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+        prompt_id = result.get("prompt_id")
+        logger.info(f"Serverless prompt accepted: {prompt_id}")
+
+        if not prompt_id:
+            logger.error(f"No prompt_id in serverless response: {result}")
+            return result
+
+        # 2. Poll history until execution completes
+        logger.info(f"Polling for execution completion: {prompt_id}")
+        history_entry = await poll_serverless_history(prompt_id)
+
+        status = history_entry.get("status", {})
+        if status.get("status_str") != "success":
+            messages = status.get("messages", [])
+            logger.error(f"Execution failed: {messages}")
+            result["execution_error"] = messages
+            return result
+
+        logger.info(f"Execution completed successfully: {prompt_id}")
+
+        # 3. Download output images from serverless container
+        images = await fetch_serverless_images(history_entry)
+        logger.info(f"Downloaded {len(images)} image(s)")
+
+        if not images:
+            logger.warning(f"No images in execution output for {prompt_id}")
+            result["outputs"] = history_entry.get("outputs", {})
+            return result
+
+        # 4. Save images to shared output directory (/outputs/{user_id}/)
+        saved_outputs = await save_output_images(user_id, images)
+
+        # 5. Return complete result with output metadata
+        result["outputs"] = saved_outputs
+        result["execution_status"] = "success"
         return result
+
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Serverless inference timed out")
     except httpx.HTTPStatusError as e:
         logger.error(f"Serverless response body: {e.response.text[:500]}")
         raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Serverless submission failed: {e}")
         raise HTTPException(status_code=502, detail=f"Serverless error: {e}")

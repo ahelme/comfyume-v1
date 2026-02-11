@@ -55,13 +55,13 @@
       - Extensions refactored to `comfyume-extensions/` with `extensions.conf` (PR #15)
       - `scripts/deploy.sh` — git-based deploy, replaces SCP (PR #14, #15)
       - Status banner: floating GPU progress indicator in redirect.js (PR #14)
-      - QA loop skill created for autonomous testing with Ralph Loop (PR #17, #18)
+      - fix loop skill created for autonomous testing with Ralph Loop (PR #17, #18)
       - CLAUDE.md rules: extensions separation + git flow deploy (PR #16)
     - **DEPLOYMENT DRIFT RESOLVED**: All code committed, server in sync with git (6714c79)
     - BLOCKER: Output images stranded on serverless container (never reach browser UI)
     - INVESTIGATE: WebSocket connectivity — ComfyUI frontend WebSocket connects to local container, not serverless
     - INVESTIGATE: Variable warnings in .env on server (#7)
-    - NEXT: **Run QA loop**: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
+    - NEXT: **Run fix loop**: `/ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
     - NEXT: Solve image delivery: serverless → user browser (the BIG problem)
     - NEXT: Complete app flow doc (#8), infrastructure config map (#9)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
@@ -82,19 +82,19 @@
 
 ---
 
-## Progress Report 47 - 2026-02-11 - Extensions refactor, deploy script, QA loop (#1, #12, #13)
+## Progress Report 47 - 2026-02-11 - Extensions refactor, deploy script, fix loop (#1, #12, #13)
 
 **Date:** 2026-02-11 (evening) | **Issues:** comfyume-v1 #1, #12, #13 | **PRs:** #14-#18
 
 ### Summary
-Resolved deployment drift, factored out extensions, created proper deploy tooling, built autonomous QA loop.
+Resolved deployment drift, factored out extensions, created proper deploy tooling, built autonomous fix loop.
 
 ### PRs merged this session:
 1. **#14** `fix: GPU progress banner + sync deployment drift` — redirect.js status banner, synced all 6 surgical SCP deployments back to git
 2. **#15** `refactor: factor out extensions to comfyume-extensions/` — moved custom nodes out of comfyui-frontend/, added extensions.conf enable/disable, deploy.sh, .dockerignore
 3. **#16** `docs: CLAUDE.md rules` — Critical Instruction #4 (extensions separation) and #5 (git flow deploy)
-4. **#17** `feat: ComfyUI QA loop skill` — autonomous testing with Chrome DevTools, designed for Ralph Loop
-5. **#18** `fix: QA loop improvements` — 50 max iterations, Phase 0 auto-resume, context management, stuck handler
+4. **#17** `feat: ComfyUI fix loop skill` — autonomous testing with Chrome DevTools, designed for Ralph Loop
+5. **#18** `fix: fix loop improvements` — 50 max iterations, Phase 0 auto-resume, context management, stuck handler
 
 ### Architecture changes:
 - **`comfyume-extensions/`** — new project-root directory for all ComfyUI customisations
@@ -115,7 +115,7 @@ Resolved deployment drift, factored out extensions, created proper deploy toolin
 - **WebSocket**: ComfyUI frontend connects WebSocket to local container (CPU-only). No bridge to serverless.
 
 ### Next steps:
-- Run QA loop: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
+- Run fix loop: `/ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
 - Solve image delivery (serverless → user browser)
 - Complete app flow doc (#8), infrastructure config map (#9)
 

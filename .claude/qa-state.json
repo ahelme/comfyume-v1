@@ -1,15 +1,37 @@
 {
-  "last_updated": "2026-02-11T18:15:00Z",
-  "iteration": 0,
+  "last_updated": "2026-02-12T01:00:00Z",
+  "iteration": 3,
   "current_workflow": 1,
+  "phase": "fix",
   "workflows": {
-    "1_flux2_klein_9b": { "status": "untested", "file": "flux2_klein_9b_text_to_image.json" },
-    "2_flux2_klein_4b": { "status": "untested", "file": "flux2_klein_4b_text_to_image.json" },
-    "3_ltx2_video": { "status": "untested", "file": "ltx2_text_to_video.json" },
-    "4_ltx2_distilled": { "status": "untested", "file": "ltx2_text_to_video_distilled.json" },
-    "5_example": { "status": "untested", "file": "example_workflow.json" }
+    "1_flux2_klein_9b": {
+      "status": "fixing:image-delivery",
+      "file": "flux2_klein_9b_text_to_image.json",
+      "criteria_passed": ["load", "queue_response", "status_banner", "qm_serverless", "no_js_errors"],
+      "criteria_failed": ["output_display", "queue_history"],
+      "notes": "Implementing image delivery fix. 3 coordinated changes: 1) QM polls serverless history + downloads images + saves to /outputs, 2) serverless_proxy extension patches PromptExecutor.execute() for native queue, 3) redirect.js defers in serverless mode. Need to deploy and test."
+    }
   },
-  "bugs_found": [],
+  "bugs_found": [
+    {
+      "id": "BUG-001",
+      "title": "Image delivery gap — QM never fetches generated images from serverless",
+      "root_cause": "submit_to_serverless() only POSTs /prompt, never fetches /api/history/{prompt_id} or /api/view to get actual images",
+      "status": "fix-in-progress",
+      "fix_approach": "3-part coordinated fix: QM fetches images, server-side proxy for native queue, output dir symlink",
+      "files_modified": [
+        "queue-manager/main.py",
+        "comfyume-extensions/serverless_proxy/__init__.py (NEW)",
+        "comfyume-extensions/queue_redirect/web/redirect.js",
+        "comfyume-extensions/extensions.conf",
+        "comfyui-frontend/docker-entrypoint.sh",
+        "scripts/generate-user-compose.sh",
+        "docker-compose.users.yml"
+      ],
+      "severity": "blocker",
+      "affects_all_workflows": true
+    }
+  ],
   "fixes_applied": [
     "redirect.js: status banner for GPU progress feedback (PR #14)",
     "Dockerfile: self-healing custom nodes mechanism (c613a06)",
@@ -17,8 +39,9 @@
     "nginx: dynamic DNS resolution (93bf1a1)"
   ],
   "known_issues": [
-    "IMAGE DELIVERY GAP: serverless GPU generates images but they stay on the remote container. ComfyUI /prompt returns {prompt_id, number} only — images normally come via WebSocket which we don't relay. This is the MAIN blocker for criteria #4 (output display in UI).",
-    "default_workflow_loader DISABLED: canvas null errors. Users must load workflows manually from Load menu.",
-    "WebSocket: ComfyUI frontend tries to connect WebSocket to local container (CPU-only). No bridge to serverless container."
+    "IMAGE DELIVERY GAP: fix coded, needs deploy + test",
+    "default_workflow_loader DISABLED: canvas null errors.",
+    "WebSocket: native ComfyUI WebSocket now used (via serverless_proxy), no bridge needed.",
+    "Queue history: should work once serverless_proxy patches execution (native ComfyUI history)."
   ]
 }
