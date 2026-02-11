@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-10
+**Doc Updated:** 2026-02-11
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -17,6 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [MELLO-ONE-TEAM] 93bf1a1 fix: dynamic DNS resolution in nginx, fix http2 deprecation (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] 8b21b75 docs: session handover — core stack healthy, nginx/SSL remaining (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] 5ecbaa4 fix: remove unused redis.conf volume mount (comfyume-v1 #1, #7)
 - [MELLO-ONE-TEAM] f38f260 docs: update progress — worker gpu profile fix, branch rename (comfyume-v1 #1, #2, #5)
 - [MELLO-ONE-TEAM] 749def7 fix: add gpu profile to worker-1, only starts on GPU instances (comfyume-v1 #1, #5)

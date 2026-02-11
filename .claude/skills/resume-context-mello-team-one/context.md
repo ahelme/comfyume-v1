@@ -10,8 +10,9 @@
 
 **Production:** aiworkshop.art runs on quiet-city (65.108.33.101), a Verda CPU instance.
 
-**Current state:** Core stack is RUNNING (Redis, QM, admin, 20 frontends all healthy).
-Nginx container is FAILING — can't resolve upstream user containers. No SSL cert yet.
+**Current state:** PRODUCTION LIVE! Full stack running and serving HTTPS.
+All containers healthy (Redis, QM, admin, nginx, 20 frontends).
+SSL cert valid (expires 2026-05-12). Serverless GPU inference TESTED AND WORKING.
 
 ---
 
@@ -28,12 +29,11 @@ Please read:
 
 ## IMMEDIATE NEXT STEPS
 
-1. **Fix nginx upstream resolution** — nginx container not on Docker network, can't resolve `user001:8188`. Check `nginx/` config and docker-compose.yml network settings.
-2. **Get SSL cert** — `certbot certonly --standalone -d aiworkshop.art` (stop nginx first so certbot can bind port 80)
-3. **Investigate .env variable warnings** — `y1w`, `HUFr7` etc. suggest unescaped `$` in values on server (#7)
-4. **Test end-to-end** — browser → nginx → frontend → QM → serverless
-5. **Clean up old Docker images** — ~80GB of stale per-user images from earlier builds
-6. **Run setup-monitoring.sh** — Prometheus, Grafana, Loki, Promtail, cAdvisor
+1. **Rebuild nginx image on server** — dynamic DNS fix (93bf1a1) is committed but server still runs old image. Run: `cd /home/dev/comfyume-v1 && docker compose build nginx && docker compose --profile container-nginx up -d nginx`
+2. **Investigate .env variable warnings** — `y1w`, `HUFr7` etc. suggest unescaped `$` in values on server (#7)
+3. **Clean up old Docker images** — ~80GB of stale per-user images from earlier builds
+4. **Run setup-monitoring.sh** — Prometheus, Grafana, Loki, Promtail, cAdvisor
+5. **Workshop prep** — test all 20 user slots, verify workflows load, check magic link URLs
 
 ---
 
@@ -44,9 +44,9 @@ Please read:
 | `./CLAUDE.md` | Project guide, architecture, gotchas |
 | `.claude/agent_docs/progress-mello-team-one-dev.md` | Tasks + session progress |
 | `.claude/agent_docs/progress-all-teams.md` | All-teams commit log |
-| `docker-compose.yml` | Main compose — check nginx service + network config |
-| `nginx/nginx.conf` | Nginx config — upstream resolution issue here |
-| `SERVERLESS_UPDATE.md` | Serverless setup docs (endpoints, API keys, GPU options) |
+| `docker-compose.yml` | Main compose — nginx, redis, QM, admin, worker |
+| `nginx/docker-entrypoint.sh` | Generates user routing config (dynamic DNS resolver) |
+| `nginx/nginx.conf` | Nginx config — SSL, auth, proxy rules |
 
 ---
 

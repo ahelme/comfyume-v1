@@ -11,8 +11,8 @@
 ### Implementation Phase
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
-**Branch:** mello-team-one-new-temp-cpu-instance-01
-**Phase:** New CPU Instance — restore working app from old GPU volume
+**Branch:** main
+**Phase:** PRODUCTION LIVE — aiworkshop.art serving, serverless inference working
 ---
 ## 0. Update Instructions
 
@@ -67,16 +67,42 @@
     - DONE: Discovered stale tarball overrides git fixes (scripts #42), diverged git history (scripts #41)
     - DONE: Disabled host nginx (Verda default, blocks port 80) (scripts #43)
     - DONE: Core stack running — Redis, QM, admin, 20 frontends ALL HEALTHY
-    - BLOCKING: Nginx container can't resolve upstream `user001:8188` — not joining Docker network
-    - BLOCKING: No SSL cert — certbot failed during restore
+    - DONE: Fixed nginx DNS — manually connected to Docker network, then switched to dynamic resolver (93bf1a1)
+    - DONE: SSL cert obtained via certbot (expires 2026-05-12)
+    - DONE: Fixed .htpasswd (was empty dir from Docker mount gotcha, restored from scripts repo backup)
+    - DONE: Fixed http2 deprecation warning in nginx.conf (93bf1a1)
+    - DONE: END-TO-END WORKING — browser → nginx → frontend → QM → serverless GPU → output generated!
     - INVESTIGATE: Variable warnings in .env on server (unescaped $ in values?) (#7)
-    - NEXT: Fix nginx upstream resolution (Docker service names vs container names)
-    - NEXT: Get SSL cert (certbot certonly --standalone -d aiworkshop.art)
-    - NEXT: Test end-to-end: browser → nginx → frontend → QM → serverless
+    - NEXT: Rebuild nginx image on server with dynamic DNS fix (current image still has old entrypoint)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 43 - 2026-02-11 - PRODUCTION LIVE! End-to-end working!
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #7
+
+**MILESTONE: aiworkshop.art is LIVE with serverless GPU inference!**
+
+**Nginx fixes (3 issues found and fixed):**
+1. DNS resolution crash: nginx crashed in restart loop because static `upstream` blocks require all hostnames resolvable at startup. Container got disconnected from Docker network during restart cycle, creating a vicious loop. Fix: manually connected to network, then switched entrypoint to use `resolver 127.0.0.11` + variables for request-time DNS resolution (93bf1a1).
+2. SSL cert: Docker created empty directories at cert paths (same gotcha as redis.conf). Removed dirs, ran `certbot certonly --standalone`, cert obtained (expires 2026-05-12).
+3. .htpasswd: Also an empty directory from Docker mount. Restored from scripts repo backup (`nginx-production/nginx/.htpasswd`).
+
+**Current state on quiet-city:**
+- ALL containers healthy: Redis, QM, admin, nginx, 20 user frontends
+- SSL: valid cert, HTTPS working
+- Auth: HTTP Basic Auth working
+- Serverless inference: TESTED AND WORKING (job submitted, GPU processed, output returned)
+
+**Remaining cleanup:**
+- Rebuild nginx image on server with dynamic DNS entrypoint fix
+- .env variable warnings (y1w, HUFr7 — #7)
+- Old Docker images (~80GB)
+- Monitoring stack (setup-monitoring.sh)
 
 ---
 
