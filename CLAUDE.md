@@ -113,6 +113,7 @@ Master task list: Issue #1.
 | Verda Team One | verda-team-one | [resume](.claude/skills/resume-context-verda-team-one/SKILL.md) | [handover](.claude/skills/handover-verda-team-one/SKILL.md) | [log](.claude/agent_docs/progress-verda-team-one-dev.md) |
 | Mello Admin Panel Team | admin-panel-team | [resume](.claude/skills/resume-context-admin-panel-team/SKILL.md) | [handover](.claude/skills/handover-admin-panel-team/SKILL.md) | [log](.claude/agent_docs/progress-admin-panel-team-dev.md) |
 | Mello Testing Scripts Team | testing-scripts-team | [resume](.claude/skills/resume-context-testing-scripts-team/SKILL.md) | [handover](.claude/skills/handover-testing-scripts-team/SKILL.md) | [log](.claude/agent_docs/progress-testing-scripts-dev.md) |
+| Mello Ralph Team | mello-ralph-team | [resume](.claude/skills/resume-context-mello-ralph-team/SKILL.md) | [handover](.claude/skills/handover-mello-ralph-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-ralph-team-dev.md) |
 
 **Central Log:** [.claude/agent_docs/progress-all-teams.md](.claude/agent_docs/progress-all-teams.md) -- 1-line-per-commit across all teams
 **Update command:** `/update-progress`
