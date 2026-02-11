@@ -47,6 +47,26 @@ app.registerExtension({
     async setup() {
         console.log("[QueueRedirect] Extension loaded (v0.11.0 API)");
 
+        // Check inference mode from QM health endpoint.
+        // In serverless mode, the server-side serverless_proxy extension handles
+        // execution — we defer to ComfyUI's native queue instead of intercepting.
+        let inferenceMode = 'local';
+        try {
+            const health = await fetch('/api/health');
+            if (health.ok) {
+                const data = await health.json();
+                inferenceMode = data.inference_mode || 'local';
+            }
+        } catch (e) {
+            console.warn("[QueueRedirect] Could not check inference mode:", e);
+        }
+
+        if (inferenceMode === 'serverless') {
+            console.log("[QueueRedirect] Serverless mode — deferring to native queue + server-side proxy");
+            return;
+        }
+
+        // Non-serverless mode: intercept queuePrompt and route to QM
         const banner = createStatusBanner();
 
         // Extract user ID from URL path (e.g. /user001/ → user001)
@@ -126,6 +146,6 @@ app.registerExtension({
             }
         };
 
-        console.log("[QueueRedirect] Queue interception active");
+        console.log("[QueueRedirect] Queue interception active (non-serverless mode)");
     }
 });

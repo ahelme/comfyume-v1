@@ -97,14 +97,26 @@ comfyume:
 EOF
 echo "✅ Model paths configured"
 
-# 7. Ready to start ComfyUI!
+# 7. Link output directory so ComfyUI's /api/view serves images from shared /outputs
+# QM saves serverless images to /outputs/{user_id}/ (shared volume).
+# ComfyUI's default output dir is /comfyui/output/. Symlink bridges them.
+echo "📂 Linking output directory..."
+rm -rf /comfyui/output
+ln -sf /outputs /comfyui/output
+echo "✅ Output directory linked: /comfyui/output → /outputs"
+
+# 8. Pass INFERENCE_MODE to ComfyUI process (serverless_proxy extension reads it)
+export INFERENCE_MODE="${INFERENCE_MODE:-local}"
+
+# 9. Ready to start ComfyUI!
 echo ""
 echo "✨ ComfyUI v0.11.0 frontend ready!"
 echo "   - Workflows: $WORKFLOW_PATH"
 echo "   - Custom nodes: /comfyui/custom_nodes"
 echo "   - Mode: CPU only (--cpu flag)"
+echo "   - Inference: ${INFERENCE_MODE}"
 echo ""
 
-# 8. Start ComfyUI with arguments passed to container
+# 10. Start ComfyUI with arguments passed to container
 # CMD from Dockerfile: ["python", "/comfyui/main.py", "--listen", "0.0.0.0", "--port", "8188", "--cpu"]
 exec "$@"
