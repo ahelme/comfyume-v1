@@ -6,26 +6,30 @@ set -e
 
 echo "🚀 Starting ComfyUI v0.11.0 frontend initialization..."
 
-# 1. Restore custom nodes from backup (fixes volume mount trap!)
-# Problem: Empty host directory volume-mounted over /comfyui/custom_nodes overwrites container contents
-# Solution: Check if critical extension exists, restore from backup if missing
+# 1. Restore ComfyUI's default custom nodes from backup (fixes volume mount trap!)
+# Problem: docker-compose.users.yml volume-mounts host dir over /comfyui/custom_nodes/
+#   ./data/user_data/userXXX/comfyui/custom_nodes:/comfyui/custom_nodes
+# This OVERWRITES the container's directory. If host dir is empty, everything is gone.
+# Solution: Backup defaults during build (Dockerfile Step 3), restore here if missing.
 echo "📦 Checking custom nodes..."
-if [ ! -f "/comfyui/custom_nodes/default_workflow_loader/__init__.py" ]; then
-    echo "⚠️  Custom nodes empty - restoring from backup..."
+if [ ! -f "/comfyui/custom_nodes/websocket_image_save.py" ]; then
+    echo "⚠️  Custom nodes empty - restoring ComfyUI defaults from backup..."
     cp -r /tmp/custom_nodes_backup/* /comfyui/custom_nodes/
-    echo "✅ Custom nodes restored"
+    echo "✅ ComfyUI default custom nodes restored"
 else
-    echo "✅ Custom nodes already present"
+    echo "✅ ComfyUI default custom nodes already present"
 fi
 
-# 2. Install our custom extensions (from /build/custom_nodes/)
-# These are our workshop-specific extensions (queue_redirect, default_workflow_loader)
+# 2. Deploy our workshop extensions (from /build/custom_nodes/ → mounted volume)
+# Dockerfile Step 4 copies queue_redirect + default_workflow_loader into /build/custom_nodes/
+# This step copies them into the volume-mounted directory on EVERY start (idempotent).
+# This is how our extensions survive the volume mount overwrite.
 echo "🔧 Installing workshop extensions..."
 if [ -d "/build/custom_nodes" ] && [ "$(ls -A /build/custom_nodes 2>/dev/null)" ]; then
     cp -r /build/custom_nodes/* /comfyui/custom_nodes/
-    echo "✅ Workshop extensions installed"
+    echo "✅ Workshop extensions installed: $(ls -d /build/custom_nodes/*/ 2>/dev/null | xargs -I{} basename {} | tr '\n' ' ')"
 else
-    echo "⚠️  No workshop extensions found in /build/custom_nodes/ (will add later)"
+    echo "⚠️  No workshop extensions found in /build/custom_nodes/"
 fi
 
 # 3. Version-aware workflow setup (v0.11.0 uses /comfyui/user/default/workflows/)

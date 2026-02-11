@@ -24,14 +24,21 @@ app.registerExtension({
         try {
             console.log("[DefaultWorkflowLoader] Loading default workflow: Flux2 Klein 9B...");
 
-            // URL-encode path for v0.9.0+ userdata API
-            // v0.9.0+ requires: workflows%2Ffile.json (slash encoded as %2F)
-            // Route: /api/userdata/{file} where {file} = "workflows%2Fflux2_klein_9b_text_to_image.json"
+            // Build relative URL so it routes through nginx to the correct user container.
+            // Browser at /user001/ + relative "api/..." = /user001/api/... → user001:8188
+            // Absolute "/api/..." would hit queue-manager instead (wrong!).
+            // v0.9.0+ userdata API: slash encoded as %2F in the path component.
             const workflowPath = 'workflows%2Fflux2_klein_9b_text_to_image.json';
-            const apiUrl = `/api/userdata/${workflowPath}`;
+            const apiUrl = `api/userdata/${workflowPath}`;
 
-            // Load workflow from userdata API
-            await app.loadWorkflowFromURL(apiUrl);
+            // v0.11.0 API: fetch JSON then load via app.loadGraphData()
+            // (app.loadWorkflowFromURL does not exist in v0.11.0)
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch workflow (HTTP ${response.status})`);
+            }
+            const workflowData = await response.json();
+            await app.loadGraphData(workflowData);
 
             // Mark as loaded (prevents re-loading on refresh)
             localStorage.setItem('comfy_workflow_loaded', 'true');
@@ -40,7 +47,7 @@ app.registerExtension({
 
         } catch (error) {
             console.error("[DefaultWorkflowLoader] ❌ Failed to load default workflow:", error);
-            console.error("[DefaultWorkflowLoader] User can manually load workflow from menu");
+            console.error("[DefaultWorkflowLoader] User can manually load workflow from Load menu");
         }
     }
 });
