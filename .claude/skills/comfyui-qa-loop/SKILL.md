@@ -85,7 +85,7 @@ Test these 5 workflow templates (and ONLY these):
 
 ```
 1. Read resume context (DO NOT invoke the skill interactively — just read the file):
-   Read: .claude/skills/resume-context-mello-team-one/context.md
+   Read: .claude/skills/resume-context-mello-ralph-team/context.md
    Read: CLAUDE.md (skim Critical Instructions)
 
 2. Read QA state:
@@ -192,10 +192,13 @@ Pick the next untested workflow from the state file (or start with #1).
 **One fix per commit. One test per fix.**
 
 ```
-1. Create feature branch:
+1. Make sure you're on the `mello-ralph-team` branch:
+   git checkout mello-ralph-team || git checkout -b mello-ralph-team
+
+2. Create a fix branch off it:
    git checkout -b fix/qa-[short-description]
 
-2. Make the MINIMAL change needed
+3. Make the MINIMAL change needed
    - Read the file first (always!)
    - Change only what's necessary
    - If touching comfyume-extensions/, update extensions.conf if needed
@@ -206,11 +209,11 @@ Pick the next untested workflow from the state file (or start with #1).
    git add [specific files]
    git commit -m "fix: [what] (#[issue])"
 
-5. Deploy via git flow:
+6. Deploy via git flow:
    git push origin fix/qa-[short-description]
-   gh pr create --title "..." --body "..."
+   gh pr create --base mello-ralph-team --title "..." --body "..."
    gh pr merge --merge --delete-branch
-   git checkout main && git pull
+   git checkout mello-ralph-team && git pull
    ./scripts/deploy.sh
 
 6. Wait for containers to be healthy (check deploy output)
