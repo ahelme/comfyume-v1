@@ -72,7 +72,23 @@
     - DONE: Fixed .htpasswd (was empty dir from Docker mount gotcha, restored from scripts repo backup)
     - DONE: Fixed http2 deprecation warning in nginx.conf (93bf1a1)
     - DONE: END-TO-END WORKING — browser → nginx → frontend → QM → serverless GPU → output generated!
+    - DONE: Found queue_redirect custom node MISSING from all user data dirs (volume mount gotcha)
+    - DONE: Copied queue_redirect + default_workflow_loader to all 20 user dirs, restarted all containers
+    - DONE: Created GH issues #8 (app flow map) and #9 (infrastructure config map)
+    - DONE: Debugged via Chrome DevTools — queue_redirect IS working (intercepts Run, POSTs to /api/jobs)
+    - DONE: Fixed Dockerfile: added `COPY custom_nodes/ /build/custom_nodes/` so entrypoint self-heals volume mount
+    - DONE: Improved entrypoint comments to document the two-stage custom nodes mechanism
+    - FOUND: Run button sends empty workflow `{}` → QM rejects with 422
+    - FOUND: Root cause — default_workflow_loader uses `app.loadWorkflowFromURL()` which doesn't exist in v0.11.0
+    - FOUND: v0.11.0 API has `app.loadGraphData(jsonObject)` instead — our custom extension code is wrong
+    - FOUND: Workflow files DO exist on disk (flux2_klein_9b, 4b, ltx2, etc.) — just not loaded onto canvas
+    - FIX READY: Update loader.js: fetch JSON, then call `app.loadGraphData(data)` — ~3 line change
+    - INVESTIGATE: WebSocket connectivity issue reported by user
     - INVESTIGATE: Variable warnings in .env on server (unescaped $ in values?) (#7)
+    - NEXT (PRIORITY): Fix default_workflow_loader to use v0.11.0 API (loadGraphData)
+    - NEXT: Rebuild frontend image with Dockerfile fix + loader fix, redeploy
+    - NEXT: Complete app flow doc (#8) — trace full path from Queue Prompt to serverless inference
+    - NEXT: Complete infrastructure config map (#9) — declarative checklist of all server config
     - NEXT: Rebuild nginx image on server with dynamic DNS fix (current image still has old entrypoint)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
 ---
@@ -81,11 +97,75 @@
 
 ---
 
+## Progress Report 44 - 2026-02-11 - queue_redirect missing, custom nodes volume mount gotcha (#8)
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #8, #9
+
+### Problem: Inference not working — jobs never reached queue manager
+
+**Symptom:** User clicks "Queue Prompt" in ComfyUI, nothing happens on serverless GPU.
+QM logs showed zero job submissions — only health checks from user containers.
+
+**Investigation — tracing the code path:**
+1. `redirect.js` (comfyui-frontend/custom_nodes/queue_redirect/web/redirect.js)
+   - Overrides `app.queuePrompt` to POST to `/api/jobs` instead of ComfyUI's native `/api/prompt`
+   - Extracts user_id from URL path (`/user001/` → `user001`)
+   - Sends `{user_id, workflow, priority, metadata}` as JSON
+2. nginx routes `/api/jobs` → queue-manager:3000 (auth disabled for /api/ paths)
+3. QM `main.py:submit_job()` (line 200) checks `settings.inference_mode`
+4. In serverless mode: calls `submit_to_serverless()` → POST to DataCrunch endpoint
+5. Endpoint: `https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot`
+
+**Root cause found at Step 1:** The `queue_redirect` extension was NEVER LOADED.
+
+**Why — Docker volume mount overwrites container contents:**
+- `docker-compose.users.yml` mounts per-user custom_nodes:
+  ```yaml
+  - ./data/user_data/user001/comfyui/custom_nodes:/comfyui/custom_nodes
+  ```
+- This **completely replaces** the container's `/comfyui/custom_nodes/` directory
+- The Docker image has both custom nodes baked in during build
+- But the host directory (`data/user_data/user001/comfyui/custom_nodes/`) only had:
+  - `websocket_image_save.py` (copied during user data setup)
+  - `example_node.py.example`
+- Missing: `queue_redirect/` and `default_workflow_loader/`
+
+**Evidence:**
+- Container logs: `⚠️ No workshop extensions found in /build/custom_nodes/`
+- `ls data/user_data/user001/comfyui/custom_nodes/` → no queue_redirect
+- nginx access logs: `POST /user001/api/prompt` (native ComfyUI, NOT our QM)
+
+**What happened without queue_redirect:**
+- ComfyUI's native queuePrompt sent workflow to itself (`POST /api/prompt`)
+- Request routed by nginx as `/user001/api/prompt` → user001 container
+- Container accepted the job into its LOCAL queue
+- ComfyUI tried to execute on CPU (no GPU!) → job sits forever or fails silently
+
+**Fix applied:**
+```bash
+for i in $(seq -f "%03g" 1 20); do
+  cp -r comfyui-frontend/custom_nodes/queue_redirect data/user_data/user${i}/comfyui/custom_nodes/
+  cp -r comfyui-frontend/custom_nodes/default_workflow_loader data/user_data/user${i}/comfyui/custom_nodes/
+done
+docker compose restart user001 user002 ... user020
+```
+
+**After fix:** Container logs show `0.0 seconds: /comfyui/custom_nodes/queue_redirect` — extension loads.
+
+**Permanent fix needed:** Add custom_nodes copy step to restore script. Every time user data directories are created, the custom nodes must be copied from `comfyui-frontend/custom_nodes/` to each user's `data/user_data/userXXX/comfyui/custom_nodes/`.
+
+**Also this session:**
+- Created GH #8: detailed app flow map (Queue Prompt → serverless inference)
+- Created GH #9: infrastructure config map (nginx, SSL, Docker networking, volumes)
+- User reported WebSocket issue — may be related or separate, investigating
+
+---
+
 ## Progress Report 43 - 2026-02-11 - PRODUCTION LIVE! End-to-end working!
 
 **Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #7
 
-**MILESTONE: aiworkshop.art is LIVE with serverless GPU inference!**
+**CORRECTION: inference not yet working — queue_redirect was missing (see Report 44)**
 
 **Nginx fixes (3 issues found and fixed):**
 1. DNS resolution crash: nginx crashed in restart loop because static `upstream` blocks require all hostnames resolvable at startup. Container got disconnected from Docker network during restart cycle, creating a vicious loop. Fix: manually connected to network, then switched entrypoint to use `resolver 127.0.0.11` + variables for request-time DNS resolution (93bf1a1).

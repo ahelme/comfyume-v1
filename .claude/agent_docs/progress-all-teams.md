@@ -17,6 +17,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [MELLO-ONE-TEAM] (no commit) fix: copied queue_redirect + default_workflow_loader to all 20 user dirs (comfyume-v1 #1, #8)
+- [MELLO-ONE-TEAM] (no commit) ops: SSL cert via certbot, .htpasswd restored, nginx container recreated (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] cae94ab docs: production live! nginx fixed, SSL cert, end-to-end working (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] 93bf1a1 fix: dynamic DNS resolution in nginx, fix http2 deprecation (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] 8b21b75 docs: session handover — core stack healthy, nginx/SSL remaining (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] 5ecbaa4 fix: remove unused redis.conf volume mount (comfyume-v1 #1, #7)
