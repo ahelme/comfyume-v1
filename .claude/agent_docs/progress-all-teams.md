@@ -17,6 +17,11 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [MELLO-ONE-TEAM] (no commit) feat: redirect.js status banner — floating GPU progress indicator, deployed to 20 user dirs (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] (no commit) fix: added serverless response key logging to QM main.py, SCP'd + restarted (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] (no commit) fix: disabled default_workflow_loader on 20 user dirs (renamed .disabled) — canvas null errors (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] (no commit) fix: deployed canvas-wait loader.js to 20 user dirs (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] (no commit) ops: rebuilt frontend + nginx images, recreated all containers with fixes (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] (no commit) fix: copied queue_redirect + default_workflow_loader to all 20 user dirs (comfyume-v1 #1, #8)
 - [MELLO-ONE-TEAM] (no commit) ops: SSL cert via certbot, .htpasswd restored, nginx container recreated (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] cae94ab docs: production live! nginx fixed, SSL cert, end-to-end working (comfyume-v1 #1)

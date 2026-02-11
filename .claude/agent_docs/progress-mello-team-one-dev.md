@@ -46,62 +46,161 @@
 
 🔴 **(CURRENT) - comfyume-v1 #1 - New CPU instance via restore script**
     - Created: 2026-02-10, Updated: 2026-02-11
-    - NEW APPROACH: Import Mello's frozen comfyume repo into comfyume-v1, adapt restore script
-    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04, OS updated
-    - DISCOVERY: old-gpu-instance (135.181.8.213) has worker image in GHCR + serverless container
-    - DISCOVERY: Mello comfyume repo has serverless queue-manager code (never committed, Feb 3-10)
-    - DONE: Froze Mello comfyume repo (chmod 000 .git), imported full app code into comfyume-v1 (2c42279)
-    - DONE: Adapted restore script v0.5.0, added safety flags, created GH issues #2 #3
-    - DONE: Created setup-monitoring.sh for Prometheus/Grafana/Loki/Promtail/cAdvisor/Dry
-    - DONE: Attached 50GB block storage, SFS, running restore on quiet-city
-    - DONE: First restore run — all 24 images built, containers started, QM unhealthy (Redis misconfigured)
-    - DONE: Simplified Redis config with Option A/B/C pattern in .env (#1, #5)
-    - DONE: Fixed docker-compose.yml: APP_SERVER_REDIS_HOST → REDIS_HOST (removed indirection)
-    - DONE: Single frontend build (1 image instead of 20), added Tailscale auth key
-    - DONE: Created GH issues #4 (GitHub Actions builds) and #5 (single shared frontend image)
-    - DONE: Worker-1 nvidia crash on CPU — added `profiles: [gpu]` to docker-compose.yml (749def7)
-    - DONE: Renamed default branch to `main` (was mello-team-one-new-temp-cpu-instance-01)
-    - DONE: Restore script removes leftover worker container before starting stack [private scripts repo 445577a]
-    - DONE: Saved worker image to SFS as comfyume-v1-worker-2026-02-11.tar.gz
-    - DONE: Removed unused redis.conf volume mount (was empty dir, caused mount error) (5ecbaa4)
-    - DONE: Discovered stale tarball overrides git fixes (scripts #42), diverged git history (scripts #41)
-    - DONE: Disabled host nginx (Verda default, blocks port 80) (scripts #43)
-    - DONE: Core stack running — Redis, QM, admin, 20 frontends ALL HEALTHY
-    - DONE: Fixed nginx DNS — manually connected to Docker network, then switched to dynamic resolver (93bf1a1)
-    - DONE: SSL cert obtained via certbot (expires 2026-05-12)
-    - DONE: Fixed .htpasswd (was empty dir from Docker mount gotcha, restored from scripts repo backup)
-    - DONE: Fixed http2 deprecation warning in nginx.conf (93bf1a1)
-    - DONE: END-TO-END WORKING — browser → nginx → frontend → QM → serverless GPU → output generated!
-    - DONE: Found queue_redirect custom node MISSING from all user data dirs (volume mount gotcha)
-    - DONE: Copied queue_redirect + default_workflow_loader to all 20 user dirs, restarted all containers
-    - DONE: Created GH issues #8 (app flow map) and #9 (infrastructure config map)
-    - DONE: Debugged via Chrome DevTools — queue_redirect IS working (intercepts Run, POSTs to /api/jobs)
-    - DONE: Fixed Dockerfile: added `COPY custom_nodes/ /build/custom_nodes/` so entrypoint self-heals volume mount
-    - DONE: Improved entrypoint comments to document the two-stage custom nodes mechanism
-    - FOUND: Run button sends empty workflow `{}` → QM rejects with 422
-    - FOUND: Root cause — default_workflow_loader uses `app.loadWorkflowFromURL()` which doesn't exist in v0.11.0
-    - FOUND: v0.11.0 API has `app.loadGraphData(jsonObject)` instead — our custom extension code is wrong
-    - NOTE: default_workflow_loader is a convenience add-on (auto-loads a workflow so workshop participants don't start with blank canvas). ComfyUI's built-in Load menu works fine without it — not a blocker for inference.
-    - FOUND: Workflow files DO exist on disk (flux2_klein_9b, 4b, ltx2, etc.) — just not loaded onto canvas
-    - DONE: Fixed loader.js: fetch() + app.loadGraphData() for v0.11.0, relative URL for nginx routing (c613a06)
-    - DONE: Fixed Dockerfile + entrypoint + loader in single commit, rebuilt frontend image on server
-    - DONE: Rebuilt nginx image with dynamic DNS fix, redeployed all containers
-    - DONE: Created GH issue #12 (refactor: factor out comfyume customisation layer)
-    - DONE: QM logs confirm jobs reaching serverless! HTTP 200 OK from DataCrunch H200
-    - FOUND: Canvas null error — loader.js calls loadGraphData before canvas is initialised
-    - DONE: Fixed loader.js to poll for app.canvas before loading workflow, deployed to all 20 user dirs
-    - INVESTIGATE: Run button not responding for user — may be canvas error cascading, needs hard refresh + localStorage clear
+    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
+    - PHASE: Serverless inference works, but output images don't reach UI yet
+    - DONE: Full list in Progress Reports 44-46 below. Key milestones:
+      - Core stack running (Redis, QM, admin, nginx, 20 frontends — all healthy)
+      - Nginx dynamic DNS, SSL cert (2026-05-12), .htpasswd restored
+      - Serverless inference confirmed: QM → DataCrunch H200 → HTTP 200 OK
+      - Dockerfile self-healing custom nodes mechanism (c613a06)
+      - default_workflow_loader: DISABLED on server (causing canvas errors, not blocking inference)
+      - redirect.js: status banner for GPU progress feedback (deployed, not yet committed)
+    - **DEPLOYMENT DRIFT**: See Progress Report 46 "Deployment Inventory" for full details
+    - INVESTIGATE: Output images stranded on serverless container (never reach browser UI)
     - INVESTIGATE: WebSocket connectivity issue reported by user
-    - INVESTIGATE: Variable warnings in .env on server (unescaped $ in values?) (#7)
-    - NEXT: Commit canvas-wait fix for loader.js, rebuild image (or just test with deployed file first)
-    - NEXT: User testing — hard refresh, clear localStorage, try Queue Prompt with loaded workflow
-    - NEXT: Complete app flow doc (#8) — trace full path from Queue Prompt to serverless inference
-    - NEXT: Complete infrastructure config map (#9) — declarative checklist of all server config
-    - NEXT: Factor out comfyume layer (#12) — move custom nodes + entrypoint to comfyui-comfyume-layer/
+    - INVESTIGATE: Variable warnings in .env on server (#7)
+    - NEXT: Commit redirect.js + QM logging changes, rebuild images, sync git ↔ server
+    - NEXT: Solve image delivery: serverless → user browser
+    - NEXT: Complete app flow doc (#8), infrastructure config map (#9)
+    - NEXT: Factor out comfyume layer (#12)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
+
+🟡 **TECH DEBT - Deployment drift between git, dev, and production**
+    - Created: 2026-02-11
+    - See Progress Report 46 "Deployment Inventory" for full divergence map
+    - RISK: Server has files SCP'd directly that don't match git — fragile, unreproducible
+    - TO FIX: Commit all changes, rebuild images, push to git, pull on server
+    - TO FIX: Create a deployment script that syncs git → server properly
+    - RELATED: #9 (infrastructure config map), #12 (comfyume layer refactor)
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 46 - 2026-02-11 - Surgical deployments inventory, deployment drift warning (#1, #7)
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #7, #8, #9
+
+### Context
+
+We've been doing rapid iterative debugging on the live server — SCP'ing files directly, copying to user dirs, restarting containers. This is fast for debugging but creates **deployment drift** between git (source of truth), dev machine (Mello), and production (Verda). This report documents every surgical deployment so we can sync everything up.
+
+### Deployment Inventory — What's Where
+
+#### 1. redirect.js (queue_redirect custom node)
+
+| Location | Version | Status |
+|----------|---------|--------|
+| Git (committed) | OLD — no status banner, uses `app.ui.dialog.show()` for errors only | Last commit: cae94ab |
+| Local dev (Mello) | NEW — has floating status banner with elapsed timer | `comfyui-frontend/custom_nodes/queue_redirect/web/redirect.js` |
+| Server git repo | OLD — hasn't been `git pull`'d | `/home/dev/comfyume-v1/comfyui-frontend/...` |
+| Server user dirs (x20) | NEW — matches local dev (SCP'd + copied) | `/home/dev/comfyume-v1/data/user_data/user*/comfyui/custom_nodes/queue_redirect/web/redirect.js` |
+| Docker image | OLD — baked in at build time, but overridden by volume mount | `comfyume-frontend:v0.11.0` built 17:34 |
+
+**How it gets served:** Volume mount overwrites container's custom_nodes/ with host dir. So the SCP'd file in user dirs is what users actually load. The Docker image version is irrelevant while volume mount is active.
+
+**Changes in new version:**
+- Added `createStatusBanner()` — floating dark overlay at top of screen
+- Added `showStatus(banner, message, color)` — updates banner text/color
+- Added `hideStatus(banner, delay)` — fades out after delay
+- Added elapsed time counter during inference (updates every second)
+- Added `console.log` of full JSON result for debugging image delivery
+- Removed `app.ui.dialog.show()` for errors (replaced with banner)
+
+#### 2. queue-manager/main.py
+
+| Location | Version | Status |
+|----------|---------|--------|
+| Git (committed) | OLD — no response key logging | Last commit: cae94ab |
+| Local dev (Mello) | NEW — logs `Serverless response keys: [...]` | `queue-manager/main.py` |
+| Server | NEW — matches local dev (SCP'd directly) | `/home/dev/comfyume-v1/queue-manager/main.py` |
+| Docker image | OLD — but QM volume-mounts code from host, so image version irrelevant | `comfyume-v1-queue-manager:latest` built 16:12 |
+
+**How it gets served:** docker-compose.yml volume-mounts `./queue-manager/` into the container. So SCP to the host path + `docker compose restart queue-manager` = immediate effect.
+
+**Changes:** Added 1 line after `response.raise_for_status()`:
+```python
+logger.info(f"Serverless response keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+```
+Purpose: See what DataCrunch returns, to figure out how to deliver output images back to users.
+
+#### 3. default_workflow_loader (custom node)
+
+| Location | Version | Status |
+|----------|---------|--------|
+| Git (committed) | v3 — has canvas-wait fix (polls for `app.canvas`) | `comfyui-frontend/custom_nodes/default_workflow_loader/web/loader.js` |
+| Local dev (Mello) | Same as git | Committed in previous session |
+| Server user dirs (x20) | **DISABLED** — renamed to `default_workflow_loader.disabled` | All 20 users |
+| Docker image | v3 — baked into `/build/custom_nodes/` staging area | `comfyume-frontend:v0.11.0` built 17:34 |
+
+**Why disabled:** Canvas null errors when auto-loading workflows. Not blocking inference — users can manually load workflows from ComfyUI's Load menu. Will re-enable once canvas timing issues are resolved.
+
+**CAUTION:** If containers are recreated with `docker compose up -d`, the entrypoint will re-copy `default_workflow_loader` from the Docker image staging area back into user dirs (the self-healing mechanism). The `.disabled` rename will be overwritten. Need to either fix the loader or remove it from the Docker image before recreating containers.
+
+#### 4. Docker Images on Server
+
+| Image | Built | Notes |
+|-------|-------|-------|
+| `comfyume-frontend:v0.11.0` | 17:34:15 | Has Dockerfile COPY fix + entrypoint improvements + loader.js v3 |
+| `comfyume-v1-nginx:latest` | 17:34:24 | Has dynamic DNS resolver (93bf1a1) |
+| `comfyume-v1-queue-manager:latest` | 16:12:31 | Initial build. Code is volume-mounted so image is stale but irrelevant |
+| `comfyume-v1-admin:latest` | 16:12:30 | Initial build. Unchanged |
+| `comfyume-v1-user*:latest` (x20) | 13:02 | OLD per-user images from initial restore. Unused — containers use `comfyume-frontend:v0.11.0` via `image:` in compose |
+
+#### 5. Other Server State
+
+| Item | State | Notes |
+|------|-------|-------|
+| SSL cert | Valid until 2026-05-12 | `/etc/ssl/certs/fullchain.pem`, `/etc/ssl/private/privkey.pem` |
+| .htpasswd | Restored from scripts repo backup | `/home/dev/comfyume-v1/nginx/.htpasswd` |
+| .env | Has y1w/HUFr7/etc variable warnings (#7) | Unescaped `$` in password values |
+| Git repo on server | Behind — hasn't been `git pull`'d since initial clone | `/home/dev/comfyume-v1/` |
+
+### Deployment Flow Diagram
+
+```
+                   Source of Truth                  Live Production
+                   ──────────────                  ───────────────
+  Git (GitHub)    ← commit ← Local Dev (Mello)   → SCP → Server Files
+       │                         │                         │
+       │ git pull                │ docker build            │ volume mount
+       ▼                         ▼                         ▼
+  Server Git Repo            Docker Image              User Data Dirs
+  (NOT in sync!)            (partially stale)          (LIVE — what users see)
+```
+
+**Problem:** The right side (SCP → Server Files) bypasses git. The server git repo is behind. Docker images are partially stale. Only the user data dirs and QM code (both volume-mounted) reflect the latest changes.
+
+### Risks
+
+1. **Unreproducible state:** If server dies, `docker compose up` will use stale Docker images. Entrypoint will restore default_workflow_loader (which we disabled). redirect.js in the image won't have the status banner.
+2. **Container recreation resets custom_nodes:** Any `docker compose up` recreates containers → entrypoint copies from image staging → overwrites our surgical user dir changes (including the .disabled rename).
+3. **Git repo on server is behind:** If someone runs `git pull` on the server, it won't affect running containers (volume mounts). But it could cause confusion about "which version is this?"
+
+### TO DO: Sync Up
+
+1. **Commit** redirect.js and main.py changes (local dev → git)
+2. **Decide** on default_workflow_loader: fix the canvas issue, or remove from Docker image
+3. **Rebuild** frontend image with all latest changes
+4. **Push** to git, **pull** on server
+5. **Recreate** containers to use new images
+6. **Document** a proper deployment workflow (git push → server pull → rebuild → recreate)
+
+### Surgical Deployments Log (chronological)
+
+| Time (UTC) | Action | Files | Method |
+|------------|--------|-------|--------|
+| ~16:30 | Copied queue_redirect + default_workflow_loader to 20 user dirs | custom_nodes/* | SSH + cp |
+| ~17:02 | Copied updated loader.js (v0.11.0 API fix) to 20 user dirs | loader.js | SSH + cp |
+| ~17:34 | Rebuilt frontend Docker image | Dockerfile, entrypoint, loader.js | docker compose build |
+| ~17:34 | Rebuilt nginx Docker image | nginx/* | docker compose build |
+| ~17:34 | Recreated all containers | All | docker compose up -d |
+| ~17:44 | Deployed canvas-wait loader.js to 20 user dirs | loader.js | SCP + cp |
+| ~17:49 | Disabled default_workflow_loader on 20 user dirs | renamed to .disabled | SSH + mv |
+| ~17:50 | SCP'd updated redirect.js (status banner) to 20 user dirs | redirect.js | SCP + cp |
+| ~17:52 | SCP'd updated main.py (response logging) to server | main.py | SCP |
+| ~17:52 | Restarted QM container | queue-manager | docker compose restart |
 
 ---
 

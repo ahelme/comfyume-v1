@@ -185,7 +185,9 @@ async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
             json={"prompt": workflow, "client_id": user_id}
         )
         response.raise_for_status()
-        return response.json()
+        result = response.json()
+        logger.info(f"Serverless response keys: {list(result.keys()) if isinstance(result, dict) else type(result).__name__}")
+        return result
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Serverless inference timed out")
     except httpx.HTTPStatusError as e:
