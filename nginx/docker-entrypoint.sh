@@ -4,9 +4,12 @@ set -e
 # Generate user frontend routing configuration
 echo "Generating nginx configuration for ${NUM_USERS:-20} users..."
 
-# Create upstream configuration for user frontends
+# No upstream blocks needed — using dynamic resolution with resolver
+# This prevents nginx from crashing at startup if user containers aren't
+# ready yet. DNS resolution happens at request time instead.
 cat > /etc/nginx/conf.d/user-upstreams.conf <<EOF
-# User frontend upstreams (generated at runtime)
+# Dynamic resolution — no upstream blocks needed
+# User containers are resolved at request time via Docker DNS (127.0.0.11)
 EOF
 
 # Create URL-encoding preserving maps for userdata API (Issue #54)
@@ -20,31 +23,26 @@ EOF
 # Create location blocks for user routing
 cat > /etc/nginx/conf.d/user-locations.conf <<EOF
 # User frontend locations (generated at runtime)
+# Using resolver + variables for dynamic DNS resolution
 EOF
 
 # Generate configuration for each user
 for i in $(seq 1 ${NUM_USERS:-20}); do
     USER_ID=$(printf "user%03d" $i)
-    PORT=$((8000 + i))
-
-    # Add upstream
-    cat >> /etc/nginx/conf.d/user-upstreams.conf <<EOF
-
-upstream ${USER_ID} {
-    server ${USER_ID}:8188;
-}
-EOF
 
     # Add map for URL encoding preservation
     cat >> /etc/nginx/conf.d/user-maps.conf <<EOF
 map \$request_uri \$${USER_ID}_raw_path { ~^/${USER_ID}(/[^\?]*) \$1; default /; }
 EOF
 
-    # Add location using map variable to preserve URL encoding
+    # Add location using resolver + variable for dynamic DNS resolution
+    # The set $backend trick makes nginx resolve at request time, not startup
     cat >> /etc/nginx/conf.d/user-locations.conf <<EOF
 
 location /${USER_ID}/ {
-    proxy_pass http://${USER_ID}\$${USER_ID}_raw_path\$is_args\$args;
+    resolver 127.0.0.11 valid=30s;
+    set \$backend_${USER_ID} ${USER_ID};
+    proxy_pass http://\$backend_${USER_ID}:8188\$${USER_ID}_raw_path\$is_args\$args;
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
