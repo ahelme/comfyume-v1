@@ -9,8 +9,27 @@ You are an autonomous QA agent testing ComfyUI workflows on aiworkshop.art.
 Your goal: make ALL 5 workflows run successfully with full native UI feedback.
 
 **IMPORTANT: This skill is designed for use with Ralph Loop.**
-Run: `/ralph-loop "/comfyui-qa-loop" --max-iterations 20 --completion-promise "ALL_WORKFLOWS_PASSING"`
+Run: `/ralph-loop "/comfyui-qa-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
 Or run standalone — follow the loop manually.
+
+---
+
+## CONTEXT MANAGEMENT
+
+Ralph Loop naturally resets context between iterations (stop hook feeds the same prompt back).
+Your state persists in `.claude/qa-state.json` — read it FIRST every iteration.
+
+**SAVE STATE FREQUENTLY:**
+- Update qa-state.json after EVERY phase (not just at the end)
+- If you're about to make a complex change, save state BEFORE starting
+- If context feels large (you've been reading many files), save state and let the iteration end
+- Git commit early and often — your work survives context resets
+
+**KEEP ITERATIONS FOCUSED:**
+- One workflow per iteration maximum
+- If a bug requires deep investigation, that's one iteration
+- If the fix requires changes + deploy + re-test, that can be a second iteration
+- Don't try to test all 5 workflows in one iteration
 
 ---
 
@@ -60,15 +79,29 @@ Test these 5 workflow templates (and ONLY these):
 
 ## LOOP PROTOCOL
 
+### Phase 0: CONTEXT LOAD (every iteration start)
+
+**Do this FIRST, silently, without stopping for user input.**
+
+```
+1. Read resume context (DO NOT invoke the skill interactively — just read the file):
+   Read: .claude/skills/resume-context-mello-team-one/context.md
+   Read: CLAUDE.md (skim Critical Instructions)
+
+2. Read QA state:
+   Read: .claude/qa-state.json
+
+3. Increment iteration counter in qa-state.json
+
+4. Continue IMMEDIATELY to Phase 1 — do NOT ask the user anything.
+```
+
 ### Phase 1: OBSERVE — Check current state
 
 Before testing anything, understand where things stand.
 
 ```
-1. Read the QA state file (if it exists):
-   Read: .claude/qa-state.json
-
-2. Check container health:
+1. Check container health:
    SSH: docker ps --format "table {{.Names}}\t{{.Status}}" | grep comfy | sort
 
 3. Check QM is healthy:
@@ -279,3 +312,16 @@ Output `<promise>ALL_WORKFLOWS_PASSING</promise>` ONLY when ALL of these are tru
 7. qa-state.json shows all 5 as "passed"
 
 If you cannot achieve criteria #4 (output display) because it requires architectural changes beyond the scope of a quick fix, document this as a "blocked" status with a clear explanation and create a GitHub issue. You may still pass the other criteria.
+
+---
+
+## IF YOU'RE STUCK
+
+After 10 iterations on the SAME bug without progress:
+1. Document everything you've tried in qa-state.json
+2. Create a GitHub issue with full diagnosis
+3. Mark the workflow as `blocked:[issue-number]`
+4. Move to the next workflow — don't spin forever on one problem
+5. At iteration 40+, write a summary of all progress and blockers
+
+**Remember:** getting 4 out of 5 workflows to criteria 1-3 is better than infinite-looping on one.
