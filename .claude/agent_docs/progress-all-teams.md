@@ -17,6 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [RALPH] 467b4d7 fix: reference .env for QA test user credentials instead of hardcoding (comfyume-v1 #1, PR #21)
+- [RALPH] e258c8c feat: create Mello Ralph Team — autonomous QA agent team identity (comfyume-v1 #1, PR #20)
 - [MELLO-ONE-TEAM] bd358f3 fix: QA loop — context management, 50 iterations, auto-resume, stuck handler (comfyume-v1 #1, PR #18)
 - [MELLO-ONE-TEAM] 53f51ad feat: add ComfyUI QA loop skill for autonomous workflow testing (comfyume-v1 #1, PR #17)
 - [MELLO-ONE-TEAM] 9006781 docs: add extension separation and deploy flow rules to CLAUDE.md (comfyume-v1 #12, #13, PR #16)

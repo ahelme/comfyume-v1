@@ -74,3 +74,25 @@
 ### Ready to start testing!
 
 ---
+
+## Progress Report 2 - 2026-02-11 - Ralph Loop first run, credential fix
+
+**Date:** 2026-02-11
+
+### Changes:
+- Ralph Loop plugin activated and tested — `/ralph-loop:ralph-loop` invocation confirmed working (PR #21)
+- Switched QA test user from user011 → user001
+- Removed hardcoded credentials from tracked skill files — now references `.env` line 367 at runtime
+- qa-state.json updated: iteration 1, workflow 1 set to "testing"
+
+### Observations:
+- All 24 containers healthy on quiet-city
+- QM running: serverless mode, H200-141GB-SPOT, Redis connected
+- HTTP Basic Auth requires URL-encoded credentials for Chrome DevTools automation
+- Ralph Loop `/help` confirms: stop hook intercepts exit, feeds same prompt back
+
+### Next:
+- Continue Ralph Loop iteration 1: test Flux2 Klein 9B workflow via Chrome DevTools
+- Navigate to user001 with auth, load workflow, queue prompt, observe results
+
+---
