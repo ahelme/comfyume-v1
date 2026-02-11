@@ -60,6 +60,7 @@ for i in $(seq 1 $NUM_USERS); do
     environment:
       - USER_ID=$USER_ID
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=\${INFERENCE_MODE:-local}
 EOF
 
     # Add depends_on

@@ -17,6 +17,7 @@ services:
     environment:
       - USER_ID=user001
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       queue-manager:
         condition: service_healthy
@@ -47,6 +48,7 @@ services:
     environment:
       - USER_ID=user002
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user001:
         condition: service_healthy
@@ -77,6 +79,7 @@ services:
     environment:
       - USER_ID=user003
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user002:
         condition: service_healthy
@@ -107,6 +110,7 @@ services:
     environment:
       - USER_ID=user004
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user003:
         condition: service_healthy
@@ -137,6 +141,7 @@ services:
     environment:
       - USER_ID=user005
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user004:
         condition: service_healthy
@@ -167,6 +172,7 @@ services:
     environment:
       - USER_ID=user006
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       queue-manager:
         condition: service_healthy
@@ -197,6 +203,7 @@ services:
     environment:
       - USER_ID=user007
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user006:
         condition: service_healthy
@@ -227,6 +234,7 @@ services:
     environment:
       - USER_ID=user008
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user007:
         condition: service_healthy
@@ -257,6 +265,7 @@ services:
     environment:
       - USER_ID=user009
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user008:
         condition: service_healthy
@@ -287,6 +296,7 @@ services:
     environment:
       - USER_ID=user010
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user009:
         condition: service_healthy
@@ -317,6 +327,7 @@ services:
     environment:
       - USER_ID=user011
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       queue-manager:
         condition: service_healthy
@@ -347,6 +358,7 @@ services:
     environment:
       - USER_ID=user012
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user011:
         condition: service_healthy
@@ -377,6 +389,7 @@ services:
     environment:
       - USER_ID=user013
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user012:
         condition: service_healthy
@@ -407,6 +420,7 @@ services:
     environment:
       - USER_ID=user014
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user013:
         condition: service_healthy
@@ -437,6 +451,7 @@ services:
     environment:
       - USER_ID=user015
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user014:
         condition: service_healthy
@@ -467,6 +482,7 @@ services:
     environment:
       - USER_ID=user016
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       queue-manager:
         condition: service_healthy
@@ -497,6 +513,7 @@ services:
     environment:
       - USER_ID=user017
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user016:
         condition: service_healthy
@@ -527,6 +544,7 @@ services:
     environment:
       - USER_ID=user018
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user017:
         condition: service_healthy
@@ -557,6 +575,7 @@ services:
     environment:
       - USER_ID=user019
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user018:
         condition: service_healthy
@@ -587,6 +606,7 @@ services:
     environment:
       - USER_ID=user020
       - QUEUE_MANAGER_URL=http://queue-manager:3000
+      - INFERENCE_MODE=${INFERENCE_MODE:-local}
     depends_on:
       user019:
         condition: service_healthy
