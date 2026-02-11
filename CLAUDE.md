@@ -43,6 +43,8 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 1. **BELIEVE THE USER** -- When the user reports something isn't working, investigate. Don't dismiss with "try cache refresh".
 2. **USE LATEST STABLE LIBRARIES** as of Jan 2026.
 3. **CHECK FOR EXISTING CODE FIRST** -- NEVER rewrite code that already exists. ALWAYS check for previous solutions.
+4. **ALL COMFYUI CUSTOMISATIONS GO IN `comfyume-extensions/`** -- Any code that modifies, extends, or wraps ComfyUI behavior MUST live in `comfyume-extensions/`, never inside `comfyui-frontend/`. This is for separation of concerns, easy bugfixing, modularity, migration-friendliness, and ease of finding our changes vs upstream ComfyUI. Enable/disable extensions via `comfyume-extensions/extensions.conf`.
+5. **DEPLOY VIA GIT FLOW** -- Use `./scripts/deploy.sh`. Never SCP files directly to production. Flow: edit → commit → push → deploy script handles the rest.
 
 ---
 
