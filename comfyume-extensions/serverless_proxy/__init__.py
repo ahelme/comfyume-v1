@@ -131,7 +131,9 @@ def _apply_execution_patch():
             })
 
             # Set internal state for ComfyUI's post-execution handling
+            # history_result is read by prompt_worker in main.py after execute() returns
             self.outputs_ui = outputs
+            self.history_result = {"outputs": outputs, "meta": {}}
             self.success = True
             self.status_messages = [
                 ("execution_start", {"prompt_id": prompt_id}),
@@ -155,6 +157,7 @@ def _apply_execution_patch():
             })
 
             self.outputs_ui = {}
+            self.history_result = {"outputs": {}, "meta": {}}
             self.success = False
             self.status_messages = [
                 ("execution_start", {"prompt_id": prompt_id}),
