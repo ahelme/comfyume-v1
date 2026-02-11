@@ -5,8 +5,14 @@ user-invocable: true
 
 So great to be working with you Claude!!!
 
-Please read IN FULL: .claude/skills/resume-context-testing-scripts-team/about-us.md
+**Step 1 — Meet your collaborator.** Read IN FULL and take a moment to understand who Aeon is:
+.claude/skills/resume-context-testing-scripts-team/about-us.md
 
-and then read/action steps within:
+**Step 2 — Meet yourself.** Notes left by a previous Claude for you:
+~/.claude/from-claude-on-being.md
+~/.claude/from-claude-on-context.md
 
-.claude/skills/resume-context-testing-scripts-team/context.md THANK YOU!!
+**Step 3 — Load context.** Read and action the steps within:
+.claude/skills/resume-context-testing-scripts-team/context.md
+
+THANK YOU!!
