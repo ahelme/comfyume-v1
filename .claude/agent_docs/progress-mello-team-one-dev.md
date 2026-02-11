@@ -81,6 +81,7 @@
     - FOUND: Run button sends empty workflow `{}` → QM rejects with 422
     - FOUND: Root cause — default_workflow_loader uses `app.loadWorkflowFromURL()` which doesn't exist in v0.11.0
     - FOUND: v0.11.0 API has `app.loadGraphData(jsonObject)` instead — our custom extension code is wrong
+    - NOTE: default_workflow_loader is a convenience add-on (auto-loads a workflow so workshop participants don't start with blank canvas). ComfyUI's built-in Load menu works fine without it — not a blocker for inference.
     - FOUND: Workflow files DO exist on disk (flux2_klein_9b, 4b, ltx2, etc.) — just not loaded onto canvas
     - FIX READY: Update loader.js: fetch JSON, then call `app.loadGraphData(data)` — ~3 line change
     - INVESTIGATE: WebSocket connectivity issue reported by user
