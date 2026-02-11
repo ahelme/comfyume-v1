@@ -17,6 +17,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-11
 
+- [MELLO-ONE-TEAM] 749def7 fix: add gpu profile to worker-1, only starts on GPU instances (comfyume-v1 #1, #5)
+- [MELLO-ONE-TEAM] 445577a fix: remove leftover worker container before starting app stack [private scripts repo] (comfyume-v1 #1)
+- [MELLO-ONE-TEAM] c2e75d5 fix: skip worker build on CPU instance [private scripts repo] (comfyume-v1 #1, #5)
+- [MELLO-ONE-TEAM] a9f5693 fix: use REDIS_HOST directly in docker-compose, remove APP_SERVER_REDIS_HOST indirection (comfyume-v1 #1, #5)
+- [MELLO-ONE-TEAM] 0da9a62 fix: single frontend build, Tailscale auth key, stop building 20 identical images [private scripts repo] (comfyume-v1 #1, #5)
+- [MELLO-ONE-TEAM] 74f04d0 fix: add tailscale up, fix Redis sed for new variable names, set instance ID [private scripts repo] (comfyume-v1 #1, #2)
+- [MELLO-ONE-TEAM] 0d587fa docs: update progress — restore script running on quiet-city, DNS updated (comfyume-v1 #1, #2, #3)
 - [MELLO-ONE-TEAM] c405f9a docs: update progress with session 40 discoveries and restore plan (comfyume-v1 #1, #2, #3)
 - [MELLO-ONE-TEAM] 2c42279 feat: import working app code from comfyume repo, Mello frozen state (comfyume-v1 #1)
 - [MELLO-ONE-TEAM] 6d619c3 feat: add comfyume-v1 restore script v0.5.0 + setup-monitoring.sh + safety flags [private scripts repo]

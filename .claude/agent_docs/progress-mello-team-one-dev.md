@@ -54,10 +54,48 @@
     - DONE: Adapted restore script v0.5.0, added safety flags, created GH issues #2 #3
     - DONE: Created setup-monitoring.sh for Prometheus/Grafana/Loki/Promtail/cAdvisor/Dry
     - DONE: Attached 50GB block storage, SFS, running restore on quiet-city
-    - NEXT: Verify restore script completes, test app stack, update DNS
+    - DONE: First restore run — all 24 images built, containers started, QM unhealthy (Redis misconfigured)
+    - DONE: Simplified Redis config with Option A/B/C pattern in .env (#1, #5)
+    - DONE: Fixed docker-compose.yml: APP_SERVER_REDIS_HOST → REDIS_HOST (removed indirection)
+    - DONE: Single frontend build (1 image instead of 20), added Tailscale auth key
+    - DONE: Created GH issues #4 (GitHub Actions builds) and #5 (single shared frontend image)
+    - DONE: Worker-1 nvidia crash on CPU — added `profiles: [gpu]` to docker-compose.yml (749def7)
+    - DONE: Renamed default branch to `main` (was mello-team-one-new-temp-cpu-instance-01)
+    - DONE: Restore script removes leftover worker container before starting stack [private scripts repo 445577a]
+    - DONE: Saved worker image to SFS as comfyume-v1-worker-2026-02-11.tar.gz
+    - RUNNING: Third restore run with all fixes (Redis, worker profile, single build, Tailscale auth key)
+    - NEXT: Verify containers healthy, test endpoints, run setup-monitoring.sh
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 41 - 2026-02-11 - First restore run, Redis fix, single build
+
+**Date:** 2026-02-11 | **Issues:** comfyume-v1 #1, #2, #4, #5
+
+**First restore run results:**
+- All 24 Docker images built successfully (20 frontends + nginx + admin + QM + worker)
+- Containers started but QM went unhealthy — Redis timeout connecting to 100.99.216.71 (Mello)
+- Root cause: .env had REDIS_HOST pointing at Mello's Tailscale IP, not Docker service name
+- Tailscale identity restored but needed re-auth (node was deleted from tailnet)
+
+**Fixes applied (both restore scripts):**
+- Simplified Redis config: Option A (all-in-one) / B (split CPU/GPU) / C (serverless) pattern
+- Option C active: REDIS_HOST=redis (Docker networking), REDIS_BIND_IP=127.0.0.1
+- docker-compose.yml: removed APP_SERVER_REDIS_HOST indirection, uses REDIS_HOST directly
+- Single frontend build: `docker build -t comfyume-frontend:v0.11.0` instead of 20 per-user builds
+- Infrastructure builds separately: `docker compose build nginx admin queue-manager worker-1`
+- Added Tailscale auth key (tskey-auth-*, expires 2026-05-12) for non-interactive auth
+- Added `tailscale up --authkey` when auth key available, falls back to browser login
+- Set VERDA_INSTANCE_ID=64c302c3 (quiet-city)
+
+**GH issues created:**
+- #4: Build Docker images with GitHub Actions + push to GHCR
+- #5: Build single shared frontend image instead of 20 per-user images
+
+**Scripts repo commits:** 74f04d0, 0da9a62 (merged via PR to main)
 
 ---
 
