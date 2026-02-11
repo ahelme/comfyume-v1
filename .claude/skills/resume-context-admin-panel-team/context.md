@@ -8,7 +8,7 @@
 
 **We are the Admin Panel Team.** Branch: `admin-panel-team`.
 
-**Production:** aiworkshop.art runs on Verda CPU instance (95.216.229.236), NOT Mello.
+**Production:** aiworkshop.art runs on Verda CPU instance (see `VERDA_PUBLIC_IP` in `.env`), NOT Mello.
 
 ---
 

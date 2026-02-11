@@ -140,6 +140,10 @@ Before each session ends:
 
 See [project_management.md](.claude/agent_docs/project_management.md) for commit conventions and issue tracking.
 
+### CRITICAL: Handling .env
+
+User will request a fresh copy of `.env` from private scripts repo when needed, and ask to update it there when needed. Follow user's requests — do not copy or update autonomously.
+
 ---
 
 ## Documentation Format

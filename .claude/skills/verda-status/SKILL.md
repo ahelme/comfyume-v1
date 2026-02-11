@@ -1,9 +1,13 @@
 ---
-description: Full status check of all Verda services. Run ALL of these via SSH to root@95.216.229.236:
+description: Full status check of all Verda services. Run ALL of these via SSH to root@$VERDA_IP:
 user-invocable: true
 ---
 
-Full status check of all Verda services. Run ALL of these via SSH to root@95.216.229.236:
+Full status check of all Verda services.
+
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
+Run ALL of these via SSH to root@$VERDA_IP:
 
 1. **System:** `uptime && free -h | head -2 && df -h / /mnt/models-block-storage`
 2. **Docker containers:** `docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | sort`

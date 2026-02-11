@@ -5,7 +5,9 @@ user-invocable: true
 
 Manage Verda serverless containers. Uses the Verda Python SDK on the Verda server.
 
-**Server:** root@95.216.229.236
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
+**Server:** root@$VERDA_IP
 **Docs:** https://docs.verda.com/containers/overview
 **SDK:** https://github.com/verda-cloud/sdk-python
 
@@ -21,7 +23,7 @@ Manage Verda serverless containers. Uses the Verda Python SDK on the Verda serve
 
 1. **List deployments:**
 ```bash
-ssh root@95.216.229.236 'source /root/.bashrc && python3 << PYEOF
+ssh root@$VERDA_IP 'source /root/.bashrc && python3 << PYEOF
 import os
 from verda import VerdaClient
 client = VerdaClient(os.environ["VERDA_CLIENT_ID"], os.environ["VERDA_CLIENT_SECRET"])
@@ -34,7 +36,7 @@ PYEOF'
 
 2. **Check container health:** Call the endpoint directly:
 ```bash
-ssh root@95.216.229.236 "curl -s -H 'Authorization: Bearer \$SERVERLESS_API_KEY' https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot/health 2>&1 || echo 'No health endpoint'"
+ssh root@$VERDA_IP "curl -s -H 'Authorization: Bearer \$SERVERLESS_API_KEY' https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot/health 2>&1 || echo 'No health endpoint'"
 ```
 
 3. **View container logs:** Check Verda console or use SDK if supported.

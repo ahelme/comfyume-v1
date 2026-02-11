@@ -5,10 +5,12 @@ user-invocable: true
 
 OpenTofu guide — open-source Terraform alternative for Verda IaC.
 
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
 **Docs:** https://opentofu.org/docs/language/
 **Modules:** https://search.opentofu.org/modules/
 **Verda Provider:** https://docs.verda.com/infrastructure-as-code/opentofu/getting-started
-**Installed on:** root@95.216.229.236 (via snap)
+**Installed on:** root@$VERDA_IP (via snap)
 
 ## Key Differences from Terraform
 
@@ -54,7 +56,7 @@ tofu validate  # Validate config
 ## Quick Start
 
 ```bash
-ssh root@95.216.229.236 "cd /root/tofu && tofu init && tofu plan"
+ssh root@$VERDA_IP "cd /root/tofu && tofu init && tofu plan"
 ```
 
 If $ARGUMENTS provided, treat as a specific OpenTofu question or operation.

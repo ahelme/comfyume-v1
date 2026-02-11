@@ -5,7 +5,9 @@ user-invocable: true
 
 Prometheus monitoring on Verda — metrics collection and querying.
 
-**Server:** root@95.216.229.236
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
+**Server:** root@$VERDA_IP
 **Port:** 9090
 **Config:** `/etc/prometheus/prometheus.yml`
 **Data:** `/var/lib/prometheus/` (7-day retention)
@@ -15,19 +17,19 @@ Prometheus monitoring on Verda — metrics collection and querying.
 
 ```bash
 # Check targets
-ssh root@95.216.229.236 "curl -s localhost:9090/api/v1/targets | python3 -m json.tool | head -30"
+ssh root@$VERDA_IP "curl -s localhost:9090/api/v1/targets | python3 -m json.tool | head -30"
 
 # Query a metric (PromQL via API)
-ssh root@95.216.229.236 "curl -s 'localhost:9090/api/v1/query?query=up' | python3 -m json.tool"
+ssh root@$VERDA_IP "curl -s 'localhost:9090/api/v1/query?query=up' | python3 -m json.tool"
 
 # Check config
-ssh root@95.216.229.236 "cat /etc/prometheus/prometheus.yml"
+ssh root@$VERDA_IP "cat /etc/prometheus/prometheus.yml"
 
 # Reload config without restart
-ssh root@95.216.229.236 "curl -X POST localhost:9090/-/reload"
+ssh root@$VERDA_IP "curl -X POST localhost:9090/-/reload"
 
 # Check storage usage
-ssh root@95.216.229.236 "du -sh /var/lib/prometheus/"
+ssh root@$VERDA_IP "du -sh /var/lib/prometheus/"
 ```
 
 ## Useful PromQL Queries

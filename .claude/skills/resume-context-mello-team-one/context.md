@@ -44,6 +44,6 @@ Please read:
 
 - [ ] Check today's date
 - [ ] `git status` on both repos
-- [ ] Can you SSH to Verda? `ssh root@95.216.229.236`
+- [ ] Can you SSH to Verda? `ssh root@$VERDA_PUBLIC_IP` (read from `.env`)
 - [ ] Read `.claude/agent_docs/progress-mello-team-one-dev.md` top section
 - [ ] Discuss priorities with user

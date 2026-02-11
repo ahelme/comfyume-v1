@@ -5,9 +5,11 @@ user-invocable: true
 
 Terraform/IaC guide for managing Verda infrastructure.
 
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
 **Docs:** https://docs.verda.com/infrastructure-as-code/terraform
 **Provider:** `verda-cloud/verda` (Terraform Registry)
-**Installed on:** root@95.216.229.236 (via OpenTofu, `tofu` command)
+**Installed on:** root@$VERDA_IP (via OpenTofu, `tofu` command)
 
 ## Provider Config
 
@@ -36,19 +38,19 @@ provider "verda" {
 
 ```bash
 # Initialize (downloads provider)
-ssh root@95.216.229.236 "cd /root/tofu && tofu init"
+ssh root@$VERDA_IP "cd /root/tofu && tofu init"
 
 # Preview changes
-ssh root@95.216.229.236 "cd /root/tofu && tofu plan"
+ssh root@$VERDA_IP "cd /root/tofu && tofu plan"
 
 # Apply changes
-ssh root@95.216.229.236 "cd /root/tofu && tofu apply -auto-approve"
+ssh root@$VERDA_IP "cd /root/tofu && tofu apply -auto-approve"
 
 # List managed resources
-ssh root@95.216.229.236 "cd /root/tofu && tofu state list"
+ssh root@$VERDA_IP "cd /root/tofu && tofu state list"
 
 # Import existing resource
-ssh root@95.216.229.236 "cd /root/tofu && tofu import verda_instance.main <instance-id>"
+ssh root@$VERDA_IP "cd /root/tofu && tofu import verda_instance.main <instance-id>"
 ```
 
 ## Auth

@@ -5,7 +5,9 @@ user-invocable: true
 
 Loki log aggregation on Verda — query logs with LogQL.
 
-**Server:** root@95.216.229.236
+**First:** Read `VERDA_PUBLIC_IP` from `.env` in the project root. Use it as `$VERDA_IP` below.
+
+**Server:** root@$VERDA_IP
 **Port:** 3100
 **Config:** `/etc/loki/config.yml`
 **Promtail config:** `/etc/promtail/config.yml`
@@ -16,22 +18,22 @@ Loki log aggregation on Verda — query logs with LogQL.
 
 ```bash
 # Check Loki is ready
-ssh root@95.216.229.236 "curl -s localhost:3100/ready"
+ssh root@$VERDA_IP "curl -s localhost:3100/ready"
 
 # Check Promtail is shipping logs
-ssh root@95.216.229.236 "systemctl is-active promtail && curl -sf localhost:9080/ready && echo 'Promtail: READY' || echo 'Promtail: NOT READY'"
+ssh root@$VERDA_IP "systemctl is-active promtail && curl -sf localhost:9080/ready && echo 'Promtail: READY' || echo 'Promtail: NOT READY'"
 
 # Query logs via LogQL API
-ssh root@95.216.229.236 "curl -s -G 'localhost:3100/loki/api/v1/query_range' --data-urlencode 'query={container_name=~\"comfy-.*\"}' --data-urlencode 'limit=20' | python3 -m json.tool | head -50"
+ssh root@$VERDA_IP "curl -s -G 'localhost:3100/loki/api/v1/query_range' --data-urlencode 'query={container_name=~\"comfy-.*\"}' --data-urlencode 'limit=20' | python3 -m json.tool | head -50"
 
 # Check available labels
-ssh root@95.216.229.236 "curl -s localhost:3100/loki/api/v1/labels"
+ssh root@$VERDA_IP "curl -s localhost:3100/loki/api/v1/labels"
 
 # Check storage usage (data stored in /tmp/loki, NOT /var/lib/loki)
-ssh root@95.216.229.236 "du -sh /tmp/loki/"
+ssh root@$VERDA_IP "du -sh /tmp/loki/"
 
 # Check which containers are being indexed
-ssh root@95.216.229.236 "curl -s localhost:3100/loki/api/v1/label/container_name/values | python3 -m json.tool"
+ssh root@$VERDA_IP "curl -s localhost:3100/loki/api/v1/label/container_name/values | python3 -m json.tool"
 ```
 
 ## LogQL Query Syntax
