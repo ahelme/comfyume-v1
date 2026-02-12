@@ -102,9 +102,13 @@ def _apply_execution_patch():
             )
 
             logger.info(f"Proxying execution to QM: {prompt_id} ({len(prompt)} nodes)")
-            response = urllib.request.urlopen(req, timeout=300)
+            # 600s timeout: cold start (60-210s) + model load (60-180s) + inference (10-60s)
+            response = urllib.request.urlopen(req, timeout=600)
             result = json.loads(response.read())
-            logger.info(f"QM response status: {result.get('status')}")
+            logger.info(f"QM response: status={result.get('status')}, has_result={bool(result.get('result'))}")
+            if result.get("result"):
+                qm_outputs = result["result"].get("outputs", {})
+                logger.info(f"QM result: execution_status={result['result'].get('execution_status')}, output_nodes={list(qm_outputs.keys())}")
 
             # Stop heartbeat
             heartbeat_active.clear()
