@@ -171,11 +171,12 @@ async def get_queue_status():
 # Job Management Endpoints
 # ============================================================================
 
-async def poll_serverless_history(prompt_id: str, max_wait: int = 300, poll_interval: float = 2.0) -> dict:
+async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_interval: float = 2.0) -> dict:
     """Poll serverless /api/history/{prompt_id} until execution completes.
 
-    Serverless cold start can take 60-180s (container spin-up + model loading),
-    then inference takes 10-30s. max_wait=300 covers worst case.
+    Serverless cold start + model loading can block HTTP for 200+ seconds.
+    With 10s per-poll timeout, we fail fast and retry often.
+    max_wait=600 covers worst case: cold start + model load + inference.
     """
     if not serverless_client:
         raise HTTPException(status_code=503, detail="Serverless client not initialized")
@@ -188,9 +189,10 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 300, poll_inte
         poll_count += 1
         elapsed = time.monotonic() - start_time
         try:
+            # 10s timeout: fail fast when server is blocked by model loading
             response = await serverless_client.get(
                 f"/history/{prompt_id}",
-                timeout=httpx.Timeout(30.0),
+                timeout=httpx.Timeout(10.0),
             )
             if response.status_code == 200:
                 history = response.json()
@@ -200,31 +202,32 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 300, poll_inte
                     completed = status.get("completed", False)
                     status_str = status.get("status_str", "unknown")
 
-                    # Detailed logging on first poll and every 15th poll
-                    if poll_count <= 3 or poll_count % 15 == 0:
-                        output_keys = list(entry.get("outputs", {}).keys())
+                    # Always log when found in history (important for debugging)
+                    if poll_count <= 5 or poll_count % 15 == 0 or completed:
+                        outputs = entry.get("outputs", {})
+                        output_summary = {
+                            nid: list(nout.keys()) for nid, nout in outputs.items()
+                        }
                         logger.info(
                             f"History poll #{poll_count} ({elapsed:.0f}s): "
                             f"completed={completed}, status={status_str}, "
-                            f"output_nodes={output_keys}, "
-                            f"status_keys={list(status.keys())}"
+                            f"outputs={output_summary}"
                         )
-                    elif poll_count % 5 == 0:
+                    elif poll_count % 10 == 0:
                         logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): completed={completed}, status={status_str}")
 
                     if completed:
                         logger.info(f"Execution completed after {elapsed:.0f}s ({poll_count} polls)")
                         return entry
                 else:
-                    # Log available keys to debug response structure
-                    if poll_count <= 3:
+                    if poll_count <= 3 or poll_count % 30 == 0:
                         logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): prompt_id not in history. Keys: {list(history.keys())[:5]}")
-                    elif poll_count % 10 == 0:
-                        logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): prompt_id not in history yet")
             else:
                 logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): HTTP {response.status_code}")
         except httpx.TimeoutException:
-            logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): request timed out (30s)")
+            # Only log periodically — timeout is expected during model loading
+            if poll_count <= 2 or poll_count % 10 == 0:
+                logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): timeout (server busy, likely loading model)")
         except Exception as e:
             logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): error: {type(e).__name__}: {e}")
 
@@ -240,6 +243,13 @@ async def fetch_serverless_images(history_entry: dict) -> list:
 
     images = []
     outputs = history_entry.get("outputs", {})
+
+    # Debug: log full output structure when investigating image delivery
+    if not outputs:
+        logger.warning(f"History entry has no outputs. Top-level keys: {list(history_entry.keys())}")
+    else:
+        for nid, nout in outputs.items():
+            logger.info(f"Output node {nid}: keys={list(nout.keys())}, images={len(nout.get('images', []))}")
 
     for node_id, node_output in outputs.items():
         for img_info in node_output.get("images", []):
