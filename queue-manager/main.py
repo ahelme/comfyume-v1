@@ -236,79 +236,77 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
     raise HTTPException(status_code=504, detail=f"Serverless execution timed out after {max_wait}s ({poll_count} polls)")
 
 
-async def fetch_serverless_images(history_entry: dict) -> list:
-    """Download output images from serverless container based on history entry."""
-    if not serverless_client:
-        return []
+async def fetch_serverless_images(history_entry: dict, user_id: str) -> dict:
+    """Get output images from serverless execution and save to local outputs.
 
-    images = []
+    Strategy: SFS first (shared storage), HTTP fallback (serverless /view API).
+    The serverless container saves images to /mnt/sfs/outputs/ via a startup
+    wrapper script. The QM reads them directly from SFS (same NFS mount).
+    If SFS isn't available, falls back to HTTP download via /view endpoint.
+
+    Returns ComfyUI-compatible output metadata: {node_id: {images: [...]}}
+    """
     outputs = history_entry.get("outputs", {})
 
-    # Debug: log full output structure when investigating image delivery
     if not outputs:
         logger.warning(f"History entry has no outputs. Top-level keys: {list(history_entry.keys())}")
-    else:
-        for nid, nout in outputs.items():
-            logger.info(f"Output node {nid}: keys={list(nout.keys())}, images={len(nout.get('images', []))}")
+        return {}
+
+    # Prepare local output directory for this user
+    local_output_dir = Path(settings.outputs_path) / user_id
+    local_output_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_outputs = {}
+    sfs_output_dir = Path("/mnt/sfs/outputs")
 
     for node_id, node_output in outputs.items():
-        for img_info in node_output.get("images", []):
+        img_list = node_output.get("images", [])
+        logger.info(f"Output node {node_id}: {len(img_list)} image(s), keys={list(node_output.keys())}")
+
+        for img_info in img_list:
             filename = img_info.get("filename")
             subfolder = img_info.get("subfolder", "")
-            img_type = img_info.get("type", "output")
-
             if not filename:
                 continue
 
-            try:
-                params = {"filename": filename, "type": img_type}
-                if subfolder:
-                    params["subfolder"] = subfolder
+            saved = False
 
-                response = await serverless_client.get("/view", params=params)
-                if response.status_code == 200:
-                    images.append({
-                        "data": response.content,
-                        "filename": filename,
-                        "subfolder": subfolder,
-                        "type": img_type,
-                        "node_id": node_id,
-                        "content_type": response.headers.get("content-type", "image/png"),
-                    })
-                    logger.info(f"Downloaded image: {filename} ({len(response.content)} bytes)")
-                else:
-                    logger.warning(f"Failed to download {filename}: HTTP {response.status_code}")
-            except Exception as e:
-                logger.error(f"Error downloading {filename}: {e}")
+            # Strategy 1: Read from SFS (shared NFS between serverless + app server)
+            sfs_path = sfs_output_dir / subfolder / filename if subfolder else sfs_output_dir / filename
+            if sfs_path.exists():
+                import shutil
+                dest = local_output_dir / filename
+                shutil.copy2(str(sfs_path), str(dest))
+                logger.info(f"SFS image: {sfs_path} -> {dest} ({dest.stat().st_size} bytes)")
+                saved = True
 
-    return images
+            # Strategy 2: HTTP download from serverless /view API (fallback)
+            if not saved and serverless_client:
+                try:
+                    params = {"filename": filename, "type": img_info.get("type", "output")}
+                    if subfolder:
+                        params["subfolder"] = subfolder
+                    response = await serverless_client.get("/view", params=params, timeout=httpx.Timeout(30.0))
+                    if response.status_code == 200:
+                        dest = local_output_dir / filename
+                        dest.write_bytes(response.content)
+                        logger.info(f"HTTP image: {filename} ({len(response.content)} bytes)")
+                        saved = True
+                    else:
+                        logger.warning(f"HTTP /view failed for {filename}: HTTP {response.status_code}")
+                except Exception as e:
+                    logger.warning(f"HTTP download failed for {filename}: {e}")
 
-
-async def save_output_images(user_id: str, images: list) -> dict:
-    """Save downloaded images to the shared output directory.
-    Returns ComfyUI-compatible output metadata (node_id -> {images: [...]}).
-    """
-    output_dir = Path(settings.outputs_path) / user_id
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    saved_outputs = {}
-
-    for img in images:
-        node_id = img["node_id"]
-        filename = img["filename"]
-
-        save_path = output_dir / filename
-        save_path.write_bytes(img["data"])
-        logger.info(f"Saved: {save_path}")
-
-        if node_id not in saved_outputs:
-            saved_outputs[node_id] = {"images": []}
-
-        saved_outputs[node_id]["images"].append({
-            "filename": filename,
-            "subfolder": user_id,
-            "type": "output",
-        })
+            if saved:
+                if node_id not in saved_outputs:
+                    saved_outputs[node_id] = {"images": []}
+                saved_outputs[node_id]["images"].append({
+                    "filename": filename,
+                    "subfolder": user_id,
+                    "type": "output",
+                })
+            else:
+                logger.error(f"Failed to retrieve image {filename} via both SFS and HTTP")
 
     return saved_outputs
 
@@ -350,19 +348,15 @@ async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
 
         logger.info(f"Execution completed successfully: {prompt_id}")
 
-        # 3. Download output images from serverless container
-        images = await fetch_serverless_images(history_entry)
-        logger.info(f"Downloaded {len(images)} image(s)")
+        # 3. Fetch and save output images (SFS first, HTTP fallback)
+        saved_outputs = await fetch_serverless_images(history_entry, user_id)
 
-        if not images:
-            logger.warning(f"No images in execution output for {prompt_id}")
+        if not saved_outputs:
+            logger.warning(f"No images saved for {prompt_id}")
             result["outputs"] = history_entry.get("outputs", {})
             return result
 
-        # 4. Save images to shared output directory (/outputs/{user_id}/)
-        saved_outputs = await save_output_images(user_id, images)
-
-        # 5. Return complete result with output metadata
+        logger.info(f"Saved outputs for {len(saved_outputs)} node(s)")
         result["outputs"] = saved_outputs
         result["execution_status"] = "success"
         return result
