@@ -129,6 +129,8 @@ services:
     volumes:
       - ${OUTPUTS_PATH}:/outputs
       - ${INPUTS_PATH}:/inputs
+      # SFS mount: serverless containers save images to shared NFS
+      - /mnt/sfs/outputs:/mnt/sfs/outputs:ro
     depends_on:
       redis:
         condition: service_healthy
