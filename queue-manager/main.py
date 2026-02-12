@@ -171,29 +171,66 @@ async def get_queue_status():
 # Job Management Endpoints
 # ============================================================================
 
-async def poll_serverless_history(prompt_id: str, max_wait: int = 240, poll_interval: float = 2.0) -> dict:
-    """Poll serverless /api/history/{prompt_id} until execution completes."""
+async def poll_serverless_history(prompt_id: str, max_wait: int = 300, poll_interval: float = 2.0) -> dict:
+    """Poll serverless /api/history/{prompt_id} until execution completes.
+
+    Serverless cold start can take 60-180s (container spin-up + model loading),
+    then inference takes 10-30s. max_wait=300 covers worst case.
+    """
     if not serverless_client:
         raise HTTPException(status_code=503, detail="Serverless client not initialized")
 
-    elapsed = 0.0
-    while elapsed < max_wait:
+    import time
+    start_time = time.monotonic()
+    poll_count = 0
+
+    while (time.monotonic() - start_time) < max_wait:
+        poll_count += 1
+        elapsed = time.monotonic() - start_time
         try:
-            response = await serverless_client.get(f"/history/{prompt_id}")
+            response = await serverless_client.get(
+                f"/history/{prompt_id}",
+                timeout=httpx.Timeout(30.0),
+            )
             if response.status_code == 200:
                 history = response.json()
                 if prompt_id in history:
                     entry = history[prompt_id]
                     status = entry.get("status", {})
-                    if status.get("completed", False):
+                    completed = status.get("completed", False)
+                    status_str = status.get("status_str", "unknown")
+
+                    # Detailed logging on first poll and every 15th poll
+                    if poll_count <= 3 or poll_count % 15 == 0:
+                        output_keys = list(entry.get("outputs", {}).keys())
+                        logger.info(
+                            f"History poll #{poll_count} ({elapsed:.0f}s): "
+                            f"completed={completed}, status={status_str}, "
+                            f"output_nodes={output_keys}, "
+                            f"status_keys={list(status.keys())}"
+                        )
+                    elif poll_count % 5 == 0:
+                        logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): completed={completed}, status={status_str}")
+
+                    if completed:
+                        logger.info(f"Execution completed after {elapsed:.0f}s ({poll_count} polls)")
                         return entry
+                else:
+                    # Log available keys to debug response structure
+                    if poll_count <= 3:
+                        logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): prompt_id not in history. Keys: {list(history.keys())[:5]}")
+                    elif poll_count % 10 == 0:
+                        logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): prompt_id not in history yet")
+            else:
+                logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): HTTP {response.status_code}")
+        except httpx.TimeoutException:
+            logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): request timed out (30s)")
         except Exception as e:
-            logger.warning(f"History poll error (will retry): {e}")
+            logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): error: {type(e).__name__}: {e}")
 
         await asyncio.sleep(poll_interval)
-        elapsed += poll_interval
 
-    raise HTTPException(status_code=504, detail=f"Serverless execution timed out after {max_wait}s")
+    raise HTTPException(status_code=504, detail=f"Serverless execution timed out after {max_wait}s ({poll_count} polls)")
 
 
 async def fetch_serverless_images(history_entry: dict) -> list:
