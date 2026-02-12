@@ -95,8 +95,9 @@ Storage:            SFS mounted at /mnt/sfs
 
 **Start Command:**
 ```bash
-python /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml
+python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml --output-directory /mnt/sfs/outputs
 ```
+**Note:** `--output-directory /mnt/sfs/outputs` is REQUIRED for image delivery. Without it, generated images stay on the container's local filesystem and cannot be retrieved by the Queue Manager.
 
 **Environment Variables:**
 - `HF_HOME=/mnt/sfs/cache/huggingface`
