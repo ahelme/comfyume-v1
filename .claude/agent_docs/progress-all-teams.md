@@ -17,7 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-15
 
-- [MELLO-ONE-TEAM] (uncommitted) docs: 3-tier deployment workflow, CLAUDE.md overhaul, Verda rebrand, serverless gotchas (#29, #31) — 20 files, +271/-139
+- [MELLO-ONE-TEAM] 5ba7039 docs: 3-tier deployment workflow, team renames, Verda rebrand (#29, #31) — 32 files, +372/-181
+- [MELLO-ONE-TEAM] 0c762c0 merge: incorporate main (PRs #32-#35) into testing-mello-team-one
 
 ## 2026-02-12
 

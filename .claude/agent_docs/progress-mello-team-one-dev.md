@@ -47,18 +47,18 @@
 🔴 **(CURRENT) - comfyume-v1 #29, #30, #31 - Post-Ralph: docs, testing server, piece-by-piece**
     - Created: 2026-02-12, Updated: 2026-02-15
     - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
-    - PHASE 1.5 (IN PROGRESS): Deployment workflow, CLAUDE.md overhaul
+    - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames
       - DONE: 3-tier deployment workflow (testing→staging→production)
       - DONE: Blue-green deploy via DNS switch (TTL 60s)
-      - DONE: Dev directories: testing-main/staging-main/production-main + scripts
+      - DONE: Per-team testing dirs (testing-mello-team-one, etc.)
+      - DONE: Branch rename: mello-team-one → testing-mello-team-one
+      - DONE: Team renames: admin-panel-team → mello-admin-panel-team, testing-scripts-team → mello-scripts-team
       - DONE: SFS-prod + SFS-clone storage model
       - DONE: Verda rebrand (ex. DataCrunch) — updated ~25 files
-      - DONE: Serverless inference gotcha added to CLAUDE.md critical gotchas
-      - DONE: Architecture diagrams annotated with SFS flow + load-balancer warning
-      - DONE: Git workflow merged into CLAUDE.md (commits, issues, task mgmt)
-      - DONE: Updated Mello role (dev+user-dir, not staging/backup)
-      - DONE: infrastructure-registry.md link added (private scripts repo)
-      - IN PROGRESS: Username rename dev→aeon (Mello + Verda)
+      - DONE: Serverless inference gotcha + architecture diagrams annotated
+      - DONE: Git workflow merged into CLAUDE.md, infrastructure.md rewritten
+      - DONE: PR #36 merged to main
+      - PENDING: Username rename dev→aeon (#37)
     - PHASE 2 (NEXT): Create testing instance, fix restore script, test changes
       - Create new Verda instance + scratch disk + SFS-clone
       - Fix restore script bugs (scripts #41, #42, #43)
