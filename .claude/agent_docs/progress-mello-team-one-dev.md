@@ -53,12 +53,13 @@
       - DONE: Renamed 3 production resources in Verda console (OS vol, scratch disk, SFS)
       - DONE: Deleted 2 orphan block volumes (004, 005). Vol 003 locked (1-month rental).
       - DONE: Created SFS-clone: CLONE_SFS-Model-Vault-16-Feb-97Es5EBC (220GB, #38)
-      - DONE: SFS-prod → SFS-clone rsync running (~128GB, ~30min)
+      - DONE: SFS-prod → SFS-clone rsync COMPLETE (128GB, 3306 files, ~15min at ~143MB/s)
       - DONE: Documented SFS console rename → pseudopath change risk (gotchas.md)
       - DONE: Updated #37 with clarified plan (new user, not rename)
-      - IN PROGRESS: Spinning up GPU instance (RTX A6000 spot, FIN-01) to check Temp-Model-Vault (#38)
-      - NOTE: No CPU instances available in FIN-01. SFS is regional — must stay same location.
-      - NOTE: SFS rsync was ~42% (~55GB/128GB, ~150MB/s) — likely finished by next session
+      - DONE: Created #38 for testing instance + model vault check flow
+      - IN PROGRESS: Aeon spinning up RTX A6000 spot (FIN-01, €0.14/hr) — no CPU avail
+      - IN PROGRESS: Temp-Model-Vault restored from deleted state to check for extra models
+      - NOTE: SFS is regional — must stay FIN-01 for SFS access
       - PENDING: Username rename dev→aeon (#37)
     - PHASE 2 (NEXT): Set up testing instance, fix restore script, test changes
       - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
