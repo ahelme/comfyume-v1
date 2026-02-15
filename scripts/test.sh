@@ -5,7 +5,7 @@
 #
 # Usage: ./scripts/test.sh
 #
-# Architecture: Verda CPU app server + DataCrunch serverless inference
+# Architecture: Verda CPU app server + Verda serverless inference
 # No local GPU workers — inference via direct HTTP to serverless endpoints
 #
 

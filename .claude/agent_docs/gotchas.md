@@ -2,6 +2,14 @@
 
 For critical gotchas see CLAUDE.md "CRITICAL GOTCHAS" section.
 
+## Verda Rebrand (ex. DataCrunch)
+
+Verda was previously called "DataCrunch". The rebrand means:
+- **ALL docs, code comments, specs** must reference **Verda**, not DataCrunch
+- **API endpoint URLs** may still use `containers.datacrunch.io` — verify current domain before updating URLs
+- **When writing new docs**: always use "Verda". First mention in standalone docs: "Verda (ex. DataCrunch)"
+- **Check for stale refs**: search for `DataCrunch` / `datacrunch` across the entire codebase when touching related files
+
 ## Issue #54 RESOLVED: Workflow Save/Load Now Working
 
 **Issue #54: Workflow save/load was broken** -- POST to userdata API returned 405 through nginx

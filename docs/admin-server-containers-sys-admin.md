@@ -73,11 +73,11 @@ chmod 1777 /mnt/sfs/outputs
 
 ---
 
-## 2. DataCrunch Container Start Command (BUG-003)
+## 2. Verda (ex. DataCrunch) Container Start Command (BUG-003)
 
 ### Problem
 
-The DataCrunch serverless container was configured via Verda Console with start command:
+The Verda serverless container was configured via Verda Console with start command:
 ```bash
 python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml
 ```
@@ -165,7 +165,7 @@ exec python3 /workspace/ComfyUI/main.py \
 
 ### Purpose
 
-Used as the DataCrunch container start command instead of raw `python3 ...`. Ensures SFS permissions are correct on every container boot. This is important because:
+Used as the Verda container start command instead of raw `python3 ...`. Ensures SFS permissions are correct on every container boot. This is important because:
 
 1. Serverless containers are ephemeral (scale 0-10)
 2. SFS permissions might be reset by maintenance operations
@@ -350,7 +350,7 @@ docker image prune -a             # Safer: only images
 |---|---|---|
 | Code changes | Git repo → deploy.sh | Commit, push, `./scripts/deploy.sh` |
 | SFS file/permissions | SSH to quiet-city | Add to `restore-verda-instance.sh` |
-| DataCrunch container config | Verda SDK or Console | Add to deployment automation |
+| Verda container config | Verda SDK or Console | Add to deployment automation |
 | SSL certificate | Upload to `/etc/ssl/` | Add to restore script |
 | DNS records | Domain registrar | Document in admin-backup-restore.md |
 | Docker volumes | docker-compose.yml | Commit to git |

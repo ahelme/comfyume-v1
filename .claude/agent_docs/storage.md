@@ -9,7 +9,9 @@ Reference for storage options on Verda GPU cloud.
 - No provisioning gotchas - just mount and go
 - Multiple instances can share same storage
 - Mount: `mount -t nfs <sfs-endpoint>:/share /mnt/sfs`
-- Structure: `/mnt/sfs/models/` (ComfyUI models), `/mnt/sfs/cache/` (container, config, scripts)
+- Structure: `/mnt/sfs/models/` (ComfyUI models), `/mnt/sfs/outputs/` (serverless image output), `/mnt/sfs/cache/` (container, config, scripts)
+- **Permissions:** `/mnt/sfs/outputs/` must be `chmod 1777` — serverless containers run as uid 1000, not root
+- **Why SFS for outputs:** Serverless containers are load-balanced — HTTP GET to a different instance returns 404. SFS is shared NFS, visible to all containers + app server
 
 ## Block Storage -- Alternative
 

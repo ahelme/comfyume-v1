@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Serverless Inference E2E Test for ComfyuME
-# Tests the full job lifecycle through serverless containers (DataCrunch H200/B300)
+# Tests the full job lifecycle through serverless containers (Verda H200/B300)
 #
 # Usage:
 #   ./scripts/test-serverless.sh              # Test active endpoint (config check + submit)
@@ -87,7 +87,7 @@ if [ -n "${SERVERLESS_API_KEY}" ]; then
     KEY_PREVIEW="${SERVERLESS_API_KEY:0:8}..."
     pass_test "SERVERLESS_API_KEY configured (${KEY_PREVIEW})"
 else
-    fail_test "SERVERLESS_API_KEY not set" "Required for DataCrunch auth"
+    fail_test "SERVERLESS_API_KEY not set" "Required for Verda auth"
 fi
 
 # Check all endpoint vars

@@ -27,7 +27,7 @@ Comprehensive admin dashboard for managing the ComfyuME platform, including infr
 | Metric | Source | Display |
 |--------|--------|---------|
 | Mello VPS Status | systemd/docker | 🟢 Online / 🔴 Offline |
-| Verda Instance | DataCrunch API | 🟢 Running / 🟡 Stopped / ⚫ None |
+| Verda Instance | Verda API | 🟢 Running / 🟡 Stopped / ⚫ None |
 | Serverless Status | Container endpoint health | 🟢 Ready / 🟡 Cold / 🔴 Error |
 | Redis | redis-cli ping | 🟢 Connected / 🔴 Disconnected |
 | Tailscale VPN | tailscale status | 🟢 Connected / 🔴 Disconnected |
@@ -174,7 +174,7 @@ Comprehensive admin dashboard for managing the ComfyuME platform, including infr
 ```
 REDIS_PASSWORD=****
 SERVERLESS_API_KEY=****
-DATACRUNCH_CLIENT_ID=kZqx...
+VERDA_CLIENT_ID=kZqx...
 SERVERLESS_ACTIVE=h200-spot
 INFERENCE_MODE=serverless
 ```
@@ -238,7 +238,7 @@ POST /admin/api/backup/{type}    - Trigger backup
 | Disk usage | `df -h` + `du -sh` for directories |
 | R2 bucket sizes | AWS CLI `aws s3 ls --summarize` |
 | User activity | Redis pub/sub + WebSocket connections |
-| Deployment status | DataCrunch API |
+| Deployment status | Verda API |
 | OS info | `/etc/os-release`, `uname -r` |
 
 ### Frontend Stack
@@ -298,4 +298,4 @@ POST /admin/api/backup/{type}    - Trigger backup
 
 - GitHub Issue: TBD (create after spec approval)
 - Current admin: `/home/dev/projects/comfyume/admin/`
-- DataCrunch API docs: https://docs.datacrunch.io/
+- Verda API docs: https://docs.datacrunch.io/

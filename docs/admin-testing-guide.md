@@ -14,7 +14,7 @@
 
 ComfyuME uses a split architecture:
 - **App server** (Verda CPU): nginx, Redis, queue-manager, admin dashboard, 20 frontend containers
-- **Inference**: Serverless containers on DataCrunch (H200/B300) via direct HTTP — no local GPU workers
+- **Inference**: Serverless containers on Verda (ex. DataCrunch) (H200/B300) via direct HTTP — no local GPU workers
 
 Three test scripts validate different aspects:
 
@@ -183,9 +183,9 @@ Browser-based checks to complement automated tests:
 | Issue | Fix |
 |-------|-----|
 | INFERENCE_MODE not serverless | Set `INFERENCE_MODE=serverless` in `.env`, restart QM |
-| API key rejected (401/403) | Verify `SERVERLESS_API_KEY` matches DataCrunch dashboard |
-| Endpoint unreachable (000) | Container may be cold — wait and retry, or check DataCrunch console |
-| Job timeout | Increase `--timeout`, check DataCrunch deployment status |
+| API key rejected (401/403) | Verify `SERVERLESS_API_KEY` matches Verda dashboard |
+| Endpoint unreachable (000) | Container may be cold — wait and retry, or check Verda console |
+| Job timeout | Increase `--timeout`, check Verda deployment status |
 
 ### test-connectivity.sh failures
 

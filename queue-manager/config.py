@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # Active endpoint selector: "default" | "h200-spot" | "h200-on-demand" | "b300-spot" | "b300-on-demand"
     serverless_active: str = "default"
 
-    # Verda/DataCrunch API Key (required for serverless auth)
+    # Verda API Key (required for serverless auth)
     serverless_api_key: Optional[str] = None
 
     # Worker configuration (for local/redis modes)

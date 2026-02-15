@@ -6,7 +6,7 @@
 
 ## CONTEXT
 
-**We are the Admin Panel Team.** Branch: `admin-panel-team`.
+**We are the Mello Admin Panel Team.** Branch: `mello-admin-panel-team`.
 
 **Production:** aiworkshop.art runs on Verda CPU instance (see `VERDA_PUBLIC_IP` in `.env`), NOT Mello.
 
@@ -98,7 +98,7 @@ Subdomains reverse-proxied through Mello nginx → Verda via Tailscale. Let's En
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-admin-panel-team-dev.md` top section
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
 - [ ] Run `/verda-monitoring-check` to verify stack is healthy
 - [ ] Fix #101: re-run sed without `^` anchor via Verda console
 - [ ] Investigate result delivery: how do serverless outputs get back to user?
