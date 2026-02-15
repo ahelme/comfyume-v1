@@ -456,10 +456,22 @@ NOTE: Spot instances are used for affordability but can be terminated anytime --
 - [Verda Instances](https://docs.verda.com/cpu-and-gpu-instances/set-up-a-gpu-instance) - Setup an instance
 - [Verda Serverless Containers](https://docs.verda.com/containers/overview) - Setup a container
 
-### Volume Naming Convention
+### Resource Naming Convention
 
-- `OS-*` = OS disks (will have Ubuntu installed)
-- `Volume-*` = Data volumes (your actual block storage)
+All Verda resources (instances, block volumes, SFS) use environment prefixes in their **console names**:
+
+| Prefix | Environment | Example |
+|--------|-------------|---------|
+| `PROD_*` | Production | `PROD_OS-hiq7F8JM`, `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi` |
+| `CLONE_*` | Cloned from prod (testing + staging shared) | `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` |
+| `STAG_*` | Staging-only | `STAG_OS-...`, `STAG_Scratch-Disk-...` |
+| `TEST_*` | Testing-only | `TEST_OS-...`, `TEST_Scratch-Disk-...` |
+| `UNUSED_*` | Old/orphaned, pending deletion | `UNUSED_OLD-GPU-INSTANCE-OS-5qsQtVzV` |
+
+Volume type suffixes (after the prefix):
+- `OS-*` = OS disks (Ubuntu installed)
+- `Scratch-Disk-*` or `Block-Storage-*` = Data volumes (ephemeral user data)
+- `SFS-*` = Shared filesystem (models, outputs)
 
 ### After Provisioning
 
@@ -570,11 +582,11 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [project_structure.md](.claude/agent_docs/project_structure.md) | finding files, dir layout | data/user_data/userXXX/ · .users.yml auto-gen · scripts/ admin/ nginx/ qm/ |
 | [project_management.md](.claude/agent_docs/project_management.md) | commits, issues, PRs | conventional commits · ref GH# always · `gh issue` needs --json |
 | [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-04-10 · !R2 needs .eu |
-| [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | 3-tier Verda (prod·staging·testing) · Mello=dev+user-dir · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 |
+| [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | 3-tier Verda (prod·staging·testing) · Mello=dev+user-dir · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 · resource naming: PROD_ STAG_ TEST_ UNUSED_ |
 | [infrastructure-registry.md](https://github.com/ahelme/comfymulti-scripts/blob/main/infrastructure-registry.md) | IPs, instance names, SFS IDs, secrets refs | PRIVATE scripts repo · actual resource IDs · update when provisioning |
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |
 | [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · /outputs/ needs 1777 perms · block=single-instance · !WIPED if attached@provisioning |
-| [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent · !Verda ex.DataCrunch rebrand |
+| [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | !SFS console rename→pseudopath change on reboot · !SFS needs share settings per instance · nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent · !Verda ex.DataCrunch rebrand |
 | [external-references.md](.claude/agent_docs/external-references.md) | architecture research | Visionatrix · SaladTech · Modal · 9elements — multi-user patterns |
 
 ---

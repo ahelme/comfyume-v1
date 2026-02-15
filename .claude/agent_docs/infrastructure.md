@@ -21,6 +21,7 @@ Each Verda environment runs identical stack: nginx, queue-manager, Redis, admin,
 | Machine | Role | Specs | Notes |
 |---|---|---|---|
 | **Verda (production)** | Live workshop platform | CPU.8V.32G, Ubuntu 24.04 | quiet-city-purrs-fin-01 (65.108.33.101), Tailscale 100.89.38.43 |
+| **Verda (testing)** | Model vault check (#38) | 1x RTX A6000, 10 CPU, 60GB RAM | testing-sharp-book-cracks-fin-01 (135.181.63.140). Spot €0.1446/hr. Ephemeral. |
 | **Verda (staging/testing)** | Pre-production validation | CPU instance (ephemeral) | Created as needed, deleted when done |
 | **Mello** | Dev machine, user dir, Tailscale node | Hetzner CAX31, 8 vCPU, 16GB, 80GB | comfy.ahelme.net (100.99.216.71). NO containers — dev dirs + scripts only |
 | **Verda Serverless** | Serverless GPU inference | H200 141GB / B300 288GB | Spot or on-demand, INFERENCE_MODE=serverless |
@@ -36,6 +37,10 @@ Each Verda environment runs identical stack: nginx, queue-manager, Redis, admin,
 | **OS disk** | Verda Block Storage | Ubuntu OS + Docker | One per instance |
 | **R2 buckets** | Cloudflare R2 (.eu) | Off-site backups: models, config, worker image, user files | Remote (3 buckets) |
 | **Mello** | Hetzner SSD | Git repos, dev scripts | Mello only |
+
+### Resource Naming Convention
+
+All Verda resources use environment prefixes in console names: `PROD_*` (production), `CLONE_*` (cloned from prod, testing+staging shared), `STAG_*` (staging-only), `TEST_*` (testing-only), `UNUSED_*` (orphaned, pending deletion). Full registry in comfymulti-scripts `infrastructure-registry.md`.
 
 ## Services (per Verda environment)
 
