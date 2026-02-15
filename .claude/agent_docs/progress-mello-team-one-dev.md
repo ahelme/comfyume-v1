@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-11 - comfyume-v1 fresh start, new CPU instance
+**Doc Updated:** 2026-02-12 - Ralph Loop succeeded, image delivery fixed, post-Ralph docs
 
 ---
 # Project Progress Tracker
@@ -44,27 +44,36 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #1 - New CPU instance via restore script**
-    - Created: 2026-02-10, Updated: 2026-02-11
-    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
-    - PHASE: Serverless inference works, UI feedback partial, image delivery gap is main blocker
-    - DONE: Full list in Progress Reports 44-47 below. Key milestones:
-      - Core stack running (Redis, QM, admin, nginx, 20 frontends — all healthy)
-      - Nginx dynamic DNS, SSL cert (2026-05-12), .htpasswd restored
-      - Serverless inference confirmed: QM → DataCrunch H200 → HTTP 200 OK
-      - Extensions refactored to `comfyume-extensions/` with `extensions.conf` (PR #15)
-      - `scripts/deploy.sh` — git-based deploy, replaces SCP (PR #14, #15)
-      - Status banner: floating GPU progress indicator in redirect.js (PR #14)
-      - fix loop skill created for autonomous testing with Ralph Loop (PR #17, #18)
-      - CLAUDE.md rules: extensions separation + git flow deploy (PR #16)
-    - **DEPLOYMENT DRIFT RESOLVED**: All code committed, server in sync with git (6714c79)
-    - BLOCKER: Output images stranded on serverless container (never reach browser UI)
-    - INVESTIGATE: WebSocket connectivity — ComfyUI frontend WebSocket connects to local container, not serverless
+🔴 **(CURRENT) - comfyume-v1 #29, #30, #31 - Post-Ralph: docs, testing server, piece-by-piece**
+    - Created: 2026-02-12, Updated: 2026-02-12
+    - PHASE 1 (IN PROGRESS): Commit Ralph changes, create docs, update progress
+      - DONE: Ralph changes committed on `ralph-changes-unlogged` branch (PR #32)
+      - DONE: GH issues #29, #30, #31 created
+      - DONE: `docs/admin-changes-to-comfyume-v1.md` — complete changelog of all commits (#29)
+      - DONE: `docs/admin-server-containers-sys-admin.md` — server-side changes (#29)
+      - DONE: `docs/media-generation-flow.md` — end-to-end 21-step flow table (#8, #29)
+      - DONE: Progress files updated (this file + Ralph team)
+    - PHASE 2 (NEXT): Create testing instance, fix restore script, test changes
+      - Create new Verda instance + scratch disk + SFS
+      - Fix restore script bugs (scripts #41, #42, #43)
+      - Run restore, test end-to-end
+    - PHASE 3 (NEXT): Add advanced code piece by piece
     - INVESTIGATE: Variable warnings in .env on server (#7)
-    - NEXT: **Run fix loop**: `/ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
-    - NEXT: Solve image delivery: serverless → user browser (the BIG problem)
-    - NEXT: Complete app flow doc (#8), infrastructure config map (#9)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
+
+🟢 **RESOLVED - Image delivery gap (#22) — Ralph Loop overnight success**
+    - Created: 2026-02-11, Resolved: 2026-02-12
+    - Ralph Loop ran overnight (4 iterations), fixed 3 bugs:
+      - BUG-001: QM never fetched images from serverless (PRs #23-#28)
+      - BUG-002: SFS /mnt/sfs/outputs permissions 755→1777 (server-side)
+      - BUG-003: Missing --output-directory /mnt/sfs/outputs flag (Verda SDK)
+    - Result: Flux2 Klein 9B text-to-image passing all 8 QA criteria
+    - All changes committed via proper git flow
+
+🟢 **RESOLVED - New CPU instance via restore script (#1)**
+    - Created: 2026-02-10, Resolved: 2026-02-12
+    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
+    - 24 containers healthy, serverless inference working, images delivering
 
 🟢 **RESOLVED - Deployment drift between git, dev, and production**
     - Created: 2026-02-11, Resolved: 2026-02-11
@@ -79,6 +88,40 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 48 - 2026-02-12 - Post-Ralph: docs, git cleanup, Phase 1 (#29, #30)
+
+**Date:** 2026-02-12 | **Issues:** #22, #29, #30, #31 | **PRs:** #32
+
+### Context
+Ralph Loop ran overnight (2026-02-11 → 2026-02-12) and resolved the image delivery blocker. All 8 QA criteria passing for Flux2 Klein 9B workflow. This session commits Ralph's work and creates comprehensive documentation.
+
+### Ralph Loop results (overnight):
+- 4 iterations, 3 bugs found and fixed
+- BUG-001: QM never fetched images (PRs #23-#28, across 6 PRs)
+- BUG-002: SFS permissions 755→1777 (server-side, not in git)
+- BUG-003: Missing --output-directory flag (Verda SDK, not in git)
+- Workflow 1 (Flux2 Klein 9B): ALL 8 criteria passing
+
+### Commits this session:
+1. **PR #32** — `ralph-changes-unlogged` branch: qa-state.json, SERVERLESS_UPDATE.md, ralph-debug-hook.sh
+
+### Docs created this session:
+1. **`docs/admin-changes-to-comfyume-v1.md`** — Complete changelog of all 35 commits, 8 phases, with precise file/container/directory references
+2. **`docs/admin-server-containers-sys-admin.md`** — Server-side changes guide: SFS permissions, DataCrunch container config, wrapper script, SSL, nginx, Redis
+3. **`docs/media-generation-flow.md`** — 21-step end-to-end media generation flow table (button click → image in Assets sidebar), with columns for filenames, line numbers, dirs, containers, services
+
+### GH Issues created:
+- **#30** — Post-Ralph cleanup: commit changes, documentation, testing server
+- **#31** — Post-Ralph-Phase-2: testing site, restore script fixes (created by user)
+- (Note: #29 was created by user earlier)
+
+### Key decisions:
+- Ralph changes committed to separate `ralph-changes-unlogged` branch (not directly to main)
+- Documentation work on `mello-team-one` branch
+- Next: create testing instance for Phase 2
 
 ---
 

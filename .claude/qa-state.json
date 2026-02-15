@@ -1,15 +1,15 @@
 {
-  "last_updated": "2026-02-12T01:00:00Z",
-  "iteration": 3,
+  "last_updated": "2026-02-12T05:50:00Z",
+  "iteration": 4,
   "current_workflow": 1,
-  "phase": "fix",
+  "phase": "passed",
   "workflows": {
     "1_flux2_klein_9b": {
-      "status": "fixing:image-delivery",
+      "status": "passed",
       "file": "flux2_klein_9b_text_to_image.json",
-      "criteria_passed": ["load", "queue_response", "status_banner", "qm_serverless", "no_js_errors"],
-      "criteria_failed": ["output_display", "queue_history"],
-      "notes": "Implementing image delivery fix. 3 coordinated changes: 1) QM polls serverless history + downloads images + saves to /outputs, 2) serverless_proxy extension patches PromptExecutor.execute() for native queue, 3) redirect.js defers in serverless mode. Need to deploy and test."
+      "criteria_passed": ["load", "queue_response", "status_banner", "qm_serverless", "no_js_errors", "output_display", "queue_history", "sidebar_assets"],
+      "criteria_failed": [],
+      "notes": "All criteria passing. Image delivery fix: updated DataCrunch container start command via Verda SDK to add --output-directory /mnt/sfs/outputs. Fixed SFS directory permissions to 1777. Image saves to SFS, QM copies to local /outputs/user001/, frontend serves via /api/view."
     }
   },
   "bugs_found": [
@@ -17,31 +17,44 @@
       "id": "BUG-001",
       "title": "Image delivery gap — QM never fetches generated images from serverless",
       "root_cause": "submit_to_serverless() only POSTs /prompt, never fetches /api/history/{prompt_id} or /api/view to get actual images",
-      "status": "fix-in-progress",
+      "status": "fixed",
       "fix_approach": "3-part coordinated fix: QM fetches images, server-side proxy for native queue, output dir symlink",
-      "files_modified": [
-        "queue-manager/main.py",
-        "comfyume-extensions/serverless_proxy/__init__.py (NEW)",
-        "comfyume-extensions/queue_redirect/web/redirect.js",
-        "comfyume-extensions/extensions.conf",
-        "comfyui-frontend/docker-entrypoint.sh",
-        "scripts/generate-user-compose.sh",
-        "docker-compose.users.yml"
-      ],
       "severity": "blocker",
       "affects_all_workflows": true
+    },
+    {
+      "id": "BUG-002",
+      "title": "SFS outputs directory not writable by serverless container",
+      "root_cause": "mkdir created /mnt/sfs/outputs with 755 root:root permissions. ComfyUI runs as non-root (uid 1000) and cannot write.",
+      "status": "fixed",
+      "fix_approach": "chmod 1777 /mnt/sfs/outputs (sticky + world-writable). Updated wrapper script.",
+      "severity": "blocker"
+    },
+    {
+      "id": "BUG-003",
+      "title": "Serverless container startup doesn't include --output-directory",
+      "root_cause": "DataCrunch container start command configured via Verda Console only had --listen, --port, --extra-model-paths-config. No --output-directory flag, so ComfyUI saves to /workspace/ComfyUI/output/ (container-local, not SFS).",
+      "status": "fixed",
+      "fix_approach": "Updated DataCrunch deployment via Verda SDK: added --output-directory /mnt/sfs/outputs to cmd array.",
+      "severity": "blocker"
     }
   ],
   "fixes_applied": [
     "redirect.js: status banner for GPU progress feedback (PR #14)",
     "Dockerfile: self-healing custom nodes mechanism (c613a06)",
     "extensions.conf: config-driven extension deployment (PR #15)",
-    "nginx: dynamic DNS resolution (93bf1a1)"
+    "nginx: dynamic DNS resolution (93bf1a1)",
+    "feat: image delivery gap fix — serverless proxy + QM image fetching (PR #23)",
+    "fix: set history_result in serverless proxy for ComfyUI v0.11.0 (PR #25)",
+    "fix: improve serverless polling diagnostics and timeouts (PR #26)",
+    "fix: increase poll timeout to 600s, reduce per-request to 10s (PR #27)",
+    "feat: SFS-based image delivery for serverless mode (PR #28)",
+    "fix: SFS /mnt/sfs/outputs permissions to 1777 (server-side)",
+    "fix: DataCrunch container start command updated with --output-directory /mnt/sfs/outputs (Verda SDK)"
   ],
   "known_issues": [
-    "IMAGE DELIVERY GAP: fix coded, needs deploy + test",
-    "default_workflow_loader DISABLED: canvas null errors.",
-    "WebSocket: native ComfyUI WebSocket now used (via serverless_proxy), no bridge needed.",
-    "Queue history: should work once serverless_proxy patches execution (native ComfyUI history)."
+    "Cold start takes 5+ min (model loading on fresh H200 instance)",
+    "Old queue history entries show broken thumbnails (from pre-fix runs)",
+    "default_workflow_loader DISABLED: canvas null errors"
   ]
 }
