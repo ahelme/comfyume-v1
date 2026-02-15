@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-11
+**Doc Updated:** 2026-02-12
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -15,8 +15,21 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ---
 
+## 2026-02-12
+
+- [MELLO-ONE-TEAM] 0f9c503 docs: post-Ralph documentation — changelog, server admin, media flow (comfyume-v1 #29, #30, PR #33)
+- [MELLO-ONE-TEAM] e6fd900 fix: log Ralph Loop results — QA passed, image delivery fixed (comfyume-v1 #22, PR #32)
+- [RALPH] f79eefc feat: SFS-based image delivery for serverless mode (comfyume-v1 #22, PR #28)
+- [RALPH] 48fb876 fix: increase poll timeout to 600s, reduce per-request to 10s (comfyume-v1 #22, PR #27)
+- [RALPH] b4116d1 fix: improve serverless polling diagnostics and timeouts (comfyume-v1 #22, PR #26)
+
 ## 2026-02-11
 
+- [RALPH] 77c3a6e fix: set history_result in serverless proxy for ComfyUI v0.11.0 (comfyume-v1 #22, PR #25)
+- [RALPH] b93fe9f fix: /api/health route alias for nginx proxy path (comfyume-v1 #22, PR #24)
+- [RALPH] 74bccc0 feat: image delivery gap fix — serverless proxy + QM image fetching (comfyume-v1 #22, PR #23)
+- [RALPH] 97c4f0c refactor: rename comfyui-qa-loop to comfyui-fix-loop (comfyume-v1 #22, PR #21)
+- [RALPH] cf0be64 docs: QA iteration 1 — Flux2 Klein 9B tested, image delivery gap confirmed (comfyume-v1 #22, PR #21)
 - [RALPH] 467b4d7 fix: reference .env for QA test user credentials instead of hardcoding (comfyume-v1 #1, PR #21)
 - [RALPH] e258c8c feat: create Mello Ralph Team — autonomous engineering agent team identity (comfyume-v1 #1, PR #20)
 - [MELLO-ONE-TEAM] bd358f3 fix: fix loop — context management, 50 iterations, auto-resume, stuck handler (comfyume-v1 #1, PR #18)
