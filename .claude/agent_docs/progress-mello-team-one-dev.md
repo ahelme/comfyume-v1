@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-12 - Ralph Loop succeeded, image delivery fixed, post-Ralph docs
+**Doc Updated:** 2026-02-15 - Verda resource naming, SFS clone, testing instance prep
 
 ---
 # Project Progress Tracker
@@ -44,25 +44,24 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #29, #30, #31 - Post-Ralph: docs, testing server, piece-by-piece**
+🔴 **(CURRENT) - comfyume-v1 #31, #37, #38 - Phase 2: testing instance, username rename, infra cleanup**
     - Created: 2026-02-12, Updated: 2026-02-15
     - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
-    - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames
-      - DONE: 3-tier deployment workflow (testing→staging→production)
-      - DONE: Blue-green deploy via DNS switch (TTL 60s)
-      - DONE: Per-team testing dirs (testing-mello-team-one, etc.)
-      - DONE: Branch rename: mello-team-one → testing-mello-team-one
-      - DONE: Team renames: admin-panel-team → mello-admin-panel-team, testing-scripts-team → mello-scripts-team
-      - DONE: SFS-prod + SFS-clone storage model
-      - DONE: Verda rebrand (ex. DataCrunch) — updated ~25 files
-      - DONE: Serverless inference gotcha + architecture diagrams annotated
-      - DONE: Git workflow merged into CLAUDE.md, infrastructure.md rewritten
-      - DONE: PR #36 merged to main
+    - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames, PR #36 merged
+    - PHASE 1.75 IN PROGRESS: Verda infra cleanup + testing instance prep
+      - DONE: Resource naming convention (PROD_/CLONE_/STAG_/TEST_/UNUSED_) — CLAUDE.md, infra-registry, .env
+      - DONE: Renamed 3 production resources in Verda console (OS vol, scratch disk, SFS)
+      - DONE: Deleted 2 orphan block volumes (004, 005). Vol 003 locked (1-month rental).
+      - DONE: Created SFS-clone: CLONE_SFS-Model-Vault-16-Feb-97Es5EBC (220GB, #38)
+      - DONE: SFS-prod → SFS-clone rsync running (~128GB, ~30min)
+      - DONE: Documented SFS console rename → pseudopath change risk (gotchas.md)
+      - DONE: Updated #37 with clarified plan (new user, not rename)
+      - IN PROGRESS: Creating testing instance (#38)
+      - IN PROGRESS: Restoring Temp-Model-Vault to check for extra models (#38)
       - PENDING: Username rename dev→aeon (#37)
-    - PHASE 2 (NEXT): Create testing instance, fix restore script, test changes
-      - Create new Verda instance + scratch disk + SFS-clone
-      - Fix restore script bugs (scripts #41, #42, #43)
-      - Run restore, test end-to-end
+    - PHASE 2 (NEXT): Set up testing instance, fix restore script, test changes
+      - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
+      - Run restore, test end-to-end (all 5 workflows)
     - PHASE 3 (NEXT): Add advanced code piece by piece
     - INVESTIGATE: Variable warnings in .env on server (#7)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
@@ -94,6 +93,50 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 50 - 2026-02-15 - Verda infra cleanup, SFS clone, testing instance prep
+
+**Date:** 2026-02-15 | **Issues:** #37, #38 | **Branch:** testing-mello-team-one
+
+### Context
+Phase 1.75 — cleaning up Verda infrastructure and preparing for Phase 2 (testing instance).
+
+### Changes this session (uncommitted, 3 files changed in comfyume-v1 + scripts repo):
+
+**Verda resource naming convention (new):**
+- Added PROD_/CLONE_/STAG_/TEST_/UNUSED_ prefixes for all Verda console names
+- Updated CLAUDE.md, infrastructure.md, gotchas.md, both .env files, infrastructure-registry.md
+- Renamed 3 production resources in Verda console (OS vol, scratch disk, SFS)
+
+**Infra cleanup:**
+- Deleted 2 orphan block volumes (004: NEW-CPU-INSTANCE_OS, 005: Temp-Model-Vault)
+- Vol 003 (OLD-GPU-INSTANCE-OS) cannot delete — 1-month rental lock, retry ~2026-03-03
+- Restored vol 005 from deleted state to check for extra models (#38)
+
+**SFS-clone created:**
+- CLONE_SFS-Model-Vault-16-Feb-97Es5EBC (220GB, FIN-01, fd7efb9e...)
+- Mounted on prod at /mnt/clone-sfs, rsync from SFS-prod running (~128GB)
+- Registered in infrastructure-registry.md, both .env files
+
+**Username rename plan (#37):**
+- Updated GH issue with clarified plan: NEW aeon user (not rename dev)
+- Full audit of /home/dev references across both repos (~100+ in comfyume-v1, ~80+ in scripts)
+
+**SFS pseudopath risk documented:**
+- Console rename may change pseudopath on next shutdown/remount
+- Added to gotchas.md, infrastructure-registry.md S-Notes
+- After any reboot: verify pseudopath, update .env + restore scripts if changed
+
+**Testing instance (#38):**
+- GH issue created with full step-by-step flow
+- Instance being provisioned, will also check Temp-Model-Vault for extra models
+
+### Decisions
+- New `aeon` user instead of renaming `dev` — avoids downtime and container disruption
+- CLONE_ prefix for SFS shared by testing+staging (not STAG_ or TEST_)
+- Use testing instance to mount restored block vol and check for extra models
 
 ---
 

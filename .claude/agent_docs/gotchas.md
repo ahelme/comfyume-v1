@@ -2,6 +2,18 @@
 
 For critical gotchas see CLAUDE.md "CRITICAL GOTCHAS" section.
 
+## Verda SFS Console Rename → Pseudopath Change Risk
+
+Renaming a Verda SFS console name (e.g. adding `PROD_` prefix) may cause the **pseudopath to change on next shutdown/remount**. The pseudopath is used in NFS mount commands across all restore scripts. If it changes, mounts silently fail.
+
+**After any SFS console rename or instance reboot:**
+1. Check current pseudopath in Verda console
+2. Update `VERDA_MODELS_SFS_PSEUDOPATH` in both `.env` files
+3. Update mount commands in `restore-verda-instance*.sh` and `setup-verda-solo-script.sh`
+4. Update `infrastructure-registry.md` S-03 and S-04 fields
+
+**Renamed 2026-02-15:** `SFS-Model-Vault-22-Jan-01-4xR2NHBi` → `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`. Pseudopath may change from `/SFS-Model-Vault-22-Jan-01-4xR2NHBi-c3d75d76` on next reboot.
+
 ## Verda Rebrand (ex. DataCrunch)
 
 Verda was previously called "DataCrunch". The rebrand means:

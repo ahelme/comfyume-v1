@@ -37,6 +37,10 @@ Each Verda environment runs identical stack: nginx, queue-manager, Redis, admin,
 | **R2 buckets** | Cloudflare R2 (.eu) | Off-site backups: models, config, worker image, user files | Remote (3 buckets) |
 | **Mello** | Hetzner SSD | Git repos, dev scripts | Mello only |
 
+### Resource Naming Convention
+
+All Verda resources use environment prefixes in console names: `PROD_*` (production), `CLONE_*` (cloned from prod, testing+staging shared), `STAG_*` (staging-only), `TEST_*` (testing-only), `UNUSED_*` (orphaned, pending deletion). Full registry in comfymulti-scripts `infrastructure-registry.md`.
+
 ## Services (per Verda environment)
 
 | Service | Technology | Port | Container |
