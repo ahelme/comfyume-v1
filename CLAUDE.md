@@ -68,6 +68,8 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 **DO NOT DELETE production Verda instance without migrating aiworkshop.art first!**
 
+**DISASTER RECOVERY:** PROD_OS volume was backed up 2026-02-16 to `BACKUP_2026-02-16-PROD_OS-hiq7F8JM` (block-vol 009, FIN-01, 100GB). Full OS snapshot of quiet-city production instance.
+
 ```
   Verda (per environment — same architecture, different instance)
   ┌─────────────────────────────────────────┐

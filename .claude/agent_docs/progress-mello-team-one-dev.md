@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-15 - Verda resource naming, SFS clone, testing instance prep
+**Doc Updated:** 2026-02-16 - Model vault check, R2 backup, DR clone, testing instance swap
 
 ---
 # Project Progress Tracker
@@ -44,25 +44,25 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #31, #37, #38 - Phase 2: testing instance, username rename, infra cleanup**
-    - Created: 2026-02-12, Updated: 2026-02-15
+🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
+    - Created: 2026-02-12, Updated: 2026-02-16
     - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
     - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames, PR #36 merged
-    - PHASE 1.75 IN PROGRESS: Verda infra cleanup + testing instance prep
-      - DONE: Resource naming convention (PROD_/CLONE_/STAG_/TEST_/UNUSED_) — CLAUDE.md, infra-registry, .env
-      - DONE: Renamed 3 production resources in Verda console (OS vol, scratch disk, SFS)
-      - DONE: Deleted 2 orphan block volumes (004, 005). Vol 003 locked (1-month rental).
-      - DONE: Created SFS-clone: CLONE_SFS-Model-Vault-16-Feb-97Es5EBC (220GB, #38)
-      - DONE: SFS-prod → SFS-clone rsync COMPLETE (128GB, 3306 files, ~15min at ~143MB/s)
-      - DONE: Documented SFS console rename → pseudopath change risk (gotchas.md)
-      - DONE: Updated #37 with clarified plan (new user, not rename)
-      - DONE: Created #38 for testing instance + model vault check flow
-      - DONE: Testing instance provisioned: testing-sharp-book-cracks-fin-01 (135.181.63.140), RTX A6000 spot
-      - DONE: Temp-Model-Vault (vol 005, da6b4d99, 220GB) restored from deleted state — will copy extra models then delete again
-      - DONE: Registry updated: instance 007 + block vol 007 in infrastructure-registry.md
-      - NOTE: SFS is regional — must stay FIN-01 for SFS access
+    - PHASE 1.75 DONE: Verda infra cleanup + model vault check (#38 closed)
+      - DONE: Resource naming convention, SFS clone, orphan volume cleanup
+      - DONE: 6 missing models (~65GB) copied from Temp-Model-Vault to both SFS volumes
+      - DONE: R2 backup of 16 missing models (~85GB) uploading in background
+      - DONE: SFS-prod fstab entry added (auto-mount on reboot)
+      - DONE: SFS share-settings gotcha documented
+      - DONE: Deployment checklist updated — SFS-first, R2 fallback
+      - DONE: PROD_OS disaster recovery clone (block-vol 009, 100GB, 2026-02-16)
+      - DONE: Instance 007 (RTX A6000 spot) → deleted after model check
+      - DONE: Instance 008 (CPU.4V.16G spot, tall-heart-dances) → deleted by spot termination
+      - DONE: Hostname prefix exception documented (immutable, no prefix)
+      - DONE: #31 task 2.0 complete — scripts #45 updated with infrastructure items
+      - NOTE: FIN-01 CPU instances scarce — considering FIN-03 with new SFS
       - PENDING: Username rename dev→aeon (#37)
-    - PHASE 2 (NEXT): Set up testing instance, fix restore script, test changes
+    - PHASE 2 (NEXT): Set up testing instance (FIN-01 or FIN-03), fix restore script
       - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
       - Run restore, test end-to-end (all 5 workflows)
     - PHASE 3 (NEXT): Add advanced code piece by piece
