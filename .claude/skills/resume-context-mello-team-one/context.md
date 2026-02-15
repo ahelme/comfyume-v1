@@ -43,13 +43,22 @@ Please read:
    - Both repos need updates (~180+ references across active + archive files)
    - .env files need VERDA_DEV_USER_PASSWORD → VERDA_AEON_USER_PASSWORD
 
-**3. Phase 2 — Testing Server + Restore Script Fixes (#31, #38)**
+**3. Fix restore script (comfymulti-scripts repo):**
+   - #41: git pull fails silently on diverged history
+   - #42: stale tarball overrides git fixes
+   - #43: host nginx blocks port 80
+   - #44: missing custom nodes deployment step
+   - #45: NEW — codify Ralph's server-side fixes (SFS permissions, Verda config)
+
+**4. Test end-to-end on fresh instance:**
+   - Run all 5 workflows (only workflow 1 tested so far)
+   - Verify image delivery works on clean setup
+
+**5. Phase 2 — Testing Server (#31, #38)**
    - RTX A6000 instance stays for Phase 2 testing (or spin up CPU when available)
    - Set up testing.aiworkshop.art
-   - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
-   - Run restore, test end-to-end (all 5 workflows)
 
-**4. Other pending:**
+**6. Other pending:**
    - Investigate .env variable warnings (#7)
    - Run setup-monitoring.sh (Prometheus, Grafana, Loki)
 
@@ -64,6 +73,17 @@ Please read:
 - SFS-clone: `/mnt/clone-sfs` — `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC`
 
 **DANGER:** Renaming SFS console name may change pseudopath on next reboot. See gotchas.md.
+
+**CRUCIAL QUEUE MANAGER FLOW:**
+```
+Browser → ComfyUI native queue (serverless_proxy patches PromptExecutor)
+  → POST /api/jobs → nginx → queue-manager:3000
+  → QM submit_to_serverless() → POST to Verda H200 /prompt
+  → QM polls /api/history/{prompt_id} (600s max, 10s per-poll)
+  → Images saved to /mnt/sfs/outputs/ by serverless container
+  → QM copies from SFS to /outputs/user001/
+  → Frontend serves via /api/view → image in UI + sidebar
+```
 
 **Key files:**
 | File | Purpose |

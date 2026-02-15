@@ -14,6 +14,10 @@ Renaming a Verda SFS console name (e.g. adding `PROD_` prefix) may cause the **p
 
 **Renamed 2026-02-15:** `SFS-Model-Vault-22-Jan-01-4xR2NHBi` → `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`. Pseudopath may change from `/SFS-Model-Vault-22-Jan-01-4xR2NHBi-c3d75d76` on next reboot.
 
+## Verda SFS Requires "Share Settings" Per Instance
+
+SFS volumes must be explicitly shared with each instance via Verda console ("share settings"). Being in the same location (FIN-01) is not enough — mount will fail with "No such file or directory" until the instance is added to the SFS share list.
+
 ## Verda Rebrand (ex. DataCrunch)
 
 Verda was previously called "DataCrunch". The rebrand means:

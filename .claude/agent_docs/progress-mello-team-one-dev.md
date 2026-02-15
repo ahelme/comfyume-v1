@@ -1306,7 +1306,6 @@ df547ff - feat: add workflow templates index file
 - ⏳ Isolated outputs per user
 - ⏳ No queue deadlocks
 - ⏳ Memory usage within limits
->>>>>>> c0e8b1d9a6bfe4819d2573b714b90a56c27a2fb1
 
 ---
 
