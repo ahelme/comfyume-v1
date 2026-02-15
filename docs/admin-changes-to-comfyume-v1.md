@@ -385,7 +385,7 @@ Further timeout tuning after observing cold start behavior.
 
 **Branch:** `fix/qa-sfs-image-delivery` | **Merged:** 2026-02-12 01:58
 
-The pivotal fix. DataCrunch routes HTTP requests to different container instances, so `/view` downloads return 404. SFS is shared NFS — all containers can read/write the same files.
+The pivotal fix. Verda (ex. DataCrunch) routes HTTP requests to different container instances, so `/view` downloads return 404. SFS is shared NFS — all containers can read/write the same files.
 
 | File | Change | Lines |
 |---|---|---|
@@ -427,9 +427,9 @@ chmod 1777 /mnt/sfs/outputs/
 **Fix:** Sticky bit + world-writable (`1777`), same pattern as `/tmp`.
 **Where to codify:** `restore-verda-instance.sh` in comfymulti-scripts repo.
 
-### BUG-003: DataCrunch container --output-directory flag
+### BUG-003: Verda container --output-directory flag
 
-**Problem:** DataCrunch container start command only had `--listen`, `--port`, `--extra-model-paths-config`. ComfyUI saved images to `/workspace/ComfyUI/output/` (container-local, ephemeral).
+**Problem:** Verda container start command only had `--listen`, `--port`, `--extra-model-paths-config`. ComfyUI saved images to `/workspace/ComfyUI/output/` (container-local, ephemeral).
 **Fix:** Updated via Verda Python SDK `update_deployment()` API:
 ```bash
 python3 -c "

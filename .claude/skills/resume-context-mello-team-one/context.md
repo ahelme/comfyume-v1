@@ -6,7 +6,7 @@
 
 ## CONTEXT
 
-**We are Mello Team One.** Main dev team. Branch: `mello-team-one` (NOT main).
+**We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one` (NOT main).
 
 **Production:** aiworkshop.art runs on quiet-city (65.108.33.101), a Verda CPU instance.
 
@@ -46,7 +46,7 @@ Please read:
    - #42: stale tarball overrides git fixes
    - #43: host nginx blocks port 80
    - #44: missing custom nodes deployment step
-   - #45: NEW — codify Ralph's server-side fixes (SFS permissions, DataCrunch config)
+   - #45: NEW — codify Ralph's server-side fixes (SFS permissions, Verda config)
 
 4. **Test end-to-end on fresh instance:**
    - Run all 5 workflows (only workflow 1 tested so far)
@@ -64,7 +64,7 @@ Please read:
 ```
 Browser → ComfyUI native queue (serverless_proxy patches PromptExecutor)
   → POST /api/jobs → nginx → queue-manager:3000
-  → QM submit_to_serverless() → POST to DataCrunch H200 /prompt
+  → QM submit_to_serverless() → POST to Verda H200 /prompt
   → QM polls /api/history/{prompt_id} (600s max, 10s per-poll)
   → Images saved to /mnt/sfs/outputs/ by serverless container
   → QM copies from SFS to /outputs/user001/

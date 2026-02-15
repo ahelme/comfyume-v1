@@ -10,7 +10,7 @@
 **Target:** Workshop Feb 25 2026
 ### Implementation Phase
 **MAIN Repo:** comfyume (https://github.com/ahelme/comfyume)
-**Branch:** admin-panel-team-*
+**Branch:** mello-admin-panel-team-*
 **Phase:** Admin Dashboard V2
 ---
 ## 0. Update Instructions

@@ -11,7 +11,7 @@
 ### Implementation Phase
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
-**Branch:** main
+**Branch:** testing-mello-team-one
 **Phase:** PRODUCTION LIVE — aiworkshop.art serving, serverless inference working
 ---
 ## 0. Update Instructions
@@ -45,16 +45,22 @@
 ## 1. PRIORITY TASKS
 
 🔴 **(CURRENT) - comfyume-v1 #29, #30, #31 - Post-Ralph: docs, testing server, piece-by-piece**
-    - Created: 2026-02-12, Updated: 2026-02-12
-    - PHASE 1 (IN PROGRESS): Commit Ralph changes, create docs, update progress
-      - DONE: Ralph changes committed on `ralph-changes-unlogged` branch (PR #32)
-      - DONE: GH issues #29, #30, #31 created
-      - DONE: `docs/admin-changes-to-comfyume-v1.md` — complete changelog of all commits (#29)
-      - DONE: `docs/admin-server-containers-sys-admin.md` — server-side changes (#29)
-      - DONE: `docs/media-generation-flow.md` — end-to-end 21-step flow table (#8, #29)
-      - DONE: Progress files updated (this file + Ralph team)
+    - Created: 2026-02-12, Updated: 2026-02-15
+    - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
+    - PHASE 1.5 (IN PROGRESS): Deployment workflow, CLAUDE.md overhaul
+      - DONE: 3-tier deployment workflow (testing→staging→production)
+      - DONE: Blue-green deploy via DNS switch (TTL 60s)
+      - DONE: Dev directories: testing-main/staging-main/production-main + scripts
+      - DONE: SFS-prod + SFS-clone storage model
+      - DONE: Verda rebrand (ex. DataCrunch) — updated ~25 files
+      - DONE: Serverless inference gotcha added to CLAUDE.md critical gotchas
+      - DONE: Architecture diagrams annotated with SFS flow + load-balancer warning
+      - DONE: Git workflow merged into CLAUDE.md (commits, issues, task mgmt)
+      - DONE: Updated Mello role (dev+user-dir, not staging/backup)
+      - DONE: infrastructure-registry.md link added (private scripts repo)
+      - IN PROGRESS: Username rename dev→aeon (Mello + Verda)
     - PHASE 2 (NEXT): Create testing instance, fix restore script, test changes
-      - Create new Verda instance + scratch disk + SFS
+      - Create new Verda instance + scratch disk + SFS-clone
       - Fix restore script bugs (scripts #41, #42, #43)
       - Run restore, test end-to-end
     - PHASE 3 (NEXT): Add advanced code piece by piece
@@ -88,6 +94,53 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 49 - 2026-02-15 - Deployment workflow, CLAUDE.md overhaul, Verda rebrand
+
+**Date:** 2026-02-15 | **Issues:** #29, #31 | **Branch:** mello-team-one
+
+### Context
+Phase 1.5 — establishing 3-tier deployment workflow and major CLAUDE.md documentation overhaul before Phase 2 (testing instance).
+
+### Changes this session (not yet committed, 20 files, +271/-139 lines):
+
+**Deployment workflow (new):**
+- 3-tier promotion: testing → staging → production
+- Blue-green deploy via DNS switch (TTL 60s permanently)
+- Dev directories on Mello: testing-main, staging-main, production-main + matching scripts dirs
+- SFS-prod (production only) + SFS-clone (testing/staging, doubles as model backup)
+- Subdomains: testing.aiworkshop.art, staging.aiworkshop.art (user handling DNS)
+
+**CLAUDE.md overhaul:**
+- Architecture Overview: updated to 3-tier environments table, machines table
+- New Deployment Workflow section with dev directories, storage, blue-green process
+- Branch strategy: added `staging` branch, team branch policy
+- Git workflow merged inline: commits, task/issue management, issue trackers, gh CLI gotcha
+- Quick Links: table format with all 3 environments
+- User Preferences: added "fix at source", "option-based config", updated branch policy to include team branches
+
+**Verda rebrand (ex. DataCrunch):**
+- Updated ~25 files across docs, code comments, skills, specs
+- Left `containers.datacrunch.io` URLs intact (live endpoints)
+- Added CRITICAL gotcha in CLAUDE.md and gotchas.md
+
+**Serverless inference gotcha:**
+- New CRITICAL section: "No Direct HTTP Back to Containers"
+- Full explanation + 3 numbered fixes with file:line references
+- Architecture diagrams annotated with SFS flow + load-balancer warning
+- Notes added to storage.md and infrastructure.md
+
+**Other updates:**
+- Mello role: dev+user-dir (not staging/backup)
+- infrastructure.md: full rewrite with tables for all sections
+- infrastructure-registry.md link added (private scripts repo)
+- storage.md: SFS outputs dir + permissions + rationale
+
+### Pending:
+- Username rename dev→aeon (Mello + Verda) — discussed, not yet executed
+- Commit and push these changes
 
 ---
 

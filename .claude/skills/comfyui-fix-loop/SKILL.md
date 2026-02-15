@@ -278,8 +278,8 @@ User Browser
   → Queue Prompt click
   → redirect.js intercepts (comfyume-extensions/queue_redirect/)
   → POST /api/jobs (absolute URL → nginx → queue-manager:3000)
-  → QM submit_to_serverless() → POST to DataCrunch H200
-  → DataCrunch ComfyUI processes workflow
+  → QM submit_to_serverless() → POST to Verda H200
+  → Verda ComfyUI processes workflow
   → Response: {prompt_id, number, node_errors} (NO images!)
   → QM wraps in JobResponse, returns to browser
   → redirect.js shows status banner

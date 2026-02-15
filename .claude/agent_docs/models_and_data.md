@@ -4,7 +4,7 @@ Workshop workflow templates, ML models, LoRAs, and model inventory.
 
 ## Selected Templates for Workshop
 
-Inference runs on serverless containers (DataCrunch H200/B300). No dedicated GPU instance required.
+Inference runs on serverless containers (Verda (ex. DataCrunch) H200/B300). No dedicated GPU instance required.
 
 **Template 1: Flux Klein 9B - Text to Image**
 - File: `flux2_klein_9b_text_to_image.json`

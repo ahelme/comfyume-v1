@@ -3,8 +3,8 @@
 **CURRENT Project Repository:** https://github.com/ahelme/comfyume-v1
 **OLDER Project Repository:** https://github.com/ahelme/comfyume
 **NOTE:** The older repo is more advanced, but is broken. This repo will revert to a stable state (by rsync from older OS drive) then we will cherry pick from the advanced yet broken older repo.
-**Domain:** aiworkshop.art (PRODUCTION) + comfy.ahelme.net (staging)
-**Doc Updated:** 2026-02-10
+**Domain:** aiworkshop.art (production) · staging.aiworkshop.art · testing.aiworkshop.art
+**Doc Updated:** 2026-02-15
 
 ---
 
@@ -12,12 +12,12 @@
 
 A multi-user ComfyUI platform for video generation workshops for professional filmmakers.
 - CPU app hosting on Verda (aiworkshop.art) -- nginx, Redis, queue-manager, 20 user frontends
-- Serverless GPU inference on DataCrunch (H200/B300) -- scales on demand, pay per use
+- Serverless GPU inference on Verda (H200/B300) -- scales on demand, pay per use
 - Models and backups on Cloudflare R2 (.eu, cheap)
 
 ### Key Requirements
 
-- Split architecture: CPU app server (Verda) + serverless GPU workers (DataCrunch H200/B300)
+- Split architecture: CPU app server (Verda) + serverless GPU workers (Verda H200/B300)
 - 20 isolated ComfyUI web interfaces
 - Central job queue (FIFO/round-robin/priority)
 - Serverless GPU workers scaling on demand
@@ -31,10 +31,13 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 ### Quick Links
 
-- **Production:** https://aiworkshop.art/
-- **Health Check:** https://aiworkshop.art/health
-- **Admin Dashboard:** https://aiworkshop.art/admin
-- **API:** https://aiworkshop.art/api/queue/status
+| Environment | URL | Health |
+|---|---|---|
+| **Production** | https://aiworkshop.art/ | /health |
+| **Staging** | https://staging.aiworkshop.art/ | /health |
+| **Testing** | https://testing.aiworkshop.art/ | /health |
+| **Admin** | https://aiworkshop.art/admin | — |
+| **API** | https://aiworkshop.art/api/queue/status | — |
 
 ---
 
@@ -50,36 +53,34 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 ## Architecture Overview
 
-| Server | Domain | Role | Status |
-|--------|--------|------|--------|
-| **VERDA** | aiworkshop.art | **PRODUCTION** | nginx, queue-manager, Redis -> serverless |
-| MELLO | comfy.ahelme.net | Staging/backup only | Containers removed (#71), backup scripts, Tailscale node |
+### Environments
 
-**DO NOT DELETE VERDA without migrating aiworkshop.art back to Mello first!**
+| Environment | Domain | Verda Instance | SFS | SSL | Lifecycle |
+|---|---|---|---|---|---|
+| **Production** | aiworkshop.art | quiet-city (persistent) | SFS-prod | Namecheap (exp 2026-04-10) | persistent |
+| **Staging** | staging.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
+| **Testing** | testing.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
+
+| Machine | Role | Notes |
+|---|---|---|
+| **Mello** (comfy.ahelme.net) | Dev machine, user dir, Tailscale node | NO containers — dev dirs + scripts only |
+| **Verda Serverless** | GPU inference | H200/B300, INFERENCE_MODE=serverless |
+
+**DO NOT DELETE production Verda instance without migrating aiworkshop.art first!**
 
 ```
-  Current Architecture:
+  Verda (per environment — same architecture, different instance)
   ┌─────────────────────────────────────────┐
-  │ Verda CPU Instance (aiworkshop.art)     │
-  │  - Nginx (HTTPS, SSL)                   │
-  │  - Redis (job queue)                    │
-  │  - Queue Manager (FastAPI)              │
-  │  - Admin Dashboard                      │
-  │  - User Frontends x20 (UI only)         │
+  │  Nginx (HTTPS, SSL) · Redis (job queue) │
+  │  Queue Manager (FastAPI) · Admin        │
+  │  User Frontends x20 (UI only)           │
   └──────────────┬──────────────────────────┘
                  │ HTTP (serverless)
   ┌──────────────▼──────────────────────────┐
-  │  Verda/DataCrunch Serverless Containers │
-  │  - H200 141GB (spot / on-demand)        │
-  │  - B300 288GB (spot / on-demand)        │
-  │  INFERENCE_MODE=serverless              │
-  └─────────────────────────────────────────┘
-
-  Mello (comfy.ahelme.net) — staging/backup only
-  ┌─────────────────────────────────────────┐
-  │  - Tailscale node (100.99.216.71)       │
-  │  - Backup scripts (comfymulti-scripts)  │
-  │  - Git repos, SSH                       │
+  │  Verda Serverless Containers             │
+  │  H200 141GB / B300 288GB (spot/demand)  │
+  │  !LOAD-BALANCED — no direct HTTP back   │
+  │  Images → SFS → QM copies to /outputs/  │
   └─────────────────────────────────────────┘
 
 Code Architecture:
@@ -95,10 +96,46 @@ Code Architecture:
     ↓ Redis
 [Job Queue] ← Redis list + pub/sub
     ↓
-[ComfyUI Workers :8188-8190] ← GPU processing (serverless)
-    ↓
-[Shared Volumes] ← models, outputs, workflows
+[ComfyUI Workers :8188-8190] ← GPU processing (serverless, load-balanced)
+    ↓ writes to SFS (NOT HTTP back!)
+[SFS /mnt/sfs/] ← models (read), outputs (write, 1777 perms)
 ```
+
+---
+
+## Deployment Workflow
+
+**Promotion:** testing → staging → production · code only moves forward · never backwards
+
+**Deploy method:** blue-green via DNS switch (TTL 60s — leave permanently)
+
+### Dev Directories (Mello — separate clones)
+
+| Directory | Repo | Branch | Team |
+|---|---|---|---|
+| `testing-mello-team-one` | comfyume-v1 | `testing-mello-team-one` | Main dev team |
+| `testing-mello-admin-panel-team` | comfyume-v1 | `testing-mello-admin-panel-team` | Admin panel team |
+| `testing-mello-scripts-team` | comfymulti-scripts | `testing-mello-scripts-team` | Scripts team |
+| `staging-main` | comfyume-v1 | `staging` | All teams merge here |
+| `staging-scripts` | comfymulti-scripts | `staging` | All teams merge here |
+| `production-main` | comfyume-v1 | `main` | Production code |
+| `production-scripts` | comfymulti-scripts | `main` | Proven scripts ONLY |
+
+### Storage Per Environment
+
+| Storage | Purpose | Shared by |
+|---|---|---|
+| **SFS-prod** | Live models, stable, trusted | Production only |
+| **SFS-clone** | Cloned from prod — safe to experiment, doubles as backup | Testing + staging |
+| **Scratch disk** (per instance) | Ephemeral: user outputs, inputs | One per instance |
+
+### Blue-Green Deploy
+
+1. Build & validate on staging instance (staging.aiworkshop.art)
+2. Final check: optionally mount SFS-prod on staging to verify with real models
+3. Switch DNS: `aiworkshop.art` A record → staging instance IP
+4. Old production stays alive as rollback
+5. Once confident → tear down old instance, staging becomes new production
 
 ---
 
@@ -107,13 +144,13 @@ Code Architecture:
 Four teams work on this project. Coordination via GitHub Issue #7 -- check like email before proceeding with conflicting work.
 Master task list: Issue #1.
 
-| Team | AKA | Resume | Handover | Progress |
-|------|-----|--------|----------|----------|
-| Mello Team One | mello-team-one | [resume](.claude/skills/resume-context-mello-team-one/SKILL.md) | [handover](.claude/skills/handover-mello-team-one/SKILL.md) | [log](.claude/agent_docs/progress-mello-team-one-dev.md) |
-| Verda Team One | verda-team-one | [resume](.claude/skills/resume-context-verda-team-one/SKILL.md) | [handover](.claude/skills/handover-verda-team-one/SKILL.md) | [log](.claude/agent_docs/progress-verda-team-one-dev.md) |
-| Mello Admin Panel Team | admin-panel-team | [resume](.claude/skills/resume-context-admin-panel-team/SKILL.md) | [handover](.claude/skills/handover-admin-panel-team/SKILL.md) | [log](.claude/agent_docs/progress-admin-panel-team-dev.md) |
-| Mello Testing Scripts Team | testing-scripts-team | [resume](.claude/skills/resume-context-testing-scripts-team/SKILL.md) | [handover](.claude/skills/handover-testing-scripts-team/SKILL.md) | [log](.claude/agent_docs/progress-testing-scripts-dev.md) |
-| Mello Ralph Team | mello-ralph-team | [resume](.claude/skills/resume-context-mello-ralph-team/SKILL.md) | [handover](.claude/skills/handover-mello-ralph-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-ralph-team-dev.md) |
+| Team | AKA | Testing Dir | Resume | Handover | Progress |
+|------|-----|-------------|--------|----------|----------|
+| Mello Team One | mello-team-one | `/home/dev/projects/testing-mello-team-one` | [resume](.claude/skills/resume-context-mello-team-one/SKILL.md) | [handover](.claude/skills/handover-mello-team-one/SKILL.md) | [log](.claude/agent_docs/progress-mello-team-one-dev.md) |
+| Verda Team One | verda-team-one | — | [resume](.claude/skills/resume-context-verda-team-one/SKILL.md) | [handover](.claude/skills/handover-verda-team-one/SKILL.md) | [log](.claude/agent_docs/progress-verda-team-one-dev.md) |
+| Mello Admin Panel Team | mello-admin-panel-team | `/home/dev/projects/testing-mello-admin-panel-team` | [resume](.claude/skills/resume-context-mello-admin-panel-team/SKILL.md) | [handover](.claude/skills/handover-mello-admin-panel-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-admin-panel-team-dev.md) |
+| Mello Scripts Team | mello-scripts-team | `/home/dev/projects/testing-mello-scripts-team` | [resume](.claude/skills/resume-context-mello-scripts-team/SKILL.md) | [handover](.claude/skills/handover-mello-scripts-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-scripts-team-dev.md) |
+| Mello Ralph Team | mello-ralph-team | `/home/dev/projects/testing-mello-ralph-team` | [resume](.claude/skills/resume-context-mello-ralph-team/SKILL.md) | [handover](.claude/skills/handover-mello-ralph-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-ralph-team-dev.md) |
 
 **Central Log:** [.claude/agent_docs/progress-all-teams.md](.claude/agent_docs/progress-all-teams.md) -- 1-line-per-commit across all teams
 **Update command:** `/update-progress`
@@ -136,12 +173,41 @@ Before each session ends:
 - **Platform:** GitHub
 - **URL:** https://github.com/ahelme/comfyume-v1
 - **Branch Strategy:**
-  - `main` - production-ready code
-  - Feature branches as needed
-  - **NEVER push directly to main** -- ALWAYS use feature branches + PRs for BOTH repos!
+  - `main` — production-ready code (maps to `production-main/`)
+  - `staging` — validated, pre-production (maps to `staging-main/`)
+  - Team branches — active development (e.g. `testing-mello-team-one`, `testing-mello-admin-panel-team`)
+  - Feature branches — branched off team branches (e.g. `testing-mello-team-one-gpu-overlay`)
+  - **NEVER push directly to main** -- ALWAYS use team branches or feature branches + PRs (BOTH repos!)
 - **Scripts Repo** (PRIVATE!): https://github.com/ahelme/comfymulti-scripts
 
-See [project_management.md](.claude/agent_docs/project_management.md) for commit conventions and issue tracking.
+### Commits
+
+Use conventional commit format. No boasting.
+```
+feat: add queue manager REST API endpoints
+fix: resolve nginx routing for user/20
+docs: update admin guide with priority override
+test: add integration tests for worker
+```
+
+**When to commit:** end of major feature · before risky changes · end of session · when tests pass
+**After commits:** always run `/update-progress`
+
+### Task & Issue Management
+
+- **ALWAYS reference GitHub issue numbers** (e.g., #15, #22, #13)
+- **DO NOT use internal task numbers** (no Task #1, Task #2, etc.)
+- **If no GitHub issue exists**, create one first before tracking work
+
+| Tracker | URL |
+|---|---|
+| comfyume-v1 (active) | https://github.com/ahelme/comfyume-v1/issues |
+| comfyume (original) | https://github.com/ahelme/comfyume/issues |
+| comfymulti-scripts (private) | https://github.com/ahelme/comfymulti-scripts/issues |
+
+**gh CLI gotcha:** `gh issue view` fails with "Projects (classic) deprecated" error. Use `--json` flag: `gh issue view 8 --json title,body,state`
+
+See [project_management.md](.claude/agent_docs/project_management.md) for extended details.
 
 ### CRITICAL: Handling .env
 
@@ -157,7 +223,7 @@ All .md files must have this header:
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **Repository:** github.com/ahelme/comfyume-v1
-**Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
+**Domain:** aiworkshop.art · staging.aiworkshop.art · testing.aiworkshop.art
 **Doc Created:** [date]
 **Doc Updated:** [date]
 ```
@@ -200,16 +266,17 @@ Docs MUST be comprehensive yet NO FLUFF. No boasting.
 | Storage | Purpose |
 |---|---|
 | BlockStorage (OS) | Instance operating system & worker |
-| BlockStorage (scratch) | Ephemeral: user inputs/outputs |
-| SFS (network drive) | Persistent: models, cache, backups |
+| BlockStorage (scratch) | Ephemeral: user inputs/outputs (one per instance) |
+| **SFS-prod** (network drive) | Persistent: models, cache, backups — production only |
+| **SFS-clone** (network drive) | Clone of SFS-prod — testing/staging, doubles as model backup |
 
-### Mello (staging/backup)
+### Mello (dev machine + user dir)
 
 | File/Directory | Purpose |
 |---|---|
+| `~/projects/comfyume-v1/` | Dev directories (see Deployment Workflow above) |
 | `~/comfymulti-scripts/` | Backup/Restore/Deploy scripts (private repo) |
-| `~/comfymulti-scripts/restore-verda-instance.sh` | Production app server restore (v0.4.2) |
-| `~/comfymulti-scripts/README-RESTORE.md` | README for restoring Verda |
+| `~/comfymulti-scripts/restore-verda-instance.sh` | Instance restore (v0.4.2) |
 
 *(Private repo: https://github.com/ahelme/comfymulti-scripts)*
 
@@ -353,6 +420,21 @@ Note: `.eu` appears between `cloudflarestorage.com` and the path, not as a suffi
 
 ---
 
+### CRITICAL: Serverless Inference — No Direct HTTP Back to Containers
+
+HTTP image download doesn't work with serverless load balancing. Verda routes each HTTP request to a **different container instance**. So `GET /view?filename=...` returns 404 because it hits a different instance than the one that generated the image. The fix was pivoting to **SFS-based delivery** — images written to shared NFS, QM copies from SFS to local `/outputs/userXXX/`, frontend serves locally.
+
+**Key principle:** Serverless containers are ephemeral and load-balanced — you can't talk back to a specific instance. All persistent data must go through shared storage (SFS).
+
+**Related fixes from Ralph Loop (PRs #23-#28):**
+1. **QM must poll + fetch results** — `submit_to_serverless()` (`queue-manager/main.py:314`) must call `poll_serverless_history()` (`:174`) after POST `/prompt`, not fire-and-forget. SFS copy at `:279`.
+2. **SFS directory permissions** — `/mnt/sfs/outputs` needs `chmod 1777` (sticky + world-writable). ComfyUI runs as uid 1000 inside containers, not root. (Server-side fix, not in git.)
+3. **`--output-directory` flag required** — without it, ComfyUI saves to container-local `/workspace/ComfyUI/output/` (ephemeral, lost on scale-down). Must pass `--output-directory /mnt/sfs/outputs` in container start command via Verda SDK. (Server-side fix, not in git.)
+
+### CRITICAL: Verda Rebrand (ex. DataCrunch)
+
+Verda was previously called "DataCrunch". ALL docs, code comments, specs, and API references must say **Verda**, not DataCrunch. API endpoint URLs may still use `containers.datacrunch.io` — verify current domain before updating URLs. When writing new docs, always use "Verda". First mention in standalone docs: "Verda (ex. DataCrunch)".
+
 ## OTHER GOTCHAS
 
 See [gotchas.md](.claude/agent_docs/gotchas.md) for full details:
@@ -394,7 +476,7 @@ NOTE: Spot instances are used for affordability but can be terminated anytime --
 
 ```
 # Mello VPS public key (MUST ADD):
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGiwaT6NQcHe7cYDKB5LrtmyIU0O8iRc7DJUmZJsNkDD dev@vps-for-verda
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGiwaT6NQcHe7cYDKB5LrtmyIU0O8iRc7DJUmZJsNkDD aeon@vps-for-verda
 ```
 
 **Why this matters for restore scripts:**
@@ -434,7 +516,7 @@ This preserves the expected IP: **100.89.38.43**
 ### Deployment Prerequisites Checklist
 
 Before starting, verify:
-- [ ] mello VPS is running (staging/backup -- comfy.ahelme.net)
+- [ ] mello VPS is running (dev machine + user dir -- comfy.ahelme.net)
 - [ ] R2: **Models bucket** (`comfyume-model-vault-backups`) contains:
   - [ ] `checkpoints/*.safetensors` (~25-50 GB)
   - [ ] `text_encoders/*.safetensors` (~20 GB)
@@ -469,9 +551,11 @@ See [Admin Backup & Restore Guide - Troubleshooting](./docs/admin-backup-restore
 - Values comprehensive and accurate documentation
 - Wants progress tracking (hence progress files)
 - Likes structured approaches
+- Fix at the source, not quick hacks on the server
+- Option-based config with clear comments over complex mechanisms
 - Hates BOASTING in DOCS, COMMITS, GH ISSUES, GH COMMENTS
 - Express pride in chat, NOT in docs/GitHub
-- **NEVER push directly to main** -- ALWAYS use feature branches + PRs (BOTH repos!)
+- **NEVER push directly to main** -- ALWAYS use testing/staging/production and team/feature branches, e.g. `testing-mello-team-one`, `testing-mello-team-one-gpu-overlay`, `staging` + PRs (BOTH repos!)
 
 ---
 
@@ -486,12 +570,13 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [project_structure.md](.claude/agent_docs/project_structure.md) | finding files, dir layout | data/user_data/userXXX/ · .users.yml auto-gen · scripts/ admin/ nginx/ qm/ |
 | [project_management.md](.claude/agent_docs/project_management.md) | commits, issues, PRs | conventional commits · ref GH# always · `gh issue` needs --json |
 | [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-04-10 · !R2 needs .eu |
-| [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | Verda=prod Mello=staging · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 |
+| [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | 3-tier Verda (prod·staging·testing) · Mello=dev+user-dir · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 |
+| [infrastructure-registry.md](https://github.com/ahelme/comfymulti-scripts/blob/main/infrastructure-registry.md) | IPs, instance names, SFS IDs, secrets refs | PRIVATE scripts repo · actual resource IDs · update when provisioning |
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |
-| [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · block=single-instance · !WIPED if attached@provisioning |
-| [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent |
+| [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · /outputs/ needs 1777 perms · block=single-instance · !WIPED if attached@provisioning |
+| [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent · !Verda ex.DataCrunch rebrand |
 | [external-references.md](.claude/agent_docs/external-references.md) | architecture research | Visionatrix · SaladTech · Modal · 9elements — multi-user patterns |
 
 ---
 
-**Last Updated:** 2026-02-10 -- Refactored to progressive disclosure modules
+**Last Updated:** 2026-02-15 -- Added 3-tier deployment workflow (testing/staging/production), SFS-clone, blue-green deploy

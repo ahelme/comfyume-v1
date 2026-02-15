@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-12
+**Doc Updated:** 2026-02-15
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -8,12 +8,16 @@
 Newest at top. One line per commit. No fluff. Link issues.
 
 ## Team Progress Files (FULL DETAIL)
-- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `mello-team-one-*`
+- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `testing-mello-team-one*`
 - **Verda:** [progress-verda-team-one-dev.md](./progress-verda-team-one-dev.md) | Branch: `verda-team-one-*`
-- **Admin Panel:** [progress-admin-panel-team-dev.md](./progress-admin-panel-team-dev.md) | Branch: `admin-panel-team-*`
-- **Testing Scripts:** [progress-testing-scripts-team-dev.md](./progress-testing-scripts-team-dev.md) | Branch: `testing-scripts-team-*`
+- **Admin Panel:** [progress-mello-admin-panel-team-dev.md](./progress-mello-admin-panel-team-dev.md) | Branch: `mello-admin-panel-team-*`
+- **Scripts:** [progress-mello-scripts-team-dev.md](./progress-mello-scripts-team-dev.md) | Branch: `mello-scripts-team-*`
 
 ---
+
+## 2026-02-15
+
+- [MELLO-ONE-TEAM] (uncommitted) docs: 3-tier deployment workflow, CLAUDE.md overhaul, Verda rebrand, serverless gotchas (#29, #31) — 20 files, +271/-139
 
 ## 2026-02-12
 

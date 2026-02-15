@@ -6,9 +6,9 @@
 
 ## CONTEXT
 
-**We are the Testing Scripts Team.** Branch: `testing-scripts-team-2`.
+**We are the Mello Scripts Team.** Branch: `mello-scripts-team`.
 
-**Production:** aiworkshop.art runs on Verda CPU instance. Inference is serverless (DataCrunch H200/B300). Mello is staging/backup only (containers removed).
+**Production:** aiworkshop.art runs on Verda CPU instance. Inference is serverless (Verda H200/B300). Mello is staging/backup only (containers removed).
 
 ---
 
@@ -48,7 +48,7 @@
 Please read:
 
 1. **`./CLAUDE.md`** - Project instructions
-2. **`.claude/agent_docs/progress-testing-scripts-team-dev.md`** (top ~250 lines) - Recent progress
+2. **`.claude/agent_docs/progress-mello-scripts-team-dev.md`** (top ~250 lines) - Recent progress
 3. **`.claude/agent_docs/progress-all-teams.md`** - All-teams commit log
 4. **`git status && git log --oneline -10`** - Pending work
 
@@ -59,7 +59,7 @@ Please read:
 | File | Purpose |
 |------|---------|
 | `./CLAUDE.md` | Project guide, architecture, gotchas |
-| `.claude/agent_docs/progress-testing-scripts-team-dev.md` | Tasks + session progress |
+| `.claude/agent_docs/progress-mello-scripts-team-dev.md` | Tasks + session progress |
 | `.claude/agent_docs/progress-all-teams.md` | All-teams commit log |
 | `scripts/test.sh` | Main integration test suite (10 sections) |
 | `scripts/test-helpers.sh` | Shared test library |
@@ -75,7 +75,7 @@ Please read:
 **GitHub Issues:** https://github.com/ahelme/comfyume/issues
 **Completed:** #6 (test scripts), #22 (Phase 3 docs), #93 (download engine), #111 (file sharing + favicon)
 **In Progress:** #71 (Mello cleanup — awaiting Hetzner downgrade)
-**Branch:** `testing-scripts-team-2`
+**Branch:** `mello-scripts-team`
 
 ---
 
@@ -83,6 +83,6 @@ Please read:
 
 - [ ] Check today's date
 - [ ] `git status` - any uncommitted changes?
-- [ ] Read `.claude/agent_docs/progress-testing-scripts-team-dev.md` top section
+- [ ] Read `.claude/agent_docs/progress-mello-scripts-team-dev.md` top section
 - [ ] Check relevant GitHub issues for updates
 - [ ] Discuss priorities with user

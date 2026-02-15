@@ -11,7 +11,7 @@
 
 Every step from pressing "Queue Prompt" in the ComfyUI interface to seeing the generated image in the browser. Traces through all code files, containers, directories, and services.
 
-**Mode documented:** Serverless inference (INFERENCE_MODE=serverless, DataCrunch H200)
+**Mode documented:** Serverless inference (INFERENCE_MODE=serverless, Verda (ex. DataCrunch) H200)
 **Instance:** quiet-city (65.108.33.101)
 **Serverless:** comfyume-vca-ftv-h200-spot
 
@@ -35,13 +35,13 @@ User Browser (HTTPS)
     │
     └──► /api/ ──► [comfy-queue-manager :3000] ── FastAPI
                         │
-                        ├── POST /prompt to DataCrunch H200
+                        ├── POST /prompt to Verda H200
                         ├── Poll /api/history/{prompt_id}
                         ├── Copy images from SFS to /outputs/
                         │
                         └── [comfy-redis :6379] ── job state
 
-[DataCrunch H200 Serverless]
+[Verda H200 Serverless]
     │
     ├── ComfyUI inference (GPU)
     ├── Saves images to /mnt/sfs/outputs/
@@ -65,7 +65,7 @@ ComfyuME has two paths for serverless inference depending on how the request ent
 2. redirect.js defers to native ComfyUI queue (does NOT intercept)
 3. ComfyUI's native queue calls `PromptExecutor.execute()`
 4. serverless_proxy has monkey-patched `execute()` → proxies to QM
-5. QM submits to DataCrunch, polls history, fetches images
+5. QM submits to Verda, polls history, fetches images
 6. Proxy sends WebSocket events back to browser
 
 **Both paths converge at step 12** (QM submits to serverless).
@@ -121,34 +121,34 @@ ComfyuME has two paths for serverless inference depending on how the request ent
 | 9.3 | Create Job object with UUID, store in Redis | `queue-manager/main.py` | 380 | — | comfy-queue-manager → comfy-redis | :3000 → :6379 |
 | 9.4 | Detect `settings.inference_mode == "serverless"` | `queue-manager/main.py` | 381 | — | comfy-queue-manager | :3000 |
 | 9.5 | Call `submit_to_serverless(workflow, user_id)` | `queue-manager/main.py` | 385 | — | comfy-queue-manager | :3000 |
-| **10** | **QM submits workflow to DataCrunch serverless** | `queue-manager/main.py` | 310-340 | `/workspace/` | comfy-queue-manager | :3000 |
+| **10** | **QM submits workflow to Verda serverless** | `queue-manager/main.py` | 310-340 | `/workspace/` | comfy-queue-manager | :3000 |
 | 10.1 | Build `/prompt` payload from workflow JSON | `queue-manager/main.py` | 315-320 | — | comfy-queue-manager | :3000 |
-| 10.2 | `serverless_client.post("/prompt")` to DataCrunch H200 | `queue-manager/main.py` | 324 | — | comfy-queue-manager → DataCrunch | :3000 → HTTPS |
+| 10.2 | `serverless_client.post("/prompt")` to Verda H200 | `queue-manager/main.py` | 324 | — | comfy-queue-manager → Verda | :3000 → HTTPS |
 | 10.3 | Auth header: `Authorization: Bearer {SERVERLESS_API_KEY}` | `queue-manager/main.py` | 68 (lifespan) | — | comfy-queue-manager | — |
-| 10.4 | Endpoint: `https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot/prompt` | `queue-manager/config.py` | 51-60 | — | — | HTTPS |
-| 10.5 | DataCrunch returns `{prompt_id, number, node_errors}` immediately | — | — | — | DataCrunch H200 | :8188 |
+| 10.4 | Endpoint: `https://containers.datacrunch.io/comfyume-vca-ftv-h200-spot/prompt` (Verda serverless) | `queue-manager/config.py` | 51-60 | — | — | HTTPS |
+| 10.5 | Verda returns `{prompt_id, number, node_errors}` immediately | — | — | — | Verda H200 | :8188 |
 | 10.6 | QM logs: "Serverless prompt accepted: {prompt_id}" | `queue-manager/main.py` | 332 | — | comfy-queue-manager | :3000 |
-| **11** | **Model loaded into GPU VRAM on H200** | ComfyUI core (on serverless) | — | `/workspace/ComfyUI/` | DataCrunch H200 | :8188 |
-| 11.1 | ComfyUI execution engine begins node-by-node processing | ComfyUI core | — | `/workspace/ComfyUI/` | DataCrunch H200 | :8188 |
-| 11.2 | UNETLoader node: loads checkpoint from `/mnt/sfs/models/shared/diffusion_models/` | ComfyUI core | — | `/mnt/sfs/models/shared/diffusion_models/` | DataCrunch H200 | :8188 |
-| 11.3 | DualCLIPLoader node: loads text encoders from `/mnt/sfs/models/shared/text_encoders/` | ComfyUI core | — | `/mnt/sfs/models/shared/text_encoders/` | DataCrunch H200 | :8188 |
-| 11.4 | VAELoader node: loads VAE from `/mnt/sfs/models/shared/vae/` | ComfyUI core | — | `/mnt/sfs/models/shared/vae/` | DataCrunch H200 | :8188 |
-| 11.5 | Model loading takes 2-5 minutes on cold start (H200 141GB VRAM) | — | — | — | DataCrunch H200 | — |
+| **11** | **Model loaded into GPU VRAM on H200** | ComfyUI core (on serverless) | — | `/workspace/ComfyUI/` | Verda H200 | :8188 |
+| 11.1 | ComfyUI execution engine begins node-by-node processing | ComfyUI core | — | `/workspace/ComfyUI/` | Verda H200 | :8188 |
+| 11.2 | UNETLoader node: loads checkpoint from `/mnt/sfs/models/shared/diffusion_models/` | ComfyUI core | — | `/mnt/sfs/models/shared/diffusion_models/` | Verda H200 | :8188 |
+| 11.3 | DualCLIPLoader node: loads text encoders from `/mnt/sfs/models/shared/text_encoders/` | ComfyUI core | — | `/mnt/sfs/models/shared/text_encoders/` | Verda H200 | :8188 |
+| 11.4 | VAELoader node: loads VAE from `/mnt/sfs/models/shared/vae/` | ComfyUI core | — | `/mnt/sfs/models/shared/vae/` | Verda H200 | :8188 |
+| 11.5 | Model loading takes 2-5 minutes on cold start (H200 141GB VRAM) | — | — | — | Verda H200 | — |
 | **12** | **QM polls serverless history** | `queue-manager/main.py` | 200-260 | `/workspace/` | comfy-queue-manager | :3000 |
 | 12.1 | `poll_serverless_history(prompt_id)` starts | `queue-manager/main.py` | 200 | — | comfy-queue-manager | :3000 |
-| 12.2 | GET `/api/history/{prompt_id}` to DataCrunch | `queue-manager/main.py` | 215 | — | comfy-queue-manager → DataCrunch | HTTPS |
+| 12.2 | GET `/api/history/{prompt_id}` to Verda | `queue-manager/main.py` | 215 | — | comfy-queue-manager → Verda | HTTPS |
 | 12.3 | Poll every 2 seconds, max 600s total (max_wait) | `queue-manager/main.py` | 210, 250 | — | comfy-queue-manager | :3000 |
 | 12.4 | Per-request timeout: 10s (fail fast during model load) | `queue-manager/main.py` | 215 | — | comfy-queue-manager | :3000 |
 | 12.5 | Logs response structure on first few polls + periodic intervals | `queue-manager/main.py` | 220-230 | — | comfy-queue-manager | :3000 |
 | 12.6 | Eventually: history returns `status.completed == True` with outputs | `queue-manager/main.py` | 235-240 | — | comfy-queue-manager | :3000 |
-| **13** | **GPU inference executes on serverless** | ComfyUI core (on serverless) | — | `/workspace/ComfyUI/` | DataCrunch H200 | :8188 |
-| 13.1 | KSampler node: denoising/diffusion steps (GPU compute) | ComfyUI core | — | — | DataCrunch H200 | :8188 |
-| 13.2 | VAEDecode node: latent → pixel space conversion | ComfyUI core | — | — | DataCrunch H200 | :8188 |
-| 13.3 | SaveImage node: saves PNG to `--output-directory` | ComfyUI core | — | `/mnt/sfs/outputs/` | DataCrunch H200 | :8188 |
-| **14** | **Image saved to SFS by serverless container** | ComfyUI core SaveImage | — | `/mnt/sfs/outputs/` | DataCrunch H200 | — |
-| 14.1 | ComfyUI `SaveImage` node writes to `--output-directory` | ComfyUI core | — | `/mnt/sfs/outputs/` | DataCrunch H200 | — |
-| 14.2 | File: e.g., `/mnt/sfs/outputs/Flux2-Klein_00001_.png` (2MB) | — | — | `/mnt/sfs/outputs/` | DataCrunch H200 | — |
-| 14.3 | File owned by uid 1000 (ComfyUI user inside container) | — | — | `/mnt/sfs/outputs/` | DataCrunch H200 | — |
+| **13** | **GPU inference executes on serverless** | ComfyUI core (on serverless) | — | `/workspace/ComfyUI/` | Verda H200 | :8188 |
+| 13.1 | KSampler node: denoising/diffusion steps (GPU compute) | ComfyUI core | — | — | Verda H200 | :8188 |
+| 13.2 | VAEDecode node: latent → pixel space conversion | ComfyUI core | — | — | Verda H200 | :8188 |
+| 13.3 | SaveImage node: saves PNG to `--output-directory` | ComfyUI core | — | `/mnt/sfs/outputs/` | Verda H200 | :8188 |
+| **14** | **Image saved to SFS by serverless container** | ComfyUI core SaveImage | — | `/mnt/sfs/outputs/` | Verda H200 | — |
+| 14.1 | ComfyUI `SaveImage` node writes to `--output-directory` | ComfyUI core | — | `/mnt/sfs/outputs/` | Verda H200 | — |
+| 14.2 | File: e.g., `/mnt/sfs/outputs/Flux2-Klein_00001_.png` (2MB) | — | — | `/mnt/sfs/outputs/` | Verda H200 | — |
+| 14.3 | File owned by uid 1000 (ComfyUI user inside container) | — | — | `/mnt/sfs/outputs/` | Verda H200 | — |
 | 14.4 | SFS permissions `1777` allow write from any uid | — | — | `/mnt/sfs/outputs/` | — | NFS |
 | **15** | **QM fetches images from SFS** | `queue-manager/main.py` | 274-298 | `/workspace/` | comfy-queue-manager | :3000 |
 | 15.1 | `fetch_serverless_images()` called after poll completes | `queue-manager/main.py` | 274 | — | comfy-queue-manager | :3000 |
@@ -156,7 +156,7 @@ ComfyuME has two paths for serverless inference depending on how the request ent
 | 15.3 | Try SFS path first: `/mnt/sfs/outputs/{subfolder}/{filename}` | `queue-manager/main.py` | 285-290 | `/mnt/sfs/outputs/` | comfy-queue-manager | NFS (ro) |
 | 15.4 | File found on SFS → copy to `/outputs/{user_id}/{filename}` | `queue-manager/main.py` | 290-293 | `/mnt/sfs/outputs/` → `/outputs/user001/` | comfy-queue-manager | :3000 |
 | 15.5 | Log: "SFS image: {path} → {dest} ({size} bytes)" | `queue-manager/main.py` | 280 | — | comfy-queue-manager | :3000 |
-| 15.6 | Fallback: HTTP GET `/view?filename=...` from serverless (if SFS fails) | `queue-manager/main.py` | 294-298 | — | comfy-queue-manager → DataCrunch | HTTPS |
+| 15.6 | Fallback: HTTP GET `/view?filename=...` from serverless (if SFS fails) | `queue-manager/main.py` | 294-298 | — | comfy-queue-manager → Verda | HTTPS |
 | **16** | **Image arrives in user output directory** | — | — | `/outputs/user001/` | comfy-queue-manager | — |
 | 16.1 | File: `/outputs/user001/Flux2-Klein_00001_.png` | — | — | `/outputs/user001/` | comfy-queue-manager | — |
 | 16.2 | This directory is volume-mounted into comfy-user001 as `/comfyui/output/` | `docker-compose.users.yml` | — | `/outputs/` ↔ `/comfyui/output/` | comfy-user001 | — |
@@ -199,7 +199,7 @@ ComfyuME has two paths for serverless inference depending on how the request ent
 | Phase | Time | What's Happening |
 |---|---|---|
 | T+0.0s – T+0.5s | Steps 1-9 | Button click → QM receives job |
-| T+0.5s – T+1.0s | Step 10 | QM POSTs to DataCrunch, gets prompt_id |
+| T+0.5s – T+1.0s | Step 10 | QM POSTs to Verda, gets prompt_id |
 | T+1.0s – T+120s | Steps 11-12 | Model loading (cold start) + QM polling |
 | T+120s – T+135s | Step 13 | GPU inference (denoising steps) |
 | T+135s – T+136s | Step 14 | Image saved to SFS |
@@ -241,7 +241,7 @@ ComfyuME has two paths for serverless inference depending on how the request ent
 | comfy-user001 | `./data/user_data/user001/comfyui/custom_nodes/` | `/comfyui/custom_nodes/` | rw | Extensions |
 | comfy-queue-manager | `./data/outputs/` | `/outputs/` | rw | Writes fetched images |
 | comfy-queue-manager | `/mnt/sfs/outputs/` | `/mnt/sfs/outputs/` | ro | Reads SFS images |
-| DataCrunch H200 | SFS | `/mnt/sfs/` | rw | Models (read) + outputs (write) |
+| Verda H200 | SFS | `/mnt/sfs/` | rw | Models (read) + outputs (write) |
 
 ---
 
