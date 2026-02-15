@@ -57,8 +57,9 @@
       - DONE: Documented SFS console rename → pseudopath change risk (gotchas.md)
       - DONE: Updated #37 with clarified plan (new user, not rename)
       - DONE: Created #38 for testing instance + model vault check flow
-      - IN PROGRESS: Aeon spinning up RTX A6000 spot (FIN-01, €0.14/hr) — no CPU avail
-      - IN PROGRESS: Temp-Model-Vault restored from deleted state to check for extra models
+      - DONE: Testing instance provisioned: testing-sharp-book-cracks-fin-01 (135.181.63.140), RTX A6000 spot
+      - DONE: Temp-Model-Vault (vol 005, da6b4d99, 220GB) restored from deleted state — will copy extra models then delete again
+      - DONE: Registry updated: instance 007 + block vol 007 in infrastructure-registry.md
       - NOTE: SFS is regional — must stay FIN-01 for SFS access
       - PENDING: Username rename dev→aeon (#37)
     - PHASE 2 (NEXT): Set up testing instance, fix restore script, test changes
