@@ -527,16 +527,25 @@ This preserves the expected IP: **100.89.38.43**
 
 ### Deployment Prerequisites Checklist
 
-Before starting, verify:
-- [ ] mello VPS is running (dev machine + user dir -- comfy.ahelme.net)
+Before deploying a new staging/testing instance, verify:
+
+**Infrastructure:**
+- [ ] **Production instance is running** (quiet-city, 65.108.33.101) — models come from PROD_SFS first
+- [ ] **PROD_SFS** (`PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`) is healthy — this is the primary model source (~192GB, 28 models). New instances mount this via NFS and copy models locally. SFS must be shared with the new instance via Verda console "share settings".
+- [ ] **CLONE_SFS** (`CLONE_SFS-Model-Vault-16-Feb-97Es5EBC`) available as backup/testing model source
+- [ ] mello VPS is running (dev machine + user dir — comfy.ahelme.net)
+
+**Fallback (only if PROD_SFS unavailable/deleted):**
 - [ ] R2: **Models bucket** (`comfyume-model-vault-backups`) contains:
   - [ ] `checkpoints/*.safetensors` (~25-50 GB)
   - [ ] `text_encoders/*.safetensors` (~20 GB)
+
+**Always required:**
 - [ ] R2: **Cache bucket** (`comfyume-cache-backups`) contains:
   - [ ] `worker-image.tar.gz` (~2.5 GB)
   - [ ] `verda-config-backup.tar.gz` (~14 MB)
 - [ ] R2: **Worker container bucket** (`comfyume-worker-container-backups`)
-- [ ] R2: **User files bucket** (`comfyume-user-files-backups`) -- available to receive backups
+- [ ] R2: **User files bucket** (`comfyume-user-files-backups`) — available to receive backups
 - [ ] GitHub: **Private Scripts Repo** (`ahelme/comfymulti-scripts`) contains:
   - [ ] `restore-verda-instance.sh`
 - [ ] User's Mac: **SSH Keys and Setup Script** added to Verda console during provisioning
@@ -548,7 +557,7 @@ Before starting, verify:
 See [Admin Backup & Restore Guide](./docs/admin-backup-restore.md) for complete step-by-step instructions including:
 - Provisioning SFS and GPU instance and block storage (scratch disk) on Verda
 - Running restore-verda-instance.sh on Verda (runs automatically on first boot)
-- Script downloads models from R2 (unless available on SFS already)
+- Script mounts PROD_SFS for models first (fast, NFS), falls back to R2 download only if SFS unavailable
 - Backup cron jobs are set up automatically by the script
 
 ### Troubleshooting
