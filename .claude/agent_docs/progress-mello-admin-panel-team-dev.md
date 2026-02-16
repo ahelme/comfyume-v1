@@ -82,7 +82,17 @@
     - Investigation: no code drift (all files match git), container healthy, models visible
     - Server rebooted Feb 15 15:19 UTC — container restarts NOT the cause (inference worked after)
     - **QM error logging deployed (#48)** — next failed job will log actual error details
-    - NEXT: set up OpenTofu on TESTING server, use `tofu plan` to detect serverless deployment drift
+    - **OpenTofu drift audit complete (#54)** — .tf matches live, no deployment config drift found
+    - NEXT: trigger a test job to capture actual error via new QM logging
+
+🔧 **IN PROGRESS - comfyume-v1 #54 - IaC: OpenTofu for Verda Serverless**
+    - Created: 2026-02-16 | Updated: 2026-02-16
+    - OpenTofu v1.11.5 installed on Mello, `verda-cloud/verda` v1.1.1 provider
+    - `infrastructure/` dir: providers.tf, variables.tf, containers.tf, .gitignore, .lock
+    - All 4 deployments imported + plan = 0 real drift
+    - Drift audit found: `--output-directory` missing from 3 of 4 deployments, healthcheck `/` not `/system_stats`
+    - CLAUDE.md updated with debugging + deployment change workflow
+    - NEXT: first `tofu apply` on testing server, fix 3 missing `--output-directory` flags
 
 ✅ **(COMPLETE) - comfyume-v1 #48 - QM Error Logging**
     - Created: 2026-02-16 | Updated: 2026-02-16
@@ -122,6 +132,38 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 12 - 2026-02-16 - OpenTofu IaC Setup + Drift Audit (#54)
+
+**Date:** 2026-02-16 | **Issues:** #54
+
+**Done:**
+- Installed OpenTofu v1.11.5 on Mello (ARM64 Ubuntu 24.04)
+- Researched `verda-cloud/verda` provider v1.1.1 — supports `verda_container` for serverless
+- Got full provider schema via `tofu providers schema -json` (7 resource types, `verda_container` confirmed)
+- Created `infrastructure/` dir: providers.tf, variables.tf, containers.tf, terraform.tfvars.example, .gitignore
+- Queried all 4 live deployments via Verda SDK — full config dump
+- Drift audit — significant differences between documented and actual config:
+  - `--output-directory /mnt/sfs/outputs` only on H200-spot (3 missing)
+  - Healthcheck `/` not `/system_stats`
+  - Exec-style entrypoint (no shell wrapper)
+  - GPU names `H200`/`B300` (not `H200 SXM5 141GB`)
+  - Queue load threshold `2` (not `1`), `deadline_seconds` missing from .tf
+  - 3 volume mounts (scratch + memory + shared), not just shared
+- Updated .tf files to match live production exactly
+- Imported all 4 deployments: `tofu import` by name
+- `tofu plan` = 0 real changes (only sensitive value display)
+- Created GH #54 with full rationale, drift table, and remaining work
+- Updated CLAUDE.md IaC section: setup, making changes, debugging workflow
+- Updated `/verda-terraform` and `/verda-open-tofu` skills
+- PRs #53 and #55 merged to main
+
+**SFS volumes identified:**
+- PROD: `be539393-...` (PROD_SFS-Model-Vault-22-Jan-01, 220GB NVMe_Shared)
+- CLONE: `fd7efb9e-...` (CLONE_SFS-Model-Vault-16-Feb, 220GB NVMe_Shared)
+
+**Provider limitations:** No `verda_sfs` resource — SFS management stays manual.
 
 ---
 ## Progress Report 11 - 2026-02-16 - NFS Fix, 3 New Issues, Inference Regression (#43, #44, #45, #46)

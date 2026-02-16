@@ -25,7 +25,12 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [SCRIPTS] 005f62e fix: redesign backup log dashboard, separate verify log (#48)
 - [SCRIPTS] Merge PR #50 into main (backup log dashboard + verify-and-log)
 - [SCRIPTS] git pull main → scripts repo synced
-- [ADMIN] a09c8d1 Merge PR (OpenTofu infrastructure files — containers.tf, providers.tf, variables.tf)
+- [ADMIN] fdc69ce docs: add OpenTofu debugging/deployment workflow to CLAUDE.md (#54)
+- [ADMIN] e7e7842 feat: import 4 Verda deployments, align .tf with live production (#54) — drift audit complete
+- [ADMIN] 8930d46 Merge PR #55 (import + drift alignment + CLAUDE.md)
+- [ADMIN] ff558b8 feat: add OpenTofu infrastructure for Verda serverless deployments
+- [ADMIN] 54abda4 Merge PR #53 (initial .tf files)
+- [ADMIN] created GH #54: IaC — bring Verda serverless under OpenTofu management
 - [MELLO-ONE-TEAM] (no commit) redis-7-alpine uploaded to R2 (16.4 MiB, verified)
 - [MELLO-ONE-TEAM] (no commit) R2 upload verified: 13 items, 0 failures, all VERIFIED
 - [MELLO-ONE-TEAM] (no commit) restore script gap analysis: 6 critical naming mismatches found
