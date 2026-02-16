@@ -117,3 +117,10 @@ Subdomains reverse-proxied through Mello nginx → Verda via Tailscale. Let's En
 - [ ] **CRITICAL: Investigate inference regression — Flux Klein and all workflows broken**
 - [ ] Check queue-manager, Redis, serverless state, container env vars
 - [ ] After inference fixed: close #43, work on #44/#45/#46
+
+**Added Feb 16 (late):**
+- [ ] **IaC: Set up OpenTofu for Verda serverless deployments — DO THIS ON TESTING SERVER, NOT PRODUCTION**
+- [ ] Write `.tf` files in `infrastructure/` defining serverless deployment config (startup cmd, scaling, GPU, SFS)
+- [ ] Use `tofu plan` to detect drift on serverless deployments — this will reveal what broke inference
+- [ ] Import existing deployment state with `tofu import`
+- [ ] CLAUDE.md #6 added: IaC via OpenTofu is now mandatory

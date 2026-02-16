@@ -21,7 +21,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [ADMIN] (no commit) created GH issues #44 (GPU banner), #45 (cookie auth), #46 (cold start UX)
 - [ADMIN] (no commit) diagnosed: redirect.js serverless early-exit, auth re-prompting, cold start timeout chain
 - [ADMIN] (no commit) SSH updated: Tailscale 100.89.38.43 as dev (root on public IP broken after reprovision)
-- [ADMIN] **REGRESSION**: inference broken for ALL workflows after container restarts — needs investigation
+- [ADMIN] **REGRESSION**: inference broken for ALL workflows — serverless returns status=error, no deployment drift found
+- [ADMIN] (no commit) investigation: no code drift, QM doesn't log serverless error detail (#48)
+- [ADMIN] created GH #48: QM poll_serverless_history logging gap
 - [MELLO-ONE-TEAM] eff863a docs: deployment checklist SFS-first, instance 008, DR clone (#38)
 - [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
 - [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)
