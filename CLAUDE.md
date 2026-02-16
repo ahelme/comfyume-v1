@@ -279,6 +279,7 @@ All Verda resources (instances, block volumes, SFS) use environment prefixes in 
 |--------|-------------|---------|
 | `PROD_*` | Production | `PROD_OS-hiq7F8JM`, `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi` |
 | `CLONE_*` | Cloned from prod (testing + staging shared) | `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` |
+| `STAG_*` | Staging-only | `STAG_OS-...`, `STAG_Scratch-Disk-...` |
 | `TEST_*` | Testing-only | `TEST_OS-...`, `TEST_Scratch-Disk-...` |
 | `UNUSED_*` | Old/orphaned, pending deletion | `UNUSED_OLD-GPU-INSTANCE-OS-5qsQtVzV` |
 
