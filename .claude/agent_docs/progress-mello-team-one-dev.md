@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-16 - Model vault check, R2 backup, DR clone, testing instance swap
+**Doc Updated:** 2026-02-16 - R2 audit, backup scripts fix, backups-log.md, PR #41 merged
 
 ---
 # Project Progress Tracker
@@ -51,7 +51,10 @@
     - PHASE 1.75 DONE: Verda infra cleanup + model vault check (#38 closed)
       - DONE: Resource naming convention, SFS clone, orphan volume cleanup
       - DONE: 6 missing models (~65GB) copied from Temp-Model-Vault to both SFS volumes
-      - DONE: R2 backup of 16 missing models (~85GB) uploading in background
+      - DONE: R2 backup of 16 missing models (~85GB) — COMPLETE, verified
+      - DONE: Full R2 audit of all 4 buckets — backups-log.md created (scripts repo)
+      - DONE: Backup scripts updated: dated naming, retention, verification (scripts #48)
+      - DONE: Found 2 broken tarballs (ssh-host-keys, ssl-certs — wrong paths)
       - DONE: SFS-prod fstab entry added (auto-mount on reboot)
       - DONE: SFS share-settings gotcha documented
       - DONE: Deployment checklist updated — SFS-first, R2 fallback
@@ -63,6 +66,8 @@
       - NOTE: FIN-01 CPU instances scarce — considering FIN-03 with new SFS
       - PENDING: Username rename dev→aeon (#37)
     - PHASE 2 (NEXT): Set up testing instance (FIN-01 or FIN-03), fix restore script
+      - Fix SSL cert backup (docker cp from nginx container) + SSH key backup path
+      - Set up backup cron jobs on production
       - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
       - Run restore, test end-to-end (all 5 workflows)
     - PHASE 3 (NEXT): Add advanced code piece by piece
@@ -96,6 +101,45 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 51 - 2026-02-16 - R2 audit, backup scripts, PR #41 merged
+
+**Date:** 2026-02-16 | **Issues:** #31, #42 | **Branch:** testing-mello-team-one
+
+### Context
+Continuing Phase 1.75 wrap-up. R2 backups completed from last session — this session focused on verifying them, fixing backup scripts, and getting docs merged to main.
+
+### Changes
+
+**PR #41 merged to main:**
+- CLAUDE.md reorganization (deployment checklist, storage naming, backup agent doc)
+- Backup retention policy added to admin-backup-restore.md
+- New agent doc: backups.md
+- Resolved 4 merge conflicts (main had PR #39 merged since last sync)
+- Branch synced with main after merge (prevents stale commits in future PRs)
+
+**R2 audit — all 4 buckets (verified, logged in backups-log.md):**
+- model-vault: COMPLETE — 24 models (~192 GiB), 1:1 with SFS-prod
+- cache: 14 OK, 2 BROKEN (ssh-host-keys & ssl-certs are empty 45B tarballs)
+- worker-container: 6 images valid, no dated naming yet
+- user-files: 1 backup (913 KiB)
+
+**Root causes found:**
+- ssl-certs backup: certs live inside nginx container (/etc/nginx/ssl/), not on host. Need docker cp.
+- ssh-host-keys backup: script used wrong source path
+- 2 SFS diffusion_models are symlinks → checkpoints/flux2_klein_9b.safetensors (R2 has full copies)
+
+**Backup scripts fixed (scripts repo, #48):**
+- backup-cron.sh, backup-verda.sh, upload-backups-to-r2.sh updated
+- Dated naming, retention policy, verification logging
+- Bash arithmetic gotcha with set -e fixed
+- Image naming fix in backup-cron.sh (uncommitted)
+
+### Decisions
+- backups-log.md records VERIFIED (checked) contents, not uploaded — single source of truth for R2 audit trail
+- After merging PR, always `git fetch origin main && git merge origin/main` on working branch
 
 ---
 

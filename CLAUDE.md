@@ -596,6 +596,7 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |
 | [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · /outputs/ needs 1777 perms · block=single-instance · !WIPED if attached@provisioning |
 | [backups.md](.claude/agent_docs/backups.md) | backup, restore, R2, retention | !append-only · 4 R2 buckets · SFS→R2 fallback · dated naming · rotation: 5d/3w/3m · scripts need updating |
+| [backups-log.md](https://github.com/ahelme/comfymulti-scripts/blob/main/backups-log.md) | verify R2 contents, audit trail | PRIVATE scripts repo · VERIFIED contents only · append-only · new entries at top |
 | [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | !SFS console rename→pseudopath change on reboot · !SFS needs share settings per instance · nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent · !Verda ex.DataCrunch rebrand |
 | [external-references.md](.claude/agent_docs/external-references.md) | architecture research | Visionatrix · SaladTech · Modal · 9elements — multi-user patterns |
 
