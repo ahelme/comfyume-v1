@@ -17,6 +17,10 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-16
 
+- [MELLO-ONE-TEAM] 949fbe1 Merge PR #41 into main (CLAUDE.md reorg, backup docs, infra cleanup)
+- [MELLO-ONE-TEAM] dde0552 merge: incorporate main (PR #39) into testing-mello-team-one
+- [MELLO-ONE-TEAM] 2f34b0f docs: add backup retention policy and backups agent doc (#42)
+- [MELLO-ONE-TEAM] 2a0c4ed docs: reorganize CLAUDE.md — deployment checklist, storage naming
 - [ADMIN] (no commit) fix: restarted all 20 frontend containers — NFS model visibility restored (#43)
 - [ADMIN] (no commit) created GH issues #44 (GPU banner), #45 (cookie auth), #46 (cold start UX)
 - [ADMIN] (no commit) diagnosed: redirect.js serverless early-exit, auth re-prompting, cold start timeout chain
@@ -26,6 +30,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
 - [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)
 - [MELLO-ONE-TEAM] 817fc51 docs: testing instance in infrastructure table (#38)
+- [MELLO-ONE-TEAM] (scripts) 6658d02 docs: add backups log — verified R2 contents audit (#45)
+- [MELLO-ONE-TEAM] (scripts) c71874c fix: backup scripts — retention policy, dated naming (#48)
+- [MELLO-ONE-TEAM] (scripts) 2de0a45 fix: bash arithmetic gotcha with set -e (#48)
 
 ## 2026-02-15
 
