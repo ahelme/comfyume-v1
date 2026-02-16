@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume
 **Domain:** comfy.ahelme.net (staging) / aiworkshop.art (production)
 **Doc Created:** 2026-02-06
-**Doc Updated:** 2026-02-10 (AEST)
+**Doc Updated:** 2026-02-16
 
 ---
 # Project Progress Tracker
@@ -68,19 +68,36 @@
     - All 22 models downloaded (172GB), disk cleaned to 68% (removed 3 legacy files ~34GB)
     - Deployed to Verda, all 20 frontends verified with /mnt/sfs/models mount
 
-🔲 **IN PROGRESS - comfyume #101, #103 - Serverless Inference: Model Path Fix**
-    - Created: 2026-02-09 | Updated: 2026-02-10
-    - ROOT CAUSE CONFIRMED: yaml key `upscale_models` should be `latent_upscale_models` (ComfyUI #12004)
-    - `sed` fix applied via Verda console but FAILED — `^` anchor missed indented yaml key
-    - Flux inference WORKS end-to-end (113s execution), LTX-2 still blocked by yaml key
-    - NEXT: re-run `sed` without `^` anchor, then verify LTX-2 works
-    - NEW ISSUE: no UI feedback — results stay on serverless container, not returned to user
+✅ **(COMPLETE) - comfyume-v1 #43 - NFS Model Visibility Fix**
+    - Created: 2026-02-16 | Updated: 2026-02-16
+    - LTX-2 "Missing Models" popup — Docker bind mount cached stale NFS dir listing
+    - Fixed by batched restart of all 20 frontend containers (no code changes)
+    - All models visible inside containers after restart
 
-🔲 **NEW - Result delivery from serverless to user frontend**
-    - Created: 2026-02-10
-    - Jobs execute on serverless (confirmed via logs) but user sees nothing in ComfyUI
-    - Need mechanism to return generated images/videos from serverless → user browser
-    - Separate from #101 — this affects ALL workflows including working Flux
+🚨 **CRITICAL - comfyume-v1 #101, #103 - Serverless Inference BROKEN**
+    - Created: 2026-02-09 | Updated: 2026-02-16
+    - Yaml key on SFS confirmed CORRECT as of Feb 16 (latent_upscale_models)
+    - Flux Klein WAS working (113s execution confirmed Feb 10)
+    - **NOW BROKEN** (reported Feb 16) — even Flux Klein no longer works
+    - Likely caused by container restart (Feb 16 #43 fix) or other recent server changes
+    - NEXT: investigate carefully what changed — compare container state before/after
+
+🔲 **NEW - comfyume-v1 #44 - GPU Progress Banner for Serverless Mode**
+    - Created: 2026-02-16
+    - redirect.js exits early in serverless mode (line 64-67), banner never created
+    - serverless_proxy sends WebSocket events but no browser-side listener
+    - Fix: listen to WebSocket events in redirect.js, show progress banner
+
+🔲 **NEW - comfyume-v1 #45 - Cookie-Based Auth Persistence**
+    - Created: 2026-02-16
+    - HTTP Basic Auth re-prompts too often, especially on mobile
+    - Fix: nginx map + Set-Cookie — cookie bypasses auth for 24h
+
+🔲 **NEW - comfyume-v1 #46 - Cold Start Silent Failure UX**
+    - Created: 2026-02-16
+    - No feedback during 5+ minute serverless cold start, silently fails
+    - Full timeout chain: urllib 600s → QM polling 10s/poll 600s max → cold start 30-300s
+    - Coupled with #44 (same file) but separate concern
 
 ✅ **(COMPLETE) - comfyume #106 - Monitoring & Management Stack**
     - Created: 2026-02-09 | Updated: 2026-02-09
@@ -97,6 +114,33 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 11 - 2026-02-16 - NFS Fix, 3 New Issues, Inference Regression (#43, #44, #45, #46)
+
+**Date:** 2026-02-16 | **Issues:** #43, #44, #45, #46
+
+**Done:**
+- Diagnosed #43: LTX-2 "Missing Models" popup — `/models/shared/` empty inside all 20 containers despite host seeing all files. Docker bind mount cached stale NFS directory listing.
+- Fixed #43: batched restart of all 20 frontend containers (user020 test, then 4 batches of 5). All models visible. No code changes needed.
+- Investigated GPU progress banner: `redirect.js` line 64-67 exits early in serverless mode, banner never created. `serverless_proxy` sends WebSocket events but nothing listens browser-side.
+- Investigated auth persistence: HTTP Basic Auth has no cookie/session support, re-prompts frequently on mobile.
+- Investigated cold start UX: full timeout chain traced (urllib 600s → QM 600s → cold start 30-300s), no user feedback.
+- Created GH issues #44 (GPU banner), #45 (cookie auth), #46 (cold start UX).
+- SSH access updated: Tailscale IP `100.89.38.43` as `dev` user (root on public IP no longer works after reprovision).
+- SFS confirmed mounted on instance (was not accessible Feb 10).
+- `extra_model_paths.yaml` on SFS has correct keys.
+
+**Key findings:**
+- ComfyUI v0.11.0 (not v0.10.0)
+- Flux Klein `UNETLoader` doesn't declare `properties.models` → no "Missing Models" popup
+- LTX-2 nodes DO declare `properties.models` → popup triggered when models not visible
+
+**REGRESSION (reported end of session):**
+- Inference now broken for ALL workflows including Flux Klein (was working before container restarts)
+- Needs careful investigation — may be related to #43 container restart or other recent changes
+
+**Handover interrupted — context ran out before completing file updates.**
 
 ---
 ## Progress Report 10 - 2026-02-09 - Monitoring Fixes, SSL Certs, Verda SDK (#106, #109)
