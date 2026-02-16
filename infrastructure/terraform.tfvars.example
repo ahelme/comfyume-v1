@@ -1,0 +1,29 @@
+# Copy to terraform.tfvars and fill in values.
+# terraform.tfvars is gitignored — NEVER commit secrets.
+#
+# Auth: set VERDA_CLIENT_ID and VERDA_CLIENT_SECRET as env vars.
+
+# Required — Verda shared volume ID for SFS (models, outputs, cache)
+# Find via: Verda console > Shared Volumes, or verda SDK get_shared_volumes()
+sfs_volume_id = "REPLACE_ME"
+
+# Hugging Face token for gated model access (e.g. Flux)
+hf_token = ""
+
+# Container image
+worker_image = "ghcr.io/ahelme/comfyume-worker:v0.11.0"
+
+# Which deployments to create (true/false)
+deploy_h200_spot      = true
+deploy_h200_on_demand = false
+deploy_b300_spot      = false
+deploy_b300_on_demand = false
+
+# Scaling
+min_replicas     = 0    # 0 = scale to zero when idle
+max_replicas     = 10
+scale_down_delay = 300  # seconds before scaling down idle replica
+request_ttl      = 36000  # max request lifetime in seconds
+
+# Startup command — change if you need different ComfyUI flags
+comfyui_start_command = "python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml --output-directory /mnt/sfs/outputs"

@@ -1,0 +1,17 @@
+# OpenTofu / Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+# .terraform.lock.hcl is COMMITTED (pins exact provider versions)
+
+# Secrets — NEVER commit
+terraform.tfvars
+*.auto.tfvars
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Plan output files
+*.tfplan
