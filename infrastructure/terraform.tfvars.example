@@ -4,7 +4,8 @@
 # Auth: set VERDA_CLIENT_ID and VERDA_CLIENT_SECRET as env vars.
 
 # Required — Verda shared volume ID for SFS (models, outputs, cache)
-# Find via: Verda console > Shared Volumes, or verda SDK get_shared_volumes()
+# PROD: be539393-4946-42fa-9adf-d72fe62cded7 (PROD_SFS-Model-Vault-22-Jan-01)
+# CLONE: fd7efb9e-762a-47e4-a2a4-a9ee1a0bd338 (CLONE_SFS-Model-Vault-16-Feb)
 sfs_volume_id = "REPLACE_ME"
 
 # Hugging Face token for gated model access (e.g. Flux)
@@ -13,17 +14,14 @@ hf_token = ""
 # Container image
 worker_image = "ghcr.io/ahelme/comfyume-worker:v0.11.0"
 
-# Which deployments to create (true/false)
+# Which deployments to create (all 4 exist in production)
 deploy_h200_spot      = true
-deploy_h200_on_demand = false
-deploy_b300_spot      = false
-deploy_b300_on_demand = false
+deploy_h200_on_demand = true
+deploy_b300_spot      = true
+deploy_b300_on_demand = true
 
-# Scaling
-min_replicas     = 0    # 0 = scale to zero when idle
+# Scaling (matches live production values)
+min_replicas     = 0      # 0 = scale to zero when idle
 max_replicas     = 10
-scale_down_delay = 300  # seconds before scaling down idle replica
+scale_down_delay = 300    # seconds before scaling down idle replica
 request_ttl      = 36000  # max request lifetime in seconds
-
-# Startup command — change if you need different ComfyUI flags
-comfyui_start_command = "python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml --output-directory /mnt/sfs/outputs"
