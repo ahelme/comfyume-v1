@@ -1,14 +1,16 @@
 # CLAUDE RESUME - COMFYUME (ADMIN PANEL TEAM)
 
-**DATE**: 2026-02-10
+**DATE**: 2026-02-16
 
 ---
 
 ## CONTEXT
 
-**We are the Mello Admin Panel Team.** Branch: `mello-admin-panel-team`.
+**We are the Mello Admin Panel Team.** Branch: `testing-mello-admin-panel-team`.
 
 **Production:** aiworkshop.art runs on Verda CPU instance (see `VERDA_PUBLIC_IP` in `.env`), NOT Mello.
+
+**SSH (temporary):** `ssh dev@100.89.38.43` (Tailscale IP). Root on public IP broken after reprovision — will be fixed when instance is re-provisioned or keys restored.
 
 ---
 
@@ -89,16 +91,29 @@ Subdomains reverse-proxied through Mello nginx → Verda via Tailscale. Let's En
 
 ## GITHUB ISSUES
 
-- **#101** — OPEN. Root cause confirmed, sed fix attempted but failed (indentation). Flux inference works, LTX-2 blocked.
-- **#103** — OPEN. REAL SFS only accessible from serverless containers.
-- **#106** — OPEN. Monitoring stack complete. Subdomains live.
-- **#109** — OPEN. SSL certs for 5 subdomains complete.
+- **#101** — [x] Yaml key fix applied. Flux inference was working. LTX-2 was blocked. **Inference now BROKEN — regression.**
+- **#103** — [x] SFS mount resolved. Instance now sees SFS. **May relate to regression — container restarts changed mount state.**
+- **#106** — [x] Monitoring stack complete. Subdomains live.
+- **#109** — [x] SSL certs for 5 subdomains complete.
+
+**Added Feb 16:**
+- **#43** — OPEN. Fixed (container restart Feb 16). Close after confirming inference works.
+- **#44** — OPEN. GPU progress banner for serverless mode.
+- **#45** — OPEN. Cookie-based auth persistence.
+- **#46** — OPEN. Cold start silent failure UX.
+- **#101 UPDATE:** Yaml key on SFS now correct. But inference BROKEN — regression after container restarts.
+- **#103 UPDATE:** SFS now also accessible from instance (was only serverless Feb 10).
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
+- [x] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
 - [ ] Run `/verda-monitoring-check` to verify stack is healthy
-- [ ] Fix #101: re-run sed without `^` anchor via Verda console
-- [ ] Investigate result delivery: how do serverless outputs get back to user?
+- [x] Fix #101: re-run sed without `^` anchor via Verda console — **done, yaml key correct on SFS**
+- [ ] Investigate result delivery: how do serverless outputs get back to user? — **partially done, Ralph Loop PRs #23-#28 implemented SFS-based delivery, but now broken**
+
+**Added Feb 16:**
+- [ ] **CRITICAL: Investigate inference regression — Flux Klein and all workflows broken**
+- [ ] Check queue-manager, Redis, serverless state, container env vars
+- [ ] After inference fixed: close #43, work on #44/#45/#46

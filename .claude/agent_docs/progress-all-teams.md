@@ -17,6 +17,11 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-16
 
+- [ADMIN] (no commit) fix: restarted all 20 frontend containers — NFS model visibility restored (#43)
+- [ADMIN] (no commit) created GH issues #44 (GPU banner), #45 (cookie auth), #46 (cold start UX)
+- [ADMIN] (no commit) diagnosed: redirect.js serverless early-exit, auth re-prompting, cold start timeout chain
+- [ADMIN] (no commit) SSH updated: Tailscale 100.89.38.43 as dev (root on public IP broken after reprovision)
+- [ADMIN] **REGRESSION**: inference broken for ALL workflows after container restarts — needs investigation
 - [MELLO-ONE-TEAM] eff863a docs: deployment checklist SFS-first, instance 008, DR clone (#38)
 - [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
 - [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)
