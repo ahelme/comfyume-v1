@@ -8,11 +8,11 @@
 
 **We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one` (NOT main).
 
-**Production:** aiworkshop.art runs on quiet-city (65.108.33.101), a Verda (ex. DataCrunch) CPU instance. 24 containers healthy. Serverless inference working. Image delivery FIXED.
+**Production:** aiworkshop.art on quiet-city (65.108.33.101). 24 containers healthy. Inference BROKEN (admin team investigating — serverless returns status=error, QM logging improved in PR #51).
 
-**Last session completed:** PR #41 merged. R2 audit of all 4 buckets. Backup scripts fixed (scripts #48). backups-log.md created.
+**Last session completed:** Backup system fully verified. R2: 13 uploads, 0 failures, all VERIFIED. Cron running. Gap analysis of restore script found 6 critical naming mismatches.
 
-**R2 backup status:** Models COMPLETE (24 files, ~192 GiB). Cache has 2 broken tarballs. No automated cron yet.
+**Backup status:** ALL items present and verified on R2. See `comfymulti-scripts/backups-log.md` for dashboard.
 
 ---
 
@@ -21,53 +21,47 @@
 Please read:
 
 1. **`./CLAUDE.md`** — Project instructions (especially Backup and Restore, Critical Gotchas)
-2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~140 lines) — Priority tasks + Report 51
+2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~160 lines) — Priority tasks + Report 52
 3. **`git log --oneline -10`** — Recent commits
-4. **`docs/media-generation-flow.md`** (skim) — End-to-end flow for reference
+4. **`comfymulti-scripts/restore-verda-instance.sh`** — The restore script that needs fixing (1688 lines)
 
 ---
 
 ## IMMEDIATE NEXT STEPS
 
-**!! FIRST THING: Check R2 for missing container images !!**
-   - Last session discovered most container images were MISSING from R2
-   - An upload was started in a rewound conversation — CHECK if it completed
-   - Run: `aws --endpoint-url $ENDPOINT s3 ls s3://comfyume-worker-container-backups/ --recursive --human-readable`
-   - Compare against ALL docker images on prod: `ssh root@65.108.33.101 'docker images --format "{{.Repository}}:{{.Tag}}\t{{.Size}}"'`
-   - Need ALL images: frontend, worker, queue-manager, nginx, admin, redis, grafana, prometheus, loki, cadvisor, dry
-   - If missing, upload them with dated naming: `<image-name>-<YYYY-MM-DD>.tar.gz`
+**!! PRIORITY: Fix restore script — BLOCKER for testing instance !!**
 
-**!! CRITICAL: ALL backups MUST be logged in `comfymulti-scripts/backups-log.md` !!**
-   - Log contains VERIFIED (checked) contents, not what was uploaded
-   - After ANY upload to R2: list bucket, verify files, add entry to log
-   - New entries go at the TOP of the log, append-only, never edit old entries
+The restore script (`comfymulti-scripts/restore-verda-instance.sh`) has 6 critical naming mismatches with the current backup system. It WILL FAIL on a new instance:
 
-**1. Fix broken backup scripts (#42, scripts #48)**
-   - SSL cert backup: certs inside nginx container at `/etc/nginx/ssl/`, not on host. Need `docker cp comfy-nginx:/etc/nginx/ssl/ /tmp/ssl-backup/` before tarring
-   - SSH host key backup: script used wrong source path, keys at `/etc/ssh/ssh_host_*`
-   - backup-cron.sh has uncommitted image naming fix (scripts repo)
-   - Set up cron jobs on production (NO automated backups running yet)
+1. **Container images:** Script looks for `app-containers.tar.gz` (single file). Backups produce individual tarballs: `comfyume-frontend-v0.11.0.tar.gz`, `comfyume-queue-manager.tar.gz`, etc. on R2 `comfyume-worker-container-backups` bucket.
 
-**3. Username rename dev→aeon (#37)**
-   - Create NEW `aeon` user on Mello and Verda (not rename)
-   - Full audit done — see #37 for file-by-file checklist
-   - Both repos need updates (~180+ references across active + archive files)
+2. **R2 key paths:** `get_cache_file()` looks for `s3://comfyume-cache-backups/<filename>` (root). Backups put files under `s3://comfyume-cache-backups/config/<filename>`. Script won't find them.
 
-**4. Fix restore script (comfymulti-scripts repo):**
-   - #41: git pull fails silently on diverged history
-   - #42: stale tarball overrides git fixes
-   - #43: host nginx blocks port 80
-   - #44: missing custom nodes deployment step
-   - #45: codify Ralph's server-side fixes (SFS permissions, Verda config)
+3. **SSL cert naming:** Script looks for `letsencrypt-backup.tar.gz`. Backups produce `ssl-certs-YYYY-MM-DD.tar.gz`.
 
-**5. Test end-to-end on fresh instance:**
-   - Run all 5 workflows (only workflow 1 tested so far)
-   - No testing instance available (FIN-01 CPU scarce)
+4. **Wrong repo:** `GH_APP_REPO=ahelme/comfyume` should be `ahelme/comfyume-v1`.
 
-**6. Other pending:**
-   - Hetzner Object Storage setup — same bucket names as R2 (#42)
-   - Investigate .env variable warnings (#7)
-   - Run setup-monitoring.sh (Prometheus, Grafana, Loki)
+5. **Wrong project dir:** `PROJECT_DIR=/home/dev/comfyume` should be `/home/dev/comfyume-v1`. `PROJECT_NAME=comfyume` should be `comfyume-v1`.
+
+6. **SFS-clone empty:** Testing instance uses SFS-clone (not SFS-prod), but SFS-clone has NO models, NO cache, NOTHING. Either copy models from SFS-prod or share SFS-prod with testing instance.
+
+**Also fix known bugs (scripts #41-#45):**
+- #41: `git pull origin main` → `git fetch origin && git reset --hard origin/main`
+- #42: Tarball priority too high → git pull after tarball restore, OR check tarball age
+- #43: Stop/disable host nginx before starting container nginx (`systemctl stop nginx && systemctl disable nginx`)
+- #44: Copy custom nodes to user data dirs after restore
+- #45: Set SFS `/mnt/sfs/outputs` to 1777 permissions, add fstab entry
+
+**After restore script is fixed:**
+- Provision testing instance (Verda CPU, FIN-01 or FIN-03)
+- Run restore script on it
+- Fix production issues there (inference regression)
+- Deploy to prod via blue-green
+
+**Other pending:**
+- Username rename dev→aeon (#37)
+- Hetzner Object Storage setup (#42)
+- Run setup-monitoring.sh
 
 ---
 
@@ -77,34 +71,25 @@ Please read:
 
 **SFS volumes (both on quiet-city, SFS-prod in fstab):**
 - SFS-prod: `/mnt/sfs` — `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`
-- SFS-clone: `/mnt/clone-sfs` — `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC`
+- SFS-clone: `/mnt/clone-sfs` — `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` (EMPTY!)
 
-**DANGER:** Renaming SFS console name may change pseudopath on next reboot. See gotchas.md.
+**R2 Buckets (4):** comfyume-model-vault-backups, comfyume-cache-backups, comfyume-worker-container-backups, comfyume-user-files-backups. Dashboard: `comfymulti-scripts/backups-log.md`.
 
-**R2 Buckets (4):** comfyume-model-vault-backups, comfyume-cache-backups, comfyume-worker-container-backups, comfyume-user-files-backups. Audit trail: `comfymulti-scripts/backups-log.md`.
-
-**DR backup:** PROD_OS cloned to block-vol 009 (BACKUP_2026-02-16-PROD_OS-hiq7F8JM, 100GB).
-
-**CRUCIAL QUEUE MANAGER FLOW:**
-```
-Browser → ComfyUI native queue (serverless_proxy patches PromptExecutor)
-  → POST /api/jobs → nginx → queue-manager:3000
-  → QM submit_to_serverless() → POST to Verda H200 /prompt
-  → QM polls /api/history/{prompt_id} (600s max, 10s per-poll)
-  → Images saved to /mnt/sfs/outputs/ by serverless container
-  → QM copies from SFS to /outputs/user001/
-  → Frontend serves via /api/view → image in UI + sidebar
-```
+**Backup automation (Verda cron):**
+- Hourly: 8 config items to SFS (50M)
+- 3am: 4 container images to SFS
+- 2/6/14/18:00: R2 upload (all config + containers)
+- Verify log: `/var/log/r2-verify.log`
 
 **Key files:**
 | File | Purpose |
 |------|---------|
-| `comfyume-extensions/serverless_proxy/__init__.py` | Patches PromptExecutor for serverless delegation |
-| `comfyume-extensions/queue_redirect/web/redirect.js` | Defers to native queue in serverless mode |
+| `comfymulti-scripts/restore-verda-instance.sh` | THE FILE TO FIX — 1688 lines, v0.4.3 |
+| `comfymulti-scripts/backups-log.md` | R2 backup status dashboard |
+| `comfymulti-scripts/backup-cron.sh` | Hourly SFS backup + R2 trigger |
+| `comfymulti-scripts/upload-backups-to-r2.sh` | R2 upload with verification |
 | `queue-manager/main.py` | Job routing, serverless polling, SFS image fetching |
 | `scripts/deploy.sh` | Git-based deploy (REMOTE_DIR still /home/dev/ — #37 to fix) |
-| `.claude/agent_docs/backups.md` | Backup retention policy, R2 bucket schedules |
-| `.claude/agent_docs/gotchas.md` | SFS pseudopath risk, nginx %2F, health check deps |
 
 **Deploy:** `./scripts/deploy.sh` (NEVER SCP — CLAUDE.md rule #5)
 
