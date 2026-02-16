@@ -28,6 +28,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [ADMIN] **REGRESSION**: inference broken for ALL workflows — serverless returns status=error, no deployment drift found
 - [ADMIN] (no commit) investigation: no code drift, QM doesn't log serverless error detail (#48)
 - [ADMIN] created GH #48: QM poll_serverless_history logging gap
+- [ADMIN] 1d0dc1a fix: log serverless execution error details in QM (#48) — deployed to production
+- [ADMIN] e844b4f docs: add IaC mandate to CLAUDE.md — Critical Instruction #6: OpenTofu mandatory
 - [MELLO-ONE-TEAM] eff863a docs: deployment checklist SFS-first, instance 008, DR clone (#38)
 - [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
 - [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)

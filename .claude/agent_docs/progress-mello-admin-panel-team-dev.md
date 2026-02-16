@@ -77,10 +77,18 @@
 🚨 **CRITICAL - comfyume-v1 #101, #103 - Serverless Inference BROKEN**
     - Created: 2026-02-09 | Updated: 2026-02-16
     - Yaml key on SFS confirmed CORRECT as of Feb 16 (latent_upscale_models)
-    - Flux Klein WAS working (113s execution confirmed Feb 10)
-    - **NOW BROKEN** (reported Feb 16) — even Flux Klein no longer works
-    - Likely caused by container restart (Feb 16 #43 fix) or other recent server changes
-    - NEXT: investigate carefully what changed — compare container state before/after
+    - Flux Klein WAS working (Feb 15 18:20 UTC — 2 images generated successfully)
+    - **BROKEN** as of Feb 16 04:57 UTC — serverless returns `status=error`, not a cold start issue
+    - Investigation: no code drift (all files match git), container healthy, models visible
+    - Server rebooted Feb 15 15:19 UTC — container restarts NOT the cause (inference worked after)
+    - **QM error logging deployed (#48)** — next failed job will log actual error details
+    - NEXT: set up OpenTofu on TESTING server, use `tofu plan` to detect serverless deployment drift
+
+✅ **(COMPLETE) - comfyume-v1 #48 - QM Error Logging**
+    - Created: 2026-02-16 | Updated: 2026-02-16
+    - poll_serverless_history now logs full error status + messages on failure
+    - Returns immediately on error instead of polling for 10 minutes
+    - Deployed to production QM via docker cp + restart (needs image rebuild to persist)
 
 🔲 **NEW - comfyume-v1 #44 - GPU Progress Banner for Serverless Mode**
     - Created: 2026-02-16
