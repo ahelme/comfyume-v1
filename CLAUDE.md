@@ -48,6 +48,30 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 3. **CHECK FOR EXISTING CODE FIRST** -- NEVER rewrite code that already exists. ALWAYS check for previous solutions.
 4. **ALL COMFYUI CUSTOMISATIONS GO IN `comfyume-extensions/`** -- Any code that modifies, extends, or wraps ComfyUI behavior MUST live in `comfyume-extensions/`, never inside `comfyui-frontend/`. This is for separation of concerns, easy bugfixing, modularity, migration-friendliness, and ease of finding our changes vs upstream ComfyUI. Enable/disable extensions via `comfyume-extensions/extensions.conf`.
 5. **DEPLOY VIA GIT FLOW** -- Use `./scripts/deploy.sh`. Never SCP files directly to production. Flow: edit → commit → push → deploy script handles the rest.
+6. **INFRASTRUCTURE AS CODE (IaC) — MANDATORY** -- All Verda infrastructure MUST be managed via OpenTofu. NEVER make manual changes to serverless deployments, instance configs, or SFS settings via SDK calls, console clicks, or ad-hoc scripts. Untracked changes cause silent regressions.
+
+### IaC Workflow (OpenTofu)
+
+**Tool:** OpenTofu v1.11.4 (open-source Terraform fork), installed on Verda at `/root/tofu/`
+
+**What's managed:**
+- Verda serverless deployments (startup command, scaling, GPU type, SFS mounts)
+- Instance provisioning (CPU type, block storage, SFS attachments)
+- DNS / networking config
+
+**Workflow:**
+1. **Define** — Write `.tf` files in `infrastructure/` dir (committed to git)
+2. **Plan** — `tofu plan` to diff actual state vs desired — review before touching anything
+3. **Apply** — `tofu apply` to converge — auditable, repeatable, version-controlled
+4. **Drift detection** — `tofu plan` on any suspected regression to see exactly what changed
+
+**State:** Remote backend (TBD — for now local state on Verda at `/root/tofu/terraform.tfstate`)
+
+**Rules:**
+- NEVER use Verda SDK/console to modify deployments directly — always through `.tf` files
+- `tofu plan` before every `tofu apply` — review output, confirm with user
+- State file is sensitive (contains API keys) — never commit to git
+- All `.tf` changes go through normal git flow (branch → PR → merge)
 
 ---
 

@@ -216,6 +216,17 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
                     elif poll_count % 10 == 0:
                         logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): completed={completed}, status={status_str}")
 
+                    if status_str == "error":
+                        import json
+                        messages = status.get("messages", [])
+                        logger.error(
+                            f"Serverless execution FAILED for {prompt_id} after {elapsed:.0f}s ({poll_count} polls): "
+                            f"status={json.dumps(status, default=str)[:1000]}"
+                        )
+                        for msg in messages:
+                            logger.error(f"  Error message: {json.dumps(msg, default=str)[:500]}")
+                        return entry
+
                     if completed:
                         logger.info(f"Execution completed after {elapsed:.0f}s ({poll_count} polls)")
                         return entry

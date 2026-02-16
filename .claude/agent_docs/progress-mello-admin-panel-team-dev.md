@@ -142,6 +142,22 @@
 
 **Handover interrupted — context ran out before completing file updates.**
 
+**Session 2 (same day, continued):**
+- Completed handover file updates from interrupted session
+- Pulled latest from main (CLAUDE.md + team files from Mello-Team-One)
+- Investigated inference regression:
+  - All containers healthy (20 frontends, QM, redis, nginx, admin)
+  - QM health OK, INFERENCE_MODE=serverless, serverless_proxy deployed
+  - Last successful inference: Feb 15 18:20 UTC (AFTER our container restarts)
+  - Failed job Feb 16 04:57: `status=error` on serverless, but QM doesn't log error detail (#48)
+  - Server rebooted Feb 15 15:19 UTC — no container restarts since
+  - **No deployment drift** — all 4 critical files match git (QM, redirect.js, serverless_proxy, nginx)
+  - Serverless container healthy (system_stats, object_info respond, models visible)
+  - Execution errors but actual error message unknown — QM logging gap (#48)
+- Created GH #48: QM poll_serverless_history doesn't log error details
+- Added CLAUDE.md Critical Instruction #6: IaC via OpenTofu mandatory
+- **Decision: IaC setup must happen on TESTING server, not production**
+
 ---
 ## Progress Report 10 - 2026-02-09 - Monitoring Fixes, SSL Certs, Verda SDK (#106, #109)
 
