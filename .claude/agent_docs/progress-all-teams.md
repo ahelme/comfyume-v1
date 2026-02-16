@@ -17,6 +17,18 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-16
 
+- [SCRIPTS] 005f62e fix: redesign backup log dashboard, separate verify log (#48)
+- [MELLO-ONE-TEAM] (no commit) redis-7-alpine uploaded to R2 (16.4 MiB, verified)
+- [MELLO-ONE-TEAM] (no commit) R2 upload verified: 13 items, 0 failures, all VERIFIED
+- [MELLO-ONE-TEAM] (no commit) restore script gap analysis: 6 critical naming mismatches found
+- [ADMIN] 0829a6c Merge PR #51 (QM logging, IaC mandate, inference investigation)
+- [ADMIN] 694b8ef Merge PR #50 (admin team session handover)
+- [ADMIN] 1d0dc1a fix: log serverless execution error details in QM (#48)
+- [ADMIN] e844b4f docs: IaC mandate in CLAUDE.md, inference regression investigation
+- [MELLO-ONE-TEAM] 09fc66d Merge PR #49 into main (R2 audit, backup scripts, session handover)
+- [MELLO-ONE-TEAM] ab5443c merge: incorporate main (admin team entries)
+- [MELLO-ONE-TEAM] ffca3db docs: context.md — missing container check, backups-log rule
+- [MELLO-ONE-TEAM] 20e35d2 docs: session handover — R2 audit, backup scripts, PR #41 merged (#31, #42)
 - [MELLO-ONE-TEAM] 949fbe1 Merge PR #41 into main (CLAUDE.md reorg, backup docs, infra cleanup)
 - [MELLO-ONE-TEAM] dde0552 merge: incorporate main (PR #39) into testing-mello-team-one
 - [MELLO-ONE-TEAM] 2f34b0f docs: add backup retention policy and backups agent doc (#42)
@@ -37,6 +49,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [MELLO-ONE-TEAM] (scripts) 6658d02 docs: add backups log — verified R2 contents audit (#45)
 - [MELLO-ONE-TEAM] (scripts) c71874c fix: backup scripts — retention policy, dated naming (#48)
 - [MELLO-ONE-TEAM] (scripts) 2de0a45 fix: bash arithmetic gotcha with set -e (#48)
+- [MELLO-ONE-TEAM] (scripts) 01d4e4e fix: backup-cron.sh image naming (#48)
+- [MELLO-ONE-TEAM] (scripts) a4244af Merge PR #49 into main (image naming fix)
 
 ## 2026-02-15
 

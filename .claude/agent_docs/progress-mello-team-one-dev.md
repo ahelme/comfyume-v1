@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-16 - R2 audit, backup scripts fix, backups-log.md, PR #41 merged
+**Doc Updated:** 2026-02-16 - Backup system verified, restore script gap analysis, backups-log dashboard
 
 ---
 # Project Progress Tracker
@@ -65,10 +65,23 @@
       - DONE: #31 task 2.0 complete — scripts #45 updated with infrastructure items
       - NOTE: FIN-01 CPU instances scarce — considering FIN-03 with new SFS
       - PENDING: Username rename dev→aeon (#37)
-    - PHASE 2 (NEXT): Set up testing instance (FIN-01 or FIN-03), fix restore script
-      - Fix SSL cert backup (docker cp from nginx container) + SSH key backup path
-      - Set up backup cron jobs on production
-      - Fix restore script bugs (scripts #41, #42, #43, #44, #45)
+    - PHASE 1.75 CONTINUED (this session):
+      - DONE: Redis image uploaded to R2 (16.4 MiB, verified)
+      - DONE: Backup scripts end-to-end verified: 13 uploads, 0 failures, all VERIFIED
+      - DONE: Cron confirmed running hourly + 4x daily R2 uploads
+      - DONE: backups-log.md redesigned as status dashboard with WHAT'S MISSING at top
+      - DONE: verify-and-log.sh v2.0 — writes to /var/log/r2-verify.log (not human log)
+      - DONE: Pulled main into branch (admin team PRs #50, #51)
+      - FOUND: 6 critical naming mismatches between backup output and restore script
+      - FOUND: SFS-clone is EMPTY — needs model data before testing instance
+    - PHASE 2 (NEXT — URGENT): Fix restore script, spin up testing instance
+      - Fix 6 naming mismatches (scripts #41, #42, #43, #44, #45):
+        - app-containers.tar.gz → individual image tarballs
+        - R2 root keys → config/ prefix
+        - letsencrypt-backup.tar.gz → ssl-certs-*.tar.gz
+        - GH_APP_REPO comfyume → comfyume-v1
+        - PROJECT_DIR /home/dev/comfyume → /home/dev/comfyume-v1
+        - SFS-clone empty → copy models from SFS-prod
       - Run restore, test end-to-end (all 5 workflows)
     - PHASE 3 (NEXT): Add advanced code piece by piece
     - INVESTIGATE: Variable warnings in .env on server (#7)
@@ -101,6 +114,52 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 52 - 2026-02-16 - Backup system verified, restore script gap analysis
+
+**Date:** 2026-02-16 | **Issues:** #31, scripts #48 | **Branch:** testing-mello-team-one
+
+### Context
+Session 2 of the day. Focused on proving backup system works and assessing readiness for testing instance.
+
+### Changes
+
+**Backup system verified end-to-end:**
+- Redis image uploaded to R2 (16.4 MiB, verified — was the only missing container image)
+- Ran upload-backups-to-r2.sh: 13 uploads, 0 failures, all VERIFIED via head-object size check
+- Confirmed cron running hourly with new scripts (8 items/50M vs old 3 items/13K)
+- Machine verify log at /var/log/r2-verify.log (clean, append-only)
+
+**backups-log.md redesigned (scripts PR #50):**
+- "WHAT'S MISSING" section at very top — impossible to miss gaps
+- Coverage dashboard with per-item date/size/verified status
+- Automation schedule table
+- Audit trail below (append-only)
+
+**verify-and-log.sh v2.0:**
+- Writes to /var/log/r2-verify.log instead of appending pipe-delimited lines to human log
+- Human dashboard maintained separately during audits
+
+**Restore script gap analysis — 6 critical mismatches found:**
+- Script looks for `app-containers.tar.gz` but backups produce individual images
+- `get_cache_file()` looks at R2 root but backups use `config/` prefix
+- Script expects `letsencrypt-backup.tar.gz` but backups produce `ssl-certs-*.tar.gz`
+- GH_APP_REPO still `ahelme/comfyume` (should be `comfyume-v1`)
+- PROJECT_DIR still `/home/dev/comfyume` (should be `comfyume-v1`)
+- SFS-clone is completely empty
+
+### Decisions
+- Keep shell scripts for backups (not OpenTofu) — working, proven, low risk
+- Fix restore script BEFORE trying to provision testing instance
+- OpenTofu for infrastructure provisioning is deferred until after workshop
+
+### Next
+- Fix restore script (6 naming mismatches + bugs #41-#45)
+- Copy models to SFS-clone (or share SFS-prod with testing instance)
+- Provision testing instance
+- Fix production issues on testing, then deploy properly
 
 ---
 
