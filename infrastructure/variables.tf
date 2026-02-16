@@ -58,17 +58,7 @@ variable "request_ttl" {
 }
 
 # --------------------------------------------------------------------------
-# ComfyUI startup command
-# --------------------------------------------------------------------------
-
-variable "comfyui_start_command" {
-  description = "Startup command for ComfyUI inside the container"
-  type        = string
-  default     = "python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml --output-directory /mnt/sfs/outputs"
-}
-
-# --------------------------------------------------------------------------
-# Deployment toggles — set to false to skip creating a deployment
+# Deployment toggles — all 4 exist in production (defaults match live)
 # --------------------------------------------------------------------------
 
 variable "deploy_h200_spot" {
@@ -80,19 +70,19 @@ variable "deploy_h200_spot" {
 variable "deploy_h200_on_demand" {
   description = "Create the H200 on-demand deployment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "deploy_b300_spot" {
   description = "Create the B300 spot deployment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "deploy_b300_on_demand" {
   description = "Create the B300 on-demand deployment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 # --------------------------------------------------------------------------
