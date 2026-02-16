@@ -17,7 +17,15 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-16
 
+- [MELLO-ONE-TEAM] 9049b2b fix: restore script v0.5.0 — 6 naming mismatches + bugs #41-#45 (scripts PR #52, merged)
+- [MELLO-ONE-TEAM] (scripts) GH issue #51 created: copy models to CLONE_SFS
+- [MELLO-ONE-TEAM] ca1b1b5 docs: session handover — backup verified, restore gap analysis (#31, #48)
+- [MELLO-ONE-TEAM] Merge PR #52 into main (backup verified, restore gap analysis)
+- [MELLO-ONE-TEAM] git pull main → both repos synced
 - [SCRIPTS] 005f62e fix: redesign backup log dashboard, separate verify log (#48)
+- [SCRIPTS] Merge PR #50 into main (backup log dashboard + verify-and-log)
+- [SCRIPTS] git pull main → scripts repo synced
+- [ADMIN] a09c8d1 Merge PR (OpenTofu infrastructure files — containers.tf, providers.tf, variables.tf)
 - [MELLO-ONE-TEAM] (no commit) redis-7-alpine uploaded to R2 (16.4 MiB, verified)
 - [MELLO-ONE-TEAM] (no commit) R2 upload verified: 13 items, 0 failures, all VERIFIED
 - [MELLO-ONE-TEAM] (no commit) restore script gap analysis: 6 critical naming mismatches found

@@ -8,11 +8,13 @@
 
 **We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one` (NOT main).
 
-**Production:** aiworkshop.art on quiet-city (65.108.33.101). 24 containers healthy. Inference BROKEN (admin team investigating — serverless returns status=error, QM logging improved in PR #51).
+**Production:** aiworkshop.art on quiet-city (65.108.33.101). 24 containers healthy. Inference BROKEN (admin team investigating — serverless returns status=error).
 
-**Last session completed:** Backup system fully verified. R2: 13 uploads, 0 failures, all VERIFIED. Cron running. Gap analysis of restore script found 6 critical naming mismatches.
+**Last session completed:** Restore script v0.5.0 — all 6 naming mismatches and 5 bugs (#41-#45) fixed. Merged as scripts PR #52.
 
-**Backup status:** ALL items present and verified on R2. See `comfymulti-scripts/backups-log.md` for dashboard.
+**Backup status:** ALL items present and verified on R2. Cron running. Dashboard: `comfymulti-scripts/backups-log.md`.
+
+**Restore script status:** v0.5.0 READY. Matches backup system. Not yet tested on a real instance.
 
 ---
 
@@ -21,46 +23,51 @@
 Please read:
 
 1. **`./CLAUDE.md`** — Project instructions (especially Backup and Restore, Critical Gotchas)
-2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~160 lines) — Priority tasks + Report 52
+2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~100 lines) — Priority tasks + Reports 52-53
 3. **`git log --oneline -10`** — Recent commits
-4. **`comfymulti-scripts/restore-verda-instance.sh`** — The restore script that needs fixing (1688 lines)
+4. **`comfymulti-scripts/restore-verda-instance.sh`** — The fixed restore script (1828 lines, v0.5.0)
 
 ---
 
 ## IMMEDIATE NEXT STEPS
 
-**!! PRIORITY: Fix restore script — BLOCKER for testing instance !!**
+**!! PRIORITY: Provision testing instance — restore script is ready !!**
 
-The restore script (`comfymulti-scripts/restore-verda-instance.sh`) has 6 critical naming mismatches with the current backup system. It WILL FAIL on a new instance:
+### Step 1: Copy models to CLONE_SFS (scripts #51)
 
-1. **Container images:** Script looks for `app-containers.tar.gz` (single file). Backups produce individual tarballs: `comfyume-frontend-v0.11.0.tar.gz`, `comfyume-queue-manager.tar.gz`, etc. on R2 `comfyume-worker-container-backups` bucket.
+SFS-clone (`CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` at `/mnt/clone-sfs`) is EMPTY. Testing instance needs models.
 
-2. **R2 key paths:** `get_cache_file()` looks for `s3://comfyume-cache-backups/<filename>` (root). Backups put files under `s3://comfyume-cache-backups/config/<filename>`. Script won't find them.
+```bash
+# On quiet-city (both SFS volumes mounted):
+rsync -avP /mnt/sfs/models/ /mnt/clone-sfs/models/     # ~192 GiB
+rsync -avP /mnt/sfs/cache/ /mnt/clone-sfs/cache/       # backups + container images
+```
 
-3. **SSL cert naming:** Script looks for `letsencrypt-backup.tar.gz`. Backups produce `ssl-certs-YYYY-MM-DD.tar.gz`.
+Alternative: share SFS-prod with the testing instance (faster, no copy needed).
 
-4. **Wrong repo:** `GH_APP_REPO=ahelme/comfyume` should be `ahelme/comfyume-v1`.
+### Step 2: Provision testing instance
 
-5. **Wrong project dir:** `PROJECT_DIR=/home/dev/comfyume` should be `/home/dev/comfyume-v1`. `PROJECT_NAME=comfyume` should be `comfyume-v1`.
+- Verda CPU instance (FIN-01 or FIN-03)
+- Add both SSH keys during provisioning (Mello + Aeon)
+- Create and attach block storage AFTER boot (not during — gets wiped!)
+- Share SFS with new instance via Verda console share settings
 
-6. **SFS-clone empty:** Testing instance uses SFS-clone (not SFS-prod), but SFS-clone has NO models, NO cache, NOTHING. Either copy models from SFS-prod or share SFS-prod with testing instance.
+### Step 3: Run restore script
 
-**Also fix known bugs (scripts #41-#45):**
-- #41: `git pull origin main` → `git fetch origin && git reset --hard origin/main`
-- #42: Tarball priority too high → git pull after tarball restore, OR check tarball age
-- #43: Stop/disable host nginx before starting container nginx (`systemctl stop nginx && systemctl disable nginx`)
-- #44: Copy custom nodes to user data dirs after restore
-- #45: Set SFS `/mnt/sfs/outputs` to 1777 permissions, add fstab entry
+```bash
+# On new instance:
+./restore-verda-instance.sh "mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/<SFS-path> /mnt/sfs" --format-scratch
+```
 
-**After restore script is fixed:**
-- Provision testing instance (Verda CPU, FIN-01 or FIN-03)
-- Run restore script on it
-- Fix production issues there (inference regression)
-- Deploy to prod via blue-green
+### Step 4: Fix production issues on testing instance
+
+- Inference regression (serverless returns status=error)
+- Test all 5 workflows end-to-end
+- Deploy to prod via blue-green when confident
 
 **Other pending:**
 - Username rename dev→aeon (#37)
-- Hetzner Object Storage setup (#42)
+- Hetzner Object Storage setup (comfyume-v1 #42)
 - Run setup-monitoring.sh
 
 ---
@@ -75,16 +82,10 @@ The restore script (`comfymulti-scripts/restore-verda-instance.sh`) has 6 critic
 
 **R2 Buckets (4):** comfyume-model-vault-backups, comfyume-cache-backups, comfyume-worker-container-backups, comfyume-user-files-backups. Dashboard: `comfymulti-scripts/backups-log.md`.
 
-**Backup automation (Verda cron):**
-- Hourly: 8 config items to SFS (50M)
-- 3am: 4 container images to SFS
-- 2/6/14/18:00: R2 upload (all config + containers)
-- Verify log: `/var/log/r2-verify.log`
-
 **Key files:**
 | File | Purpose |
 |------|---------|
-| `comfymulti-scripts/restore-verda-instance.sh` | THE FILE TO FIX — 1688 lines, v0.4.3 |
+| `comfymulti-scripts/restore-verda-instance.sh` | v0.5.0 — READY, not yet tested on instance |
 | `comfymulti-scripts/backups-log.md` | R2 backup status dashboard |
 | `comfymulti-scripts/backup-cron.sh` | Hourly SFS backup + R2 trigger |
 | `comfymulti-scripts/upload-backups-to-r2.sh` | R2 upload with verification |

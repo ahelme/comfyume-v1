@@ -74,15 +74,19 @@
       - DONE: Pulled main into branch (admin team PRs #50, #51)
       - FOUND: 6 critical naming mismatches between backup output and restore script
       - FOUND: SFS-clone is EMPTY — needs model data before testing instance
-    - PHASE 2 (NEXT — URGENT): Fix restore script, spin up testing instance
-      - Fix 6 naming mismatches (scripts #41, #42, #43, #44, #45):
-        - app-containers.tar.gz → individual image tarballs
-        - R2 root keys → config/ prefix
-        - letsencrypt-backup.tar.gz → ssl-certs-*.tar.gz
-        - GH_APP_REPO comfyume → comfyume-v1
-        - PROJECT_DIR /home/dev/comfyume → /home/dev/comfyume-v1
-        - SFS-clone empty → copy models from SFS-prod
-      - Run restore, test end-to-end (all 5 workflows)
+    - PHASE 2 DONE: Restore script v0.5.0 (scripts PR #52, merged)
+      - DONE: 6 naming mismatches fixed (container images, R2 paths, SSL, repo, project dir)
+      - DONE: 5 bugs fixed (#41 git pull, #42 tarball priority, #43 host nginx, #44 custom nodes, #45 SFS perms)
+      - DONE: New helpers: download_config_backups(), get_container_image()
+      - DONE: SSH key extraction fixed (was extracting to / instead of /etc/ssh/)
+      - DONE: All backup scripts installed by restore (not just backup-cron.sh)
+      - DONE: GH issues #41-#45 commented, scripts #51 created (CLONE_SFS copy)
+    - PHASE 2.5 (NEXT — URGENT): Provision testing instance
+      - Copy models from SFS-prod to SFS-clone (scripts #51)
+      - Provision testing instance (Verda CPU, FIN-01 or FIN-03)
+      - Run restore script v0.5.0 on it
+      - Fix production issues there (inference regression)
+      - Deploy to prod via blue-green
     - PHASE 3 (NEXT): Add advanced code piece by piece
     - INVESTIGATE: Variable warnings in .env on server (#7)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
@@ -114,6 +118,32 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 53 - 2026-02-16 - Restore script v0.5.0 — all naming mismatches + bugs fixed
+
+**Date:** 2026-02-16 | **Issues:** scripts #41-#45, #48, #51, comfyume-v1 #31 | **Branch:** testing-mello-team-one
+
+### Changes
+
+**Restore script v0.5.0 (scripts PR #52, merged):**
+- Fixed 6 naming mismatches between backup output and restore expectations
+- Fixed 5 bugs (#41-#45): git pull, tarball priority, host nginx, custom nodes, SFS perms
+- New helpers: `download_config_backups()`, `get_container_image()`, updated `get_cache_file()`
+- SSH key extraction bug: was extracting to `/` instead of `/etc/ssh/`
+- All backup scripts installed by restore (backup-cron, upload-to-r2, verify-and-log, rotate-backups)
+- DataCrunch → Verda branding in comments/output
+- Script: 350 insertions, 209 deletions
+
+**Created scripts #51:** Copy models/backups from SFS-prod to SFS-clone via rsync
+
+### Next
+- Copy models to CLONE_SFS (#51) — required before testing instance
+- Provision testing instance
+- Run restore script on it, verify end-to-end
+- Fix production inference regression on testing instance
+- Deploy to prod via blue-green
 
 ---
 
