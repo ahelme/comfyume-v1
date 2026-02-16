@@ -29,17 +29,24 @@ Please read:
 
 ## IMMEDIATE NEXT STEPS
 
+**!! FIRST THING: Check R2 for missing container images !!**
+   - Last session discovered most container images were MISSING from R2
+   - An upload was started in a rewound conversation — CHECK if it completed
+   - Run: `aws --endpoint-url $ENDPOINT s3 ls s3://comfyume-worker-container-backups/ --recursive --human-readable`
+   - Compare against ALL docker images on prod: `ssh root@65.108.33.101 'docker images --format "{{.Repository}}:{{.Tag}}\t{{.Size}}"'`
+   - Need ALL images: frontend, worker, queue-manager, nginx, admin, redis, grafana, prometheus, loki, cadvisor, dry
+   - If missing, upload them with dated naming: `<image-name>-<YYYY-MM-DD>.tar.gz`
+
+**!! CRITICAL: ALL backups MUST be logged in `comfymulti-scripts/backups-log.md` !!**
+   - Log contains VERIFIED (checked) contents, not what was uploaded
+   - After ANY upload to R2: list bucket, verify files, add entry to log
+   - New entries go at the TOP of the log, append-only, never edit old entries
+
 **1. Fix broken backup scripts (#42, scripts #48)**
    - SSL cert backup: certs inside nginx container at `/etc/nginx/ssl/`, not on host. Need `docker cp comfy-nginx:/etc/nginx/ssl/ /tmp/ssl-backup/` before tarring
    - SSH host key backup: script used wrong source path, keys at `/etc/ssh/ssh_host_*`
    - backup-cron.sh has uncommitted image naming fix (scripts repo)
    - Set up cron jobs on production (NO automated backups running yet)
-
-**2. Upload missing container images to R2**
-   - User noted we missed most container images in previous upload
-   - Container image backup was started in rewound conversation — verify status
-   - Need ALL images: frontend, worker, queue-manager, nginx, admin, redis, grafana, prometheus, loki, cadvisor, dry
-   - Use dated naming: `<image-name>-<YYYY-MM-DD>.tar.gz`
 
 **3. Username rename dev→aeon (#37)**
    - Create NEW `aeon` user on Mello and Verda (not rename)
