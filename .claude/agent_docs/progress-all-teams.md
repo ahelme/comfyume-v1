@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-15
+**Doc Updated:** 2026-02-16
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -15,9 +15,16 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ---
 
+## 2026-02-16
+
+- [MELLO-ONE-TEAM] eff863a docs: deployment checklist SFS-first, instance 008, DR clone (#38)
+- [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
+- [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)
+- [MELLO-ONE-TEAM] 817fc51 docs: testing instance in infrastructure table (#38)
+
 ## 2026-02-15
 
-- [MELLO-ONE-TEAM] (in progress) Phase 1.75: SFS clone rsync, testing instance for model check (#38)
+- [MELLO-ONE-TEAM] 0ca2ef7 docs: session handover — Phase 1.75 complete (#37, #38)
 - [MELLO-ONE-TEAM] ff2a10a chore: Verda resource naming convention, SFS clone setup, infra cleanup (#37, #38)
 - [MELLO-ONE-TEAM] 876cc8b docs: session handover — Phase 1.5 complete (#29, #31)
 - [MELLO-ONE-TEAM] 5ba7039 docs: 3-tier deployment workflow, team renames, Verda rebrand (#29, #31) — 32 files, +372/-181

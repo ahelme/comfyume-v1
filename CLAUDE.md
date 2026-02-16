@@ -4,7 +4,7 @@
 **OLDER Project Repository:** https://github.com/ahelme/comfyume
 **NOTE:** The older repo is more advanced, but is broken. This repo will revert to a stable state (by rsync from older OS drive) then we will cherry pick from the advanced yet broken older repo.
 **Domain:** aiworkshop.art (production) · staging.aiworkshop.art · testing.aiworkshop.art
-**Doc Updated:** 2026-02-15
+**Doc Updated:** 2026-02-16
 
 ---
 
@@ -51,6 +51,31 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 ---
 
+## Critical ComfyUI Info
+
+### ComfyUI v0.11.0 Workflow Storage
+
+**Workflow Location:**
+- Workflows MUST be in: `/comfyui/user/default/workflows/`
+- Served via ComfyUI's userdata API: `/api/userdata?dir=workflows`
+
+**How It Works:**
+- docker-entrypoint.sh copies workflows from `/workflows` volume to `/comfyui/user/default/workflows/`
+- Runs on every container startup
+- All 5 template workflows appear in Load menu automatically
+
+**Symptoms if wrong:**
+- Workflows folder empty in ComfyUI Load menu
+- Browser console errors: `404 /api/userdata?dir=workflows`
+
+### ComfyUI Resources
+
+- [ComfyUI GitHub](https://github.com/comfyanonymous/ComfyUI)
+- [ComfyUI Wiki](https://comfyui-wiki.com/)
+- [ComfyUI API Docs](https://github.com/comfyanonymous/ComfyUI/discussions/2073)
+
+---
+
 ## Architecture Overview
 
 ### Environments
@@ -67,6 +92,8 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 | **Verda Serverless** | GPU inference | H200/B300, INFERENCE_MODE=serverless |
 
 **DO NOT DELETE production Verda instance without migrating aiworkshop.art first!**
+
+**DISASTER RECOVERY:** PROD_OS volume was backed up 2026-02-16 to `BACKUP_2026-02-16-PROD_OS-hiq7F8JM` (block-vol 009, FIN-01, 100GB). Full OS snapshot of quiet-city production instance.
 
 ```
   Verda (per environment — same architecture, different instance)
@@ -103,11 +130,20 @@ Code Architecture:
 
 ---
 
-## Deployment Workflow
+## Dev Teams & Progress
 
-**Promotion:** testing → staging → production · code only moves forward · never backwards
+Four teams (or more) work on this project:
 
-**Deploy method:** blue-green via DNS switch (TTL 60s — leave permanently)
+| Team | AKA | Testing Dir | Resume | Handover | Progress |
+|------|-----|-------------|--------|----------|----------|
+| Mello Team One | mello-team-one | `/home/dev/projects/testing-mello-team-one` | [resume](.claude/skills/resume-context-mello-team-one/SKILL.md) | [handover](.claude/skills/handover-mello-team-one/SKILL.md) | [log](.claude/agent_docs/progress-mello-team-one-dev.md) |
+| Verda Team One | verda-team-one | — | [resume](.claude/skills/resume-context-verda-team-one/SKILL.md) | [handover](.claude/skills/handover-verda-team-one/SKILL.md) | [log](.claude/agent_docs/progress-verda-team-one-dev.md) |
+| Mello Admin Panel Team | mello-admin-panel-team | `/home/dev/projects/testing-mello-admin-panel-team` | [resume](.claude/skills/resume-context-mello-admin-panel-team/SKILL.md) | [handover](.claude/skills/handover-mello-admin-panel-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-admin-panel-team-dev.md) |
+| Mello Scripts Team | mello-scripts-team | `/home/dev/projects/testing-mello-scripts-team` | [resume](.claude/skills/resume-context-mello-scripts-team/SKILL.md) | [handover](.claude/skills/handover-mello-scripts-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-scripts-team-dev.md) |
+| Mello Ralph Team | mello-ralph-team | `/home/dev/projects/testing-mello-ralph-team` | [resume](.claude/skills/resume-context-mello-ralph-team/SKILL.md) | [handover](.claude/skills/handover-mello-ralph-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-ralph-team-dev.md) |
+
+**Central Log:** [.claude/agent_docs/progress-all-teams.md](.claude/agent_docs/progress-all-teams.md) -- 1-line-per-commit across all teams
+**Update command:** `/update-progress``
 
 ### Dev Directories (Mello — separate clones)
 
@@ -120,40 +156,6 @@ Code Architecture:
 | `staging-scripts` | comfymulti-scripts | `staging` | All teams merge here |
 | `production-main` | comfyume-v1 | `main` | Production code |
 | `production-scripts` | comfymulti-scripts | `main` | Proven scripts ONLY |
-
-### Storage Per Environment
-
-| Storage | Purpose | Shared by |
-|---|---|---|
-| **SFS-prod** | Live models, stable, trusted | Production only |
-| **SFS-clone** | Cloned from prod — safe to experiment, doubles as backup | Testing + staging |
-| **Scratch disk** (per instance) | Ephemeral: user outputs, inputs | One per instance |
-
-### Blue-Green Deploy
-
-1. Build & validate on staging instance (staging.aiworkshop.art)
-2. Final check: optionally mount SFS-prod on staging to verify with real models
-3. Switch DNS: `aiworkshop.art` A record → staging instance IP
-4. Old production stays alive as rollback
-5. Once confident → tear down old instance, staging becomes new production
-
----
-
-## Dev Teams & Progress
-
-Four teams work on this project. Coordination via GitHub Issue #7 -- check like email before proceeding with conflicting work.
-Master task list: Issue #1.
-
-| Team | AKA | Testing Dir | Resume | Handover | Progress |
-|------|-----|-------------|--------|----------|----------|
-| Mello Team One | mello-team-one | `/home/dev/projects/testing-mello-team-one` | [resume](.claude/skills/resume-context-mello-team-one/SKILL.md) | [handover](.claude/skills/handover-mello-team-one/SKILL.md) | [log](.claude/agent_docs/progress-mello-team-one-dev.md) |
-| Verda Team One | verda-team-one | — | [resume](.claude/skills/resume-context-verda-team-one/SKILL.md) | [handover](.claude/skills/handover-verda-team-one/SKILL.md) | [log](.claude/agent_docs/progress-verda-team-one-dev.md) |
-| Mello Admin Panel Team | mello-admin-panel-team | `/home/dev/projects/testing-mello-admin-panel-team` | [resume](.claude/skills/resume-context-mello-admin-panel-team/SKILL.md) | [handover](.claude/skills/handover-mello-admin-panel-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-admin-panel-team-dev.md) |
-| Mello Scripts Team | mello-scripts-team | `/home/dev/projects/testing-mello-scripts-team` | [resume](.claude/skills/resume-context-mello-scripts-team/SKILL.md) | [handover](.claude/skills/handover-mello-scripts-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-scripts-team-dev.md) |
-| Mello Ralph Team | mello-ralph-team | `/home/dev/projects/testing-mello-ralph-team` | [resume](.claude/skills/resume-context-mello-ralph-team/SKILL.md) | [handover](.claude/skills/handover-mello-ralph-team/SKILL.md) | [log](.claude/agent_docs/progress-mello-ralph-team-dev.md) |
-
-**Central Log:** [.claude/agent_docs/progress-all-teams.md](.claude/agent_docs/progress-all-teams.md) -- 1-line-per-commit across all teams
-**Update command:** `/update-progress`
 
 ### Session Checklist
 
@@ -178,7 +180,7 @@ Before each session ends:
   - Team branches — active development (e.g. `testing-mello-team-one`, `testing-mello-admin-panel-team`)
   - Feature branches — branched off team branches (e.g. `testing-mello-team-one-gpu-overlay`)
   - **NEVER push directly to main** -- ALWAYS use team branches or feature branches + PRs (BOTH repos!)
-- **Scripts Repo** (PRIVATE!): https://github.com/ahelme/comfymulti-scripts
+- **Scripts Repo** (PRIVATE!): `https://github.com/ahelme/comfymulti-scripts`
 
 ### Commits
 
@@ -215,36 +217,6 @@ User will request a fresh copy of `.env` from private scripts repo when needed, 
 
 ---
 
-## Documentation Format
-
-All .md files must have this header:
-
-```
-**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
-**Project Started:** 2026-01-02
-**Repository:** github.com/ahelme/comfyume-v1
-**Domain:** aiworkshop.art · staging.aiworkshop.art · testing.aiworkshop.art
-**Doc Created:** [date]
-**Doc Updated:** [date]
-```
-
-Docs MUST be comprehensive yet NO FLUFF. No boasting.
-
----
-
-## Core Documents
-
-- [README.md](./README.md) - Public project overview and dev quickstart
-- Progress Logs -- see Dev Teams table above
-
-### User Documentation
-
-- **docs/archive/user-guide.md** - For workshop participants (may need update)
-- **docs/admin-guide.md** - For developer/maintainer/instructor
-- **docs/archive/troubleshooting.md** - Common issues
-
----
-
 ## Critical Files and Locations
 
 ### Verda (production app server)
@@ -261,14 +233,18 @@ Docs MUST be comprehensive yet NO FLUFF. No boasting.
 | `scripts/status.sh` | System health check |
 | `scripts/generate-user-compose.sh` | Regenerates docker-compose.users.yml |
 
-### Verda Storage
+### Storage Per Environment
 
-| Storage | Purpose |
-|---|---|
-| BlockStorage (OS) | Instance operating system & worker |
-| BlockStorage (scratch) | Ephemeral: user inputs/outputs (one per instance) |
-| **SFS-prod** (network drive) | Persistent: models, cache, backups — production only |
-| **SFS-clone** (network drive) | Clone of SFS-prod — testing/staging, doubles as model backup |
+| Storage | Purpose | Shared by |
+|---|---|---|
+| **`PROD_OS-<string>`** | BlockStorage (OS) Prod. Instance operating system & app containers | Production only |
+| **`TEST_OS-<string>`** | Blockstorage (OS) Testing Instance operating system & app containers | Testing only |
+| **`STAG_OS-<string>`** | Blockstorage (OS) Staging Instance operating system & app containers | Staging only |
+| **`PROD_SFS-Model-Vault-<date-created-<string>`** | Live models, stable, trusted | Production only |
+| **`CLONE_SFS-Model-Vault-<date-created>-<string>`** | Cloned from prod — safe to experiment, doubles as backup | Testing + staging |
+| **`PROD_Block-Storage-Scratch-Disk-Volume-<string>`** | Ephemeral: user outputs, inputs | One per instance |
+| **`CLONE_Block-Storage-Scratch-DiskVolume-<string>`** | Cloned from prod - safe to experiment, doubles as backup | Testing + Staging |
+| **Serverless Containers - Workers** | Various options e.g. H200, B300 available with replicas | Production, staging, testing |
 
 ### Mello (dev machine + user dir)
 
@@ -281,167 +257,6 @@ Docs MUST be comprehensive yet NO FLUFF. No boasting.
 *(Private repo: https://github.com/ahelme/comfymulti-scripts)*
 
 See [project_structure.md](.claude/agent_docs/project_structure.md) for full file trees.
-
----
-
-## Core ComfyUI Docs
-
-### ComfyUI v0.11.0 Workflow Storage
-
-**Workflow Location:**
-- Workflows MUST be in: `/comfyui/user/default/workflows/`
-- Served via ComfyUI's userdata API: `/api/userdata?dir=workflows`
-
-**How It Works:**
-- docker-entrypoint.sh copies workflows from `/workflows` volume to `/comfyui/user/default/workflows/`
-- Runs on every container startup
-- All 5 template workflows appear in Load menu automatically
-
-**Symptoms if wrong:**
-- Workflows folder empty in ComfyUI Load menu
-- Browser console errors: `404 /api/userdata?dir=workflows`
-
-### ComfyUI Resources
-
-- [ComfyUI GitHub](https://github.com/comfyanonymous/ComfyUI)
-- [ComfyUI Wiki](https://comfyui-wiki.com/)
-- [ComfyUI API Docs](https://github.com/comfyanonymous/ComfyUI/discussions/2073)
-
----
-
-## Batched Startup Architecture
-
-**Dependency Chain:**
-1. Queue Manager must be healthy FIRST
-2. Then 4 batch leaders start in parallel: user001, user006, user011, user016 (each depends on queue-manager)
-3. Within each batch: sequential with health checks (user002 depends on user001, etc.)
-4. Total time: ~1-2 minutes for 5 users, ~2-3 minutes estimated for 20 users
-
-**Commands (Verda - App Server):**
-- Start: `docker compose up -d` (includes docker-compose.users.yml automatically)
-- Set auto-restart: `docker update --restart=unless-stopped $(docker ps -q --filter "name=comfy")` (survives reboots)
-- Regenerate: `./scripts/generate-user-compose.sh` (updates docker-compose.users.yml)
-
-**Commands (Verda - Worker):**
-- Start worker: `cd ~/comfyume/comfyui-worker/ && sudo docker compose up -d worker-1`
-- Check logs: `sudo docker logs comfy-worker-1 -f` (container name, not image name)
-- Set auto-restart: `sudo docker update --restart=unless-stopped $(sudo docker ps -q --filter "name=comfy")` (survives reboots)
-- Check Redis: `redis-cli -h 100.99.216.71 -p 6379 -a $REDIS_PASSWORD ping`
-
----
-
-## CRITICAL GOTCHAS
-
-### CRITICAL: Worker Container Infinite Restart Loop
-
-**Symptom:** Worker container restarts every 30 seconds with "ComfyUI failed to start" error.
-
-**Root Cause:** Original startup script uses `curl` for health checks, but `curl` not installed in worker container. Health check always fails -> script exits -> container restarts.
-
-**Fix:** Remove curl-based health check, use simple sleep:
-```bash
-#!/bin/bash
-echo "Starting ComfyUI Worker: $WORKER_ID"
-cd /workspace/ComfyUI
-python3 main.py --listen 0.0.0.0 --port 8188 &
-COMFYUI_PID=$!
-sleep 60  # Simple wait instead of curl check
-cd /workspace
-python3 worker.py
-kill $COMFYUI_PID 2>/dev/null || true
-```
-
-**To apply fix on running container:**
-```bash
-cat > /tmp/start-simple.sh << 'EOF'
-#!/bin/bash
-echo "Starting ComfyUI Worker: $WORKER_ID"
-cd /workspace/ComfyUI
-python3 main.py --listen 0.0.0.0 --port 8188 &
-sleep 60
-cd /workspace && python3 worker.py
-EOF
-chmod +x /tmp/start-simple.sh
-docker stop comfy-worker-1
-docker cp /tmp/start-simple.sh comfy-worker-1:/workspace/start-worker.sh
-docker start comfy-worker-1
-```
-
-**Success indicators:** Worker logs show "Worker worker-1 started", polling queue manager every 2s, HTTP 200 OK responses.
-
-### CRITICAL: Disk Space Monitoring
-
-Run `disk-check.sh` before builds/backups. Use `--block` to abort if >90% full. Auto-runs (blocking) in: start.sh, build.sh, backup scripts, restore-verda-instance.sh.
-
-```bash
-df -h /tmp /mnt/sfs  # quick manual check before any large operation
-```
-
-### CRITICAL: Server Unresponsive Emergency Fix
-
-**If server stops responding (20x user containers overwhelm resources):**
-1. Hard Reset the server via hosting provider dashboard
-2. SSH in ASAP after reboot
-3. Run: `sudo docker stop $(sudo docker ps -q --filter "name=comfy")`
-
-This stops all ComfyUI containers to prevent resource exhaustion on startup.
-
-### CRITICAL: Attaching Block Storage
-
-Block storage gets **WIPED** if attached during instance provisioning!
-
-Safe workflow:
-1. Create instance **WITHOUT** block storage attached
-2. Boot the instance
-3. **Shut down** the instance (required for attachment)
-4. Attach block storage via Verda Dashboard
-5. Boot instance again
-6. Mount the volume: `mount /dev/vdc /mnt/models`
-
-### CRITICAL: R2 .eu Domain
-
-Cloudflare R2 buckets require `.eu` in the middle of the endpoint URL. Omitting it causes silent connection failures -- uploads/downloads fail with no clear error message. Always use the full endpoint:
-```
-https://f1d627b48ef7a4f687d6ac469c8f1dea.r2.cloudflarestorage.com.eu
-```
-Note: `.eu` appears between `cloudflarestorage.com` and the path, not as a suffix.
-
-### CRITICAL: Docker Image Architecture
-
-**Single Shared Image for All Users:**
-- All 20 users use `comfyume-frontend:v0.11.0` (NOT per-user images)
-- `docker-compose.users.yml` uses `image:` not `build:` (regenerated by `scripts/generate-user-compose.sh`)
-
-**Custom Nodes Volume Mount Gotcha:**
-- Custom nodes volume-mounted per user: `./data/user_data/userXXX/comfyui/custom_nodes:/comfyui/custom_nodes`
-- **Volume mount OVERWRITES image contents!** Empty host directory = empty container directory
-- **Solution:** Copy default custom nodes from `comfyui-frontend/custom_nodes/` to each user's directory
-- Required nodes: `default_workflow_loader` (Flux2 Klein auto-load), `queue_redirect` (job submission)
-
----
-
-### CRITICAL: Serverless Inference — No Direct HTTP Back to Containers
-
-HTTP image download doesn't work with serverless load balancing. Verda routes each HTTP request to a **different container instance**. So `GET /view?filename=...` returns 404 because it hits a different instance than the one that generated the image. The fix was pivoting to **SFS-based delivery** — images written to shared NFS, QM copies from SFS to local `/outputs/userXXX/`, frontend serves locally.
-
-**Key principle:** Serverless containers are ephemeral and load-balanced — you can't talk back to a specific instance. All persistent data must go through shared storage (SFS).
-
-**Related fixes from Ralph Loop (PRs #23-#28):**
-1. **QM must poll + fetch results** — `submit_to_serverless()` (`queue-manager/main.py:314`) must call `poll_serverless_history()` (`:174`) after POST `/prompt`, not fire-and-forget. SFS copy at `:279`.
-2. **SFS directory permissions** — `/mnt/sfs/outputs` needs `chmod 1777` (sticky + world-writable). ComfyUI runs as uid 1000 inside containers, not root. (Server-side fix, not in git.)
-3. **`--output-directory` flag required** — without it, ComfyUI saves to container-local `/workspace/ComfyUI/output/` (ephemeral, lost on scale-down). Must pass `--output-directory /mnt/sfs/outputs` in container start command via Verda SDK. (Server-side fix, not in git.)
-
-### CRITICAL: Verda Rebrand (ex. DataCrunch)
-
-Verda was previously called "DataCrunch". ALL docs, code comments, specs, and API references must say **Verda**, not DataCrunch. API endpoint URLs may still use `containers.datacrunch.io` — verify current domain before updating URLs. When writing new docs, always use "Verda". First mention in standalone docs: "Verda (ex. DataCrunch)".
-
-## OTHER GOTCHAS
-
-See [gotchas.md](.claude/agent_docs/gotchas.md) for full details:
-
-- **Issue #54:** Workflow Save/Load nginx proxy_pass fix
-- **Health Checks:** Dependencies required in Dockerfile (curl, libgomp1, requests)
-- **Silent Failures:** Large file operations report success while failing
 
 ---
 
@@ -496,7 +311,7 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGiwaT6NQcHe7cYDKB5LrtmyIU0O8iRc7DJUmZJsNkDD
 - Mello can SSH into Verda (Mello has private key)
 - Verda CANNOT pull from mello (Verda has no private key for mello until setup script finishes)
 
-### Restore Scripts Are Adaptive
+### Verda Restore Scripts Are Adaptive
 
 **Core Restore Workflow:** Restore scripts first check SFS (fast), then fall back to remote:
 - **SFS** -- First choice (files cached from previous session)
@@ -525,18 +340,43 @@ If Tailscale starts without the backed-up identity, it gets a **NEW IP address**
 The restore scripts restore `/var/lib/tailscale/` BEFORE running `tailscale up`.
 This preserves the expected IP: **100.89.38.43**
 
+---
+
+## Deployment Workflow
+
+**Promotion:** testing → staging → production · code only moves forward · never backwards
+
+**Deploy method:** blue-green via DNS switch (TTL 60s — leave permanently)
+
+### Blue-Green Deploy
+
+1. Build & validate on staging instance (staging.aiworkshop.art)
+2. Final check: optionally mount SFS-prod on staging to verify with real models
+3. Switch DNS: `aiworkshop.art` A record → staging instance IP
+4. Old production stays alive as rollback
+5. Once confident → tear down old instance, staging becomes new production
+
 ### Deployment Prerequisites Checklist
 
-Before starting, verify:
-- [ ] mello VPS is running (dev machine + user dir -- comfy.ahelme.net)
+Before deploying a new staging/testing instance, verify:
+
+**Infrastructure:**
+- [ ] **Production instance is running** (quiet-city, 65.108.33.101) — models come from PROD_SFS first
+- [ ] **PROD_SFS** (`PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`) is healthy — this is the primary model source (~192GB, 28 models). New instances mount this via NFS and copy models locally. SFS must be shared with the new instance via Verda console "share settings".
+- [ ] **CLONE_SFS** (`CLONE_SFS-Model-Vault-16-Feb-97Es5EBC`) available as backup/testing model source
+- [ ] mello VPS is running (dev machine + user dir — comfy.ahelme.net)
+
+**Fallback (only if PROD_SFS unavailable/deleted):**
 - [ ] R2: **Models bucket** (`comfyume-model-vault-backups`) contains:
   - [ ] `checkpoints/*.safetensors` (~25-50 GB)
   - [ ] `text_encoders/*.safetensors` (~20 GB)
+
+**Always required:**
 - [ ] R2: **Cache bucket** (`comfyume-cache-backups`) contains:
   - [ ] `worker-image.tar.gz` (~2.5 GB)
   - [ ] `verda-config-backup.tar.gz` (~14 MB)
 - [ ] R2: **Worker container bucket** (`comfyume-worker-container-backups`)
-- [ ] R2: **User files bucket** (`comfyume-user-files-backups`) -- available to receive backups
+- [ ] R2: **User files bucket** (`comfyume-user-files-backups`) — available to receive backups
 - [ ] GitHub: **Private Scripts Repo** (`ahelme/comfymulti-scripts`) contains:
   - [ ] `restore-verda-instance.sh`
 - [ ] User's Mac: **SSH Keys and Setup Script** added to Verda console during provisioning
@@ -548,12 +388,181 @@ Before starting, verify:
 See [Admin Backup & Restore Guide](./docs/admin-backup-restore.md) for complete step-by-step instructions including:
 - Provisioning SFS and GPU instance and block storage (scratch disk) on Verda
 - Running restore-verda-instance.sh on Verda (runs automatically on first boot)
-- Script downloads models from R2 (unless available on SFS already)
+- Script mounts PROD_SFS for models first (fast, NFS), falls back to R2 download only if SFS unavailable
 - Backup cron jobs are set up automatically by the script
+
+### Batched App Container Startup Architecture
+
+**Dependency Chain:**
+1. Queue Manager must be healthy FIRST
+2. Then 4 batch leaders start in parallel: user001, user006, user011, user016 (each depends on queue-manager)
+3. Within each batch: sequential with health checks (user002 depends on user001, etc.)
+4. Total time: ~1-2 minutes for 5 users, ~2-3 minutes estimated for 20 users
+
+**Commands (Verda - App Server):**
+- Start: `docker compose up -d` (includes docker-compose.users.yml automatically)
+- Set auto-restart: `docker update --restart=unless-stopped $(docker ps -q --filter "name=comfy")` (survives reboots)
+- Regenerate: `./scripts/generate-user-compose.sh` (updates docker-compose.users.yml)
+
+**Commands (Verda - Worker):**
+- Start worker: `cd ~/comfyume/comfyui-worker/ && sudo docker compose up -d worker-1`
+- Check logs: `sudo docker logs comfy-worker-1 -f` (container name, not image name)
+- Set auto-restart: `sudo docker update --restart=unless-stopped $(sudo docker ps -q --filter "name=comfy")` (survives reboots)
+- Check Redis: `redis-cli -h 100.99.216.71 -p 6379 -a $REDIS_PASSWORD ping`
 
 ### Troubleshooting
 
 See [Admin Backup & Restore Guide - Troubleshooting](./docs/admin-backup-restore.md#troubleshooting) for common issues and solutions.
+
+---
+
+## CRITICAL GOTCHAS
+
+### CRITICAL: Worker Container Infinite Restart Loop
+
+**Symptom:** Worker container restarts every 30 seconds with "ComfyUI failed to start" error.
+
+**Root Cause:** Original startup script uses `curl` for health checks, but `curl` not installed in worker container. Health check always fails -> script exits -> container restarts.
+
+**Fix:** Remove curl-based health check, use simple sleep:
+`bash
+#!/bin/bash
+echo "Starting ComfyUI Worker: $WORKER_ID"
+cd /workspace/ComfyUI
+python3 main.py --listen 0.0.0.0 --port 8188 &
+COMFYUI_PID=$!
+sleep 60  # Simple wait instead of curl check
+cd /workspace
+python3 worker.py
+kill $COMFYUI_PID 2>/dev/null || true
+`
+
+**To apply fix on running container:**
+`bash
+cat > /tmp/start-simple.sh << 'EOF'
+#!/bin/bash
+echo "Starting ComfyUI Worker: $WORKER_ID"
+cd /workspace/ComfyUI
+python3 main.py --listen 0.0.0.0 --port 8188 &
+sleep 60
+cd /workspace && python3 worker.py
+EOF
+chmod +x /tmp/start-simple.sh
+docker stop comfy-worker-1
+docker cp /tmp/start-simple.sh comfy-worker-1:/workspace/start-worker.sh
+docker start comfy-worker-1
+`
+
+**Success indicators:** Worker logs show "Worker worker-1 started", polling queue manager every 2s, HTTP 200 OK responses.
+
+### CRITICAL: Disk Space Monitoring
+
+Run `disk-check.sh` before builds/backups. Use `--block` to abort if >90% full. Auto-runs (blocking) in: start.sh, build.sh, backup scripts, restore-verda-instance.sh.
+
+`bash
+df -h /tmp /mnt/sfs  # quick manual check before any large operation
+`
+
+### CRITICAL: Server Unresponsive Emergency Fix
+
+**If server stops responding (20x user containers overwhelm resources):**
+1. Hard Reset the server via hosting provider dashboard
+2. SSH in ASAP after reboot
+3. Run: `sudo docker stop $(sudo docker ps -q --filter "name=comfy")`
+
+This stops all ComfyUI containers to prevent resource exhaustion on startup.
+
+### CRITICAL: Attaching Block Storage
+
+Block storage gets **WIPED** if attached during instance provisioning!
+
+Safe workflow:
+1. Create instance **WITHOUT** block storage attached
+2. Boot the instance
+3. **Shut down** the instance (required for attachment)
+4. Attach block storage via Verda Dashboard
+5. Boot instance again
+6. Mount the volume: `mount /dev/vdc /mnt/models`
+
+### CRITICAL: Object Storage Is Append-Only
+
+**NEVER delete backups from R2 or Hetzner Object Storage.** Only add new dated files alongside existing ones. Old backups stay untouched indefinitely. This applies to all buckets (models, user-files, worker-container, cache).
+
+### CRITICAL: R2 .eu Domain
+
+Cloudflare R2 buckets require `.eu` in the middle of the endpoint URL. Omitting it causes silent connection failures -- uploads/downloads fail with no clear error message. Always use the full endpoint:
+`
+https://f1d627b48ef7a4f687d6ac469c8f1dea.r2.cloudflarestorage.com.eu
+`
+Note: `.eu` appears between `cloudflarestorage.com` and the path, not as a suffix.
+
+### CRITICAL: Docker Image Architecture
+
+**Single Shared Image for All Users:**
+- All 20 users use `comfyume-frontend:v0.11.0` (NOT per-user images)
+- `docker-compose.users.yml` uses `image:` not `build:` (regenerated by `scripts/generate-user-compose.sh`)
+
+**Custom Nodes Volume Mount Gotcha:**
+- Custom nodes volume-mounted per user: `./data/user_data/userXXX/comfyui/custom_nodes:/comfyui/custom_nodes`
+- **Volume mount OVERWRITES image contents!** Empty host directory = empty container directory
+- **Solution:** Copy default custom nodes from `comfyui-frontend/custom_nodes/` to each user's directory
+- Required nodes: `default_workflow_loader` (Flux2 Klein auto-load), `queue_redirect` (job submission)
+
+---
+
+### CRITICAL: Serverless Inference — No Direct HTTP Back to Containers
+
+HTTP image download doesn't work with serverless load balancing. Verda routes each HTTP request to a **different container instance**. So `GET /view?filename=...` returns 404 because it hits a different instance than the one that generated the image. The fix was pivoting to **SFS-based delivery** — images written to shared NFS, QM copies from SFS to local `/outputs/userXXX/`, frontend serves locally.
+
+**Key principle:** Serverless containers are ephemeral and load-balanced — you cant talk back to a specific instance. All persistent data must go through shared storage (SFS).
+
+**Related fixes from Ralph Loop (PRs #23-#28):**
+1. **QM must poll + fetch results** — `submit_to_serverless()` (`queue-manager/main.py:314`) must call `poll_serverless_history()` (`:174`) after POST `/prompt`, not fire-and-forget. SFS copy at `:279`.
+2. **SFS directory permissions** — `/mnt/sfs/outputs` needs `chmod 1777` (sticky + world-writable). ComfyUI runs as uid 1000 inside containers, not root. (Server-side fix, not in git.)
+3. **`--output-directory` flag required** — without it, ComfyUI saves to container-local `/workspace/ComfyUI/output/` (ephemeral, lost on scale-down). Must pass `--output-directory /mnt/sfs/outputs` in container start command via Verda SDK. (Server-side fix, not in git.)
+
+### CRITICAL: Verda Rebrand (ex. DataCrunch)
+
+Verda was previously called `DataCrunch`. ALL docs, code comments, specs, and API references must say **Verda**, not DataCrunch. API endpoint URLs may still use `containers.datacrunch.io` — verify current domain before updating URLs. When writing new docs, always use "Verda". First mention in standalone docs: "Verda (ex. DataCrunch)".
+
+### OTHER GOTCHAS
+
+See [gotchas.md](.claude/agent_docs/gotchas.md) for full details:
+
+- **Issue #54:** Workflow Save/Load nginx proxy_pass fix
+- **Health Checks:** Dependencies required in Dockerfile (curl, libgomp1, requests)
+- **Silent Failures:** Large file operations report success while failing
+
+---
+
+## Documentation
+
+### Documentation Format
+
+All .md files must have this header:
+
+`
+**Project:** ComfyuME Multi-User ComfyUI Workshop Platform
+**Project Started:** 2026-01-02
+**Repository:** github.com/ahelme/comfyume-v1
+**Domain:** aiworkshop.art · staging.aiworkshop.art · testing.aiworkshop.art
+**Doc Created:** [date]
+**Doc Updated:** [date]
+`
+
+Docs MUST be comprehensive yet NO FLUFF. No boasting.
+
+### Core Documents
+
+- [README.md](./README.md) - Public project overview and dev quickstart
+- Progress Logs -- see Dev Teams table above
+- Agent Docs -- see `.claude/agent_docs/`
+
+### User Documentation
+
+- **docs/archive/user-guide.md** - For workshop participants (may need update)
+- **docs/admin-guide.md** - For developer/maintainer/instructor
+- **docs/archive/troubleshooting.md** - Common issues
 
 ---
 
@@ -586,6 +595,7 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [infrastructure-registry.md](https://github.com/ahelme/comfymulti-scripts/blob/main/infrastructure-registry.md) | IPs, instance names, SFS IDs, secrets refs | PRIVATE scripts repo · actual resource IDs · update when provisioning |
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |
 | [storage.md](.claude/agent_docs/storage.md) | SFS, block storage, mounts | SFS=shared NFS@/mnt/sfs · /outputs/ needs 1777 perms · block=single-instance · !WIPED if attached@provisioning |
+| [backups.md](.claude/agent_docs/backups.md) | backup, restore, R2, retention | !append-only · 4 R2 buckets · SFS→R2 fallback · dated naming · rotation: 5d/3w/3m · scripts need updating |
 | [gotchas.md](.claude/agent_docs/gotchas.md) | unexpected failures, debugging | !SFS console rename→pseudopath change on reboot · !SFS needs share settings per instance · nginx decodes %2F→#54 · Dockerfile needs curl+libgomp1+requests · large ops fail silent · !Verda ex.DataCrunch rebrand |
 | [external-references.md](.claude/agent_docs/external-references.md) | architecture research | Visionatrix · SaladTech · Modal · 9elements — multi-user patterns |
 
