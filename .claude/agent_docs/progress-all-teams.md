@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-16
+**Doc Updated:** 2026-02-17
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -14,6 +14,18 @@ Newest at top. One line per commit. No fluff. Link issues.
 - **Scripts:** [progress-mello-scripts-team-dev.md](./progress-mello-scripts-team-dev.md) | Branch: `mello-scripts-team-*`
 
 ---
+
+## 2026-02-17
+
+- [ADMIN] (no commit) fix: regenerated nginx/.htpasswd from .env credentials using Python bcrypt (#61, closed)
+- [ADMIN] (no commit) created GH #61: nginx 500 — .htpasswd lost during git operations
+- [ADMIN] (no commit) updated GH #58 title: removed subdomain references (path-based approach kept)
+- [ADMIN] d153c17 fix: SSL docs correction, certbot webroot renewal, CORS cleanup (#58) — PR #59 merged
+- [ADMIN] (verda) fix: captured Ralph Loop local changes from production server — PR #60 merged
+- [ADMIN] (verda) synced .env to Verda: found 10 inconsistencies (R2 double .eu.eu, wrong REDIS_BIND_IP)
+- [ADMIN] (verda) fixed certbot: standalone→webroot, added /var/www/certbot volume mount
+- [ADMIN] (verda) recreated all 24 containers — all healthy
+- [ADMIN] (scripts) updated .env: DOMAIN, SSL paths, USE_HOST_NGINX=false, SERVER_MODE=serverless
 
 ## 2026-02-16
 
