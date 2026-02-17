@@ -16,7 +16,7 @@
 #   should be made in a SEPARATE commit with tofu plan review.
 
 locals {
-  # Base startup command (without --output-directory)
+  # Base startup command — includes --output-directory for SFS-based image delivery (#54, #70)
   base_cmd = [
     "python3", "/workspace/ComfyUI/main.py",
     "--listen", "0.0.0.0",
@@ -25,8 +25,8 @@ locals {
     "--verbose"
   ]
 
-  # H200-spot has --output-directory, others do NOT (drift discovered 2026-02-16)
-  h200_spot_cmd = concat(local.base_cmd, ["--output-directory", "/mnt/sfs/outputs"])
+  # All deployments use --output-directory to write images to SFS
+  full_cmd = concat(local.base_cmd, ["--output-directory", "/mnt/sfs/outputs"])
 
   deployments = {
     "h200-spot" = {
@@ -34,28 +34,28 @@ locals {
       gpu_name = "H200"
       is_spot  = true
       name     = "comfyume-vca-ftv-h200-spot"
-      cmd      = local.h200_spot_cmd
+      cmd      = local.full_cmd
     }
     "h200-on-demand" = {
       enabled  = var.deploy_h200_on_demand
       gpu_name = "H200"
       is_spot  = false
       name     = "comfyume-vca-ftv-h200-on-demand"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      cmd      = local.full_cmd
     }
     "b300-spot" = {
       enabled  = var.deploy_b300_spot
       gpu_name = "B300"
       is_spot  = true
       name     = "comfyume-vca-ftv-b300-spot"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      cmd      = local.full_cmd
     }
     "b300-on-demand" = {
       enabled  = var.deploy_b300_on_demand
       gpu_name = "B300"
       is_spot  = false
       name     = "comfyume-vca-ftv-b300-on-demand"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      cmd      = local.full_cmd
     }
   }
 

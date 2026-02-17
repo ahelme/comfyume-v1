@@ -105,6 +105,7 @@ app.add_middleware(
         "https://aiworkshop.art",
         "https://staging.aiworkshop.art",
         "https://testing.aiworkshop.art",
+        "https://anegg.app",  # Testing instance 009
         "http://localhost:8080",  # Local admin dashboard testing
     ],
     allow_credentials=False,  # Disabled for security - no cookies needed
