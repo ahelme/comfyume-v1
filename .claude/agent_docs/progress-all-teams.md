@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-16
+**Doc Updated:** 2026-02-17
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -14,6 +14,14 @@ Newest at top. One line per commit. No fluff. Link issues.
 - **Scripts:** [progress-mello-scripts-team-dev.md](./progress-mello-scripts-team-dev.md) | Branch: `mello-scripts-team-*`
 
 ---
+
+## 2026-02-17
+
+- [MELLO-ONE-TEAM] (scripts) b9c204a feat: disk-check --require, backup reports, remove set -e (#48) — PR #53
+- [MELLO-ONE-TEAM] (scripts) SSH key cleanup: removed Claude-generated verda@gpu-worker + dev@verda->mello keys
+- [MELLO-ONE-TEAM] (scripts) Fixed backup cron (was silently crashing since Feb 16), crontab stderr redirect
+- [MELLO-ONE-TEAM] (scripts) Verda→Mello SSH working — host ed25519 key deployed, logged in #45
+- [MELLO-ONE-TEAM] CLAUDE.md rule #7: never generate SSH keys without user approval
 
 ## 2026-02-16
 
