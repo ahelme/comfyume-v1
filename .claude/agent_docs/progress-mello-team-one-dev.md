@@ -44,7 +44,7 @@
 ---
 ## 1. PRIORITY TASKS
 
-⚠️ NEXT SESSION FIRST: Rename ssh_host_* keys in comfymulti-scripts/secrets/ssh/ — DECIDE NAMING WITH USER BEFORE PROCEEDING. Also check cron jobs running + review backup reports.
+⚠️ NEXT SESSION: Phase 2.75 — Provision testing instance (Verda CPU). SFS-clone ready, restore script ready, SSH identities ready.
 
 🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
     - Created: 2026-02-12, Updated: 2026-02-17
@@ -85,7 +85,7 @@
       - DONE: SSH key extraction fixed (was extracting to / instead of /etc/ssh/)
       - DONE: All backup scripts installed by restore (not just backup-cron.sh)
       - DONE: GH issues #41-#45 commented, scripts #51 created (CLONE_SFS copy)
-    - PHASE 2.5 (IN PROGRESS): Backup fixes + SSH key cleanup
+    - PHASE 2.5 DONE: Backup fixes + SSH key cleanup
       - DONE: SFS-clone models verified 22/22 matching SFS-prod (scripts #51 resolved)
       - DONE: Backup cron crash fixed — disk-check.sh v2.0 `--require SIZE PATH` replaces `--block` (scripts PR #53)
       - DONE: Removed `set -e` from backup-cron.sh (sections are independent)
@@ -115,8 +115,8 @@
       - DONE: All 3 public keys in Mello authorized_keys
       - DONE: Verda key comment updated, SSH verified working
       - DONE: CLAUDE.md updated with SSH identities section
-      - TODO: Merge scripts PR #53 (disk-check + backup reports + SSH key cleanup + user data rename + SSH identities)
-    - PHASE 2.75 (NEXT — URGENT): Provision testing instance
+      - Scripts PRs #53 + #54 merged
+    - PHASE 2.75 (NEXT — READY): Provision testing instance
       - Provision testing instance (Verda CPU, FIN-01 or FIN-03)
       - Run restore script v0.5.0 on it
       - Fix production issues there (inference regression)
