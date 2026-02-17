@@ -33,6 +33,7 @@ services:
       - ${SSL_KEY_PATH}:/etc/nginx/ssl/key.pem:ro
       - ${OUTPUTS_PATH}:/var/www/outputs:ro
       - ${WORKFLOWS_PATH}:/var/www/workflows:ro
+      - /var/www/certbot:/var/www/certbot:ro  # ACME challenge files for certbot renewal
     environment:
       - DOMAIN=${DOMAIN}
       - NUM_USERS=${NUM_USERS:-20}

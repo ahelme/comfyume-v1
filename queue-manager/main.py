@@ -102,12 +102,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://comfy.ahelme.net",
-        "https://www.comfy.ahelme.net",
         "https://aiworkshop.art",
-        "https://admin.aiworkshop.art",
-        "https://*.aiworkshop.art",  # User subdomains
-        "http://localhost:8080",  # For local admin dashboard testing
+        "https://staging.aiworkshop.art",
+        "https://testing.aiworkshop.art",
+        "http://localhost:8080",  # Local admin dashboard testing
     ],
     allow_credentials=False,  # Disabled for security - no cookies needed
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],

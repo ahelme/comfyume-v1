@@ -21,7 +21,7 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 - 20 isolated ComfyUI web interfaces
 - Central job queue (FIFO/round-robin/priority)
 - Serverless GPU workers scaling on demand
-- HTTPS with aiworkshop.art domain (SSL cert via Namecheap)
+- HTTPS with aiworkshop.art domain (SSL cert via Let's Encrypt)
 - HTTP Basic Auth password protection
 - Tailscale VPN for secure Redis connection
 - Persistent user storage
@@ -132,7 +132,7 @@ If `tofu plan` shows unexpected changes → something was modified outside of Ia
 
 | Environment | Domain | Verda Instance | SFS | SSL | Lifecycle |
 |---|---|---|---|---|---|
-| **Production** | aiworkshop.art | quiet-city (persistent) | SFS-prod | Namecheap (exp 2026-04-10) | persistent |
+| **Production** | aiworkshop.art | quiet-city (persistent) | SFS-prod | Let's Encrypt (exp 2026-05-12) | persistent |
 | **Staging** | staging.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
 | **Testing** | testing.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
 
@@ -640,7 +640,7 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [models_and_data.md](.claude/agent_docs/models_and_data.md) | models, templates, downloads | Flux+LTX-2 · 22 models 172GB@/mnt/sfs · yaml key = folder type verbatim |
 | [project_structure.md](.claude/agent_docs/project_structure.md) | finding files, dir layout | data/user_data/userXXX/ · .users.yml auto-gen · scripts/ admin/ nginx/ qm/ |
 | [project_management.md](.claude/agent_docs/project_management.md) | commits, issues, PRs | conventional commits · ref GH# always · `gh issue` needs --json |
-| [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-04-10 · !R2 needs .eu |
+| [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-05-12 · !R2 needs .eu |
 | [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | 3-tier Verda (prod·staging·testing) · Mello=dev+user-dir · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 · resource naming: PROD_ STAG_ TEST_ UNUSED_ |
 | [infrastructure-registry.md](https://github.com/ahelme/comfymulti-scripts/blob/main/infrastructure-registry.md) | IPs, instance names, SFS IDs, secrets refs | PRIVATE scripts repo · actual resource IDs · update when provisioning |
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |

@@ -34,9 +34,9 @@ Current firewall rules lock down all ports except essential services.
 
 ## SSL/TLS
 
-- **Provider:** Existing ahelme.net certificate via Namecheap
-- **Domain:** aiworkshop.art (production), comfy.ahelme.net (staging)
-- **Expiry:** 2026-04-10
+- **Provider:** Let's Encrypt (auto-renewed via certbot webroot)
+- **Domain:** aiworkshop.art (production)
+- **Expiry:** 2026-05-12
 - **Protocols:** TLSv1.2, TLSv1.3
 
 ## Cloudflare R2 Buckets
