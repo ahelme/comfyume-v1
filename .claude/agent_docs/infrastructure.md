@@ -1,6 +1,6 @@
 # Infrastructure & Technology Stack
 
-**Doc Updated:** 2026-02-15
+**Doc Updated:** 2026-02-17
 
 ---
 
@@ -21,7 +21,8 @@ Each Verda environment runs identical stack: nginx, queue-manager, Redis, admin,
 | Machine | Role | Specs | Notes |
 |---|---|---|---|
 | **Verda (production)** | Live workshop platform | CPU.8V.32G, Ubuntu 24.04 | quiet-city-purrs-fin-01 (65.108.33.101), Tailscale 100.89.38.43 |
-| **Verda (testing)** | Testing/staging instance | CPU.4V.16G, Ubuntu 24.04 | tall-heart-dances-fin-01 (65.108.33.118). Spot €0.0082/hr. |
+| **Verda (testing-008)** | Testing/staging instance | CPU.4V.16G, Ubuntu 24.04 | tall-heart-dances-fin-01 (65.108.33.118). Spot €0.0082/hr. |
+| **Verda (testing-009)** | Testing instance | CPU.8V.32G, Ubuntu 24.04 | intelligent-rain-shrinks-fin-01 (65.108.33.80). Fixed €0.0474/hr. CLONE_SFS + scratch attached. |
 | **Verda (staging/testing)** | Pre-production validation | CPU instance (ephemeral) | Created as needed, deleted when done |
 | **Mello** | Dev machine, user dir, Tailscale node | Hetzner CAX31, 8 vCPU, 16GB, 80GB | comfy.ahelme.net (100.99.216.71). NO containers — dev dirs + scripts only |
 | **Verda Serverless** | Serverless GPU inference | H200 141GB / B300 288GB | Spot or on-demand, INFERENCE_MODE=serverless |
