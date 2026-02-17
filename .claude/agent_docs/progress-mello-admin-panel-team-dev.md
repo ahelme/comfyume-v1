@@ -160,6 +160,19 @@
 # Progress Reports
 
 ---
+## Progress Report 15 - 2026-02-17 - anegg.app testing domain, branch strategy
+
+**Date:** 2026-02-17 | **Issues:** #68
+
+**Done:**
+- User set up `anegg.app` domain pointing to testing instance 009 (65.108.33.80)
+- Updated infrastructure-registry.md (private scripts) with domain field (I-16)
+- Updated infrastructure.md (agent_docs) machines + environments tables
+- Created PR #68 for comfyume-v1
+- Decision: continue with branches (not fork) for #66 architecture work
+- Created feature branch `testing-mello-admin-panel-team-new-testing-instance`
+
+---
 ## Progress Report 14 - 2026-02-17 - nginx .htpasswd fix, session resume (#61)
 
 **Date:** 2026-02-17 | **Issues:** #61, #58

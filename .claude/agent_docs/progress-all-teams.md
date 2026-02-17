@@ -17,6 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-17
 
+- [ADMIN] 6dd9fe5 docs: add anegg.app testing domain to infrastructure (#68)
+- [ADMIN] (scripts) a36088c docs: add anegg.app domain for testing instance 009
 - [MELLO-ONE-TEAM] (scripts) feat: per-env SSH identities — all host keys renamed verda_production_*, 3 ed25519 pairs (#55)
 - [MELLO-ONE-TEAM] (scripts) refactor: backup-mello.sh → backup-user-data.sh, runs locally on Verda (#48)
 - [MELLO-ONE-TEAM] (scripts) fix: backup-cron.sh v3.2 — local user data backup, double-logging fix (#48)
