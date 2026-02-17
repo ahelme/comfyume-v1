@@ -41,3 +41,4 @@ temp/
 
 # Claude Code local/session files (Ralph Loop state, hooks, etc.)
 .claude/*.local.md
+*.env.bak*
