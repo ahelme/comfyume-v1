@@ -66,7 +66,7 @@ Current firewall rules lock down all ports except essential services.
 - **Contents:**
   - `restore-verda-instance.sh` - Production app server restore script (v0.4.0)
   - `setup-verda-solo-script.sh` - Legacy GPU worker setup (v0.3.3, archived)
-  - `backup-cron.sh`, `backup-mello.sh`, `backup-verda.sh` - Backup scripts
+  - `backup-cron.sh`, `backup-user-data.sh`, `backup-verda.sh` - Backup scripts
   - `README-RESTORE.md` - Quick reference for restore scenarios
   - `archive/` - Legacy scripts (quick-start.sh, RESTORE-SFS.sh, etc.)
 - **Note:** Script downloads binary files (models, container) from R2 or SFS cache

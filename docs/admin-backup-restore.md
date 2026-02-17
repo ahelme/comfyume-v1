@@ -79,27 +79,23 @@ Cloudflare R2 buckets require `.eu` in the middle of the endpoint URL. Omitting 
 
 | Script | Runs From | Destination | Trigger | Schedule |
 |--------|-----------|-------------|---------|----------|
-| `backup-cron.sh` | Verda | SFS + triggers mello | Cron | Hourly |
+| `backup-cron.sh` | Verda | SFS + R2 (user data) | Cron | Hourly |
 | `backup-verda.sh` | Mello | Mello + R2 | Manual | Before shutdown |
-| `backup-mello.sh` | Mello | R2 | Manual/Cron | Before shutdown |
+| `backup-user-data.sh` | Verda | R2 | Hourly (via cron) | Each cron run |
 
 ### What Gets Backed Up
 
-| Data | `backup-cron.sh` | `backup-verda.sh` | `backup-mello.sh` | Location |
-|------|:----------------:|:-----------------:|:-----------------:|----------|
-| Tailscale identity | ✅ | ✅ | ❌ | SFS / Mello |
-| SSH host keys | ✅ | ✅ | ❌ | SFS / Mello |
-| Fail2ban, UFW configs | ✅ | ✅ | ❌ | SFS / Mello |
-| Project .env | ✅ | ✅ | ❌ | SFS / Mello |
-| User credentials | ❌ | ❌ | ✅ | Private repo |
-| Nginx htpasswd | ❌ | ❌ | ✅ | Mello VPS only |
-| /home/dev/ | ❌ | ✅ | ❌ | Mello |
-| ComfyUI project | ❌ | ✅ | ❌ | Mello |
-| oh-my-zsh custom | ❌ | ✅ | ❌ | Mello |
+| Data | `backup-cron.sh` | `backup-verda.sh` | `backup-user-data.sh` | Location |
+|------|:----------------:|:-----------------:|:--------------------:|----------|
+| Tailscale identity | ✅ | ✅ | ❌ | SFS |
+| SSH host keys | ✅ | ✅ | ❌ | SFS |
+| Fail2ban, UFW configs | ✅ | ✅ | ❌ | SFS |
+| Project .env | ✅ | ✅ | ❌ | SFS |
+| /home/dev/ | ✅ | ✅ | ❌ | SFS |
+| Container images | ✅ (3am) | ✅ | ❌ | SFS + R2 |
 | Models (.safetensors) | ❌ | ✅ (default) | ❌ | R2 |
-| Container image | ❌ | ✅ (default) | ❌ | Mello + R2 |
 | User workflows | ❌ | ❌ | ✅ | R2 |
-| User outputs | ❌ | ❌ | ✅ | R2 |
+| User outputs | ❌ | ❌ | ✅ (full only) | R2 |
 | User inputs | ❌ | ❌ | ✅ | R2 |
 | Block storage (`/mnt/scratch`) | ❌ | ❌ | ❌ | *Not backed up* |
 

@@ -336,6 +336,15 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGiwaT6NQcHe7cYDKB5LrtmyIU0O8iRc7DJUmZJsNkDD
 - Mello can SSH into Verda (Mello has private key)
 - Verda CANNOT pull from mello (Verda has no private key for mello until setup script finishes)
 
+### Verda SSH Identities (per-environment, scripts #55)
+
+Separate keys per environment so Tailscale assigns distinct IPs and Mello can identify which instance is calling. Without this, whichever instance connects first claims the Tailscale IP, locking out the others.
+
+**Keys:** `comfymulti-scripts/secrets/ssh/verda_{production,testing,staging}_ed25519(.pub)`
+**Restore scripts:** comment-out block — uncomment the key matching the target environment.
+**Mello:** all three public keys in `authorized_keys`.
+**Variable:** `VERDA_INSTANCE_SSH_PRIVATE_KEY` (old name was `VERDA_SSH_PRIVATE_KEY`).
+
 ### Verda Restore Scripts Are Adaptive
 
 **Core Restore Workflow:** Restore scripts first check SFS (fast), then fall back to remote:

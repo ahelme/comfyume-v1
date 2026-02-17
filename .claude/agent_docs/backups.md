@@ -83,25 +83,25 @@ User workflows, custom nodes, etc. (variable size)
 
 | Script | Runs From | Destination | When | Status |
 |--------|-----------|-------------|------|--------|
-| `backup-cron.sh` | Verda (cron) | SFS cache | Hourly | Needs update: dated naming, rotation |
+| `backup-cron.sh` | Verda (cron) | SFS cache + R2 | Hourly | v3.2: disk-check --require, reports, local user data backup |
 | `backup-verda.sh` | Mello (SSH) | Mello + R2 | Before shutdown | Needs update: dated naming, rotation, all 4 buckets |
-| `backup-mello.sh` | Mello | R2 | Before shutdown | Needs update: dated naming, rotation |
+| `backup-user-data.sh` | Verda | R2 | Hourly (via cron) | v3.1: renamed from backup-mello.sh, runs locally on Verda |
 
 **Location:** `ahelme/comfymulti-scripts` (private repo)
 
 ### What Gets Backed Up
 
-| Data | `backup-cron.sh` | `backup-verda.sh` | `backup-mello.sh` | Destination |
+| Data | `backup-cron.sh` | `backup-verda.sh` | `backup-user-data.sh` | Destination |
 |------|:-:|:-:|:-:|-----------|
 | Tailscale identity | Yes | Yes | - | SFS / Mello |
 | SSH host keys | Yes | Yes | - | SFS / Mello |
 | Fail2ban, UFW configs | Yes | Yes | - | SFS / Mello |
 | Project .env | Yes | Yes | - | SFS / Mello |
-| /home/dev/ | - | Yes | - | Mello + R2 |
-| Container images | - | Yes | - | Mello + R2 |
+| /home/dev/ | Yes | Yes | - | SFS / Mello |
+| Container images | Yes (3am) | Yes | - | SFS + R2 |
 | Models (.safetensors) | - | Yes | - | R2 |
 | User workflows/outputs | - | - | Yes | R2 |
-| User credentials | - | - | Yes | Private repo |
+| User credentials | - | - | - | Private repo |
 
 ---
 
@@ -148,8 +148,10 @@ aws --endpoint-url $ENDPOINT s3 ls s3://comfyume-user-files-backups/ --recursive
 
 # Run manual backup from Mello
 cd ~/projects/comfymulti-scripts
-./backup-verda.sh        # Verda → Mello + R2
-./backup-mello.sh        # Mello → R2
+./backup-verda.sh           # Verda → Mello + R2
+
+# Run manual user data backup on Verda
+./backup-user-data.sh       # Verda user data → R2
 
 # SFS-prod auto-mounts on reboot (fstab entry added 2026-02-16)
 ```

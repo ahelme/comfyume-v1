@@ -98,9 +98,24 @@
       - DONE: All `verda_ed25519` refs in restore scripts/.env updated to `ssh_host_ed25519_key`
       - DONE: CLAUDE.md rule #7 added: NEVER generate SSH keys without user approval
       - DONE: Verda→Mello SSH key gap logged in scripts issue #45
-      - TODO: Rename `ssh_host_*` keys to sensible names — DECIDE WITH USER FIRST
-      - TODO: Merge scripts PR #53 (disk-check + backup reports + SSH key cleanup)
-      - TODO: Check cron jobs are running and review backup reports on next session
+      - DONE: Cron verified running hourly — 3 backup reports generated, 8/8 SFS items OK
+      - DONE: Renamed `backup-mello.sh` → `backup-user-data.sh` — runs locally on Verda, not SSH to Mello (#48)
+      - DONE: backup-cron.sh v3.2: local user data backup to R2 (removed SSH/MELLO_HOST dependency)
+      - DONE: Fixed double-logging bug — `tee -a` + cron `>>` wrote every line twice
+      - DONE: Removed `set -e` from backup-user-data.sh (rotation failure shouldn't abort after successful upload)
+      - DONE: Deployed + verified on Verda: 964K user_data tarball uploaded and verified on R2
+      - DONE: Updated 5 docs (backups.md, project_structure.md, security.md, admin-backup-restore.md, README-RESTORE.md)
+      - DONE: Old backup-mello.sh moved to archive/
+      - DONE: Per-environment SSH identities (#55) — 3 key pairs: verda_{production,testing,staging}_ed25519
+      - DONE: Renamed ssh_host_ed25519_key → verda_production_ed25519, updated comment to production@verda
+      - DONE: Generated testing@verda + staging@verda key pairs (user-approved)
+      - DONE: Moved ecdsa + rsa host keys to secrets/ssh/other-key-types/
+      - DONE: Restore scripts updated with comment-out block for env selection
+      - DONE: .env, setup-verda-solo-script.sh, archive example all updated
+      - DONE: All 3 public keys in Mello authorized_keys
+      - DONE: Verda key comment updated, SSH verified working
+      - DONE: CLAUDE.md updated with SSH identities section
+      - TODO: Merge scripts PR #53 (disk-check + backup reports + SSH key cleanup + user data rename + SSH identities)
     - PHASE 2.75 (NEXT — URGENT): Provision testing instance
       - Provision testing instance (Verda CPU, FIN-01 or FIN-03)
       - Run restore script v0.5.0 on it
