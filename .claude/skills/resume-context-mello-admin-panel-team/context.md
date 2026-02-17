@@ -17,113 +17,117 @@ OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here chang
 
 **Production:** aiworkshop.art runs on Verda CPU instance (see `VERDA_PUBLIC_IP` in `.env`), NOT Mello.
 
-**SSH (temporary):** `ssh dev@100.89.38.43` (Tailscale IP). Root on public IP broken after reprovision — will be fixed when instance is re-provisioned or keys restored.
+**SSH:** `ssh dev@100.89.38.43` (Tailscale IP).
+
+**Debugging reference:** `docs/comfyui-debugging.md` — check BEFORE investigating any ComfyUI issue.
 
 ---
 
-## IMMEDIATE PRIORITY
+## TOP PRIORITY: SFS-Based Result Delivery (#66)
 
-### 1. Inference regression — ALL workflows broken (#101)
+### Root Cause of Inference Regression (#101) — CONFIRMED
 
-**Status:** Root cause still UNKNOWN. QM error logging (#48) deployed but no new job triggered yet to capture actual error.
+Verda's serverless load balancer routes each HTTP request to a **different** container instance:
+- `POST /prompt` → instance A (accepts, starts executing)
+- `GET /history/{prompt_id}` → instance B (never saw this prompt, returns `{}`)
 
-**Timeline:**
-- Feb 15 18:20 UTC — last successful inference (Flux Klein, 2 images)
-- Feb 16 04:57 UTC — first failure, `status=error` on serverless
-- No code drift, no container restarts between success and failure
+**Evidence (2026-02-17):** Two test jobs submitted, both accepted (HTTP 200), both timed out after 600s of polling with `Keys: []` — prompt_id never appeared in history.
 
-**OpenTofu drift audit (#54) found NO deployment config drift** — .tf matches live. The regression is NOT caused by a changed startup command, scaling, or mount config.
+### Proposed Architecture: "Dumb Pipes, Smart QM"
 
-**Drift audit DID find these inconsistencies (not causing regression but need fixing):**
-- `--output-directory /mnt/sfs/outputs` missing from 3 of 4 deployments (only H200-spot has it)
-- Healthcheck path `/` (should be `/system_stats`)
-- Queue load threshold `2` (documented as `1`)
+```
+Frontend (ComfyUI + 1 thin extension: queue_redirect)
+  ↓ POST /api/jobs
+QM (FastAPI — fully ours, fire-and-forget POST /prompt)
+  ↓
+Serverless Worker (VANILLA ComfyUI, --output-directory /mnt/sfs/outputs)
+  ↓ writes to SFS
+QM watches /mnt/sfs/outputs/ (filesystem, NOT HTTP polling)
+  ↓ copies to /outputs/userXXX/
+Frontend serves locally
+```
 
-**Next step:** Trigger a test job to capture actual ComfyUI execution error via new QM logging.
+**Key changes:**
+- Kill `serverless_proxy` extension (fragile, hooks into ComfyUI WebSocket internals)
+- QM watches SFS filesystem instead of polling `/history/{id}` over HTTP
+- Workers = vanilla ComfyUI (zero custom code) — migration-proof
+- QM sends progress via its own WebSocket to frontend
 
-### 2. OpenTofu IaC — first apply on TESTING server (#54)
+**Challenge:** Matching output files to jobs (ComfyUI filenames don't contain prompt_id). Options: timestamp matching, unique prefix, or single-job attribution (`concurrent_requests_per_replica = 1`).
+
+### Testing Instance Ready
+
+**Instance 009:** `intelligent-rain-shrinks-fin-01` (65.108.33.80, CPU.8V.32G, fixed €0.0474/hr)
+- CLONE_SFS attached (fd7efb9e-..., 220GB)
+- Scratch disk attached (c07825bd-..., 50GB, /dev/vdb)
+- Registered in infrastructure-registry.md (private scripts repo)
+
+---
+
+## Completed This Session
+
+- [x] **#61** — nginx .htpasswd regenerated (21 bcrypt entries from .env), all auth working
+- [x] **#58** — SSL certbot renewal fixed, CORS cleaned, docs corrected (PR #59 merged)
+- [x] **#66** — Architecture issue created with full design + test results
+- [x] `--verbose` flag added to all containers (frontend Dockerfile + serverless .tf)
+- [x] `docs/comfyui-debugging.md` created — comprehensive 10-section reference
+- [x] CLAUDE.md Critical Instruction #6: use debugging guide for ComfyUI bugs
+- [x] OpenTofu danger warnings added to context.md + containers.tf
+- [x] Infrastructure registry updated with instance 009 + block vols 010/011
+- [x] PR #67 merged (--verbose, debugging guide, architecture analysis)
+
+---
+
+## OpenTofu IaC (#54) — ON NEW TESTING SERVER ONLY
 
 **DONE:**
-- [x] OpenTofu v1.11.5 installed on Mello
-- [x] `infrastructure/` dir created: providers.tf, variables.tf, containers.tf
-- [x] `verda-cloud/verda` v1.1.1 provider — supports `verda_container`
-- [x] All 4 live deployments imported into tofu state
-- [x] `tofu plan` = 0 real drift (confirms .tf matches production)
-- [x] GH #54 created with full drift audit
-- [x] CLAUDE.md updated: IaC debugging + deployment change workflow
-- [x] PRs #53, #55 merged
+- [x] OpenTofu v1.11.5 on Mello, provider v1.1.1
+- [x] `infrastructure/` dir: providers.tf, variables.tf, containers.tf
+- [x] All 4 deployments imported, plan = 0 drift
+- [x] `--verbose` added to .tf base_cmd
 
-**TODO:**
-- [ ] First `tofu apply` on TESTING server (NOT production)
-- [ ] Fix: add `--output-directory /mnt/sfs/outputs` to 3 missing deployments
-- [ ] Fix: healthcheck `/` → `/system_stats`
-- [ ] Set up remote state backend (currently local — fragile)
+**TODO (on testing-009 only):**
+- [ ] First `tofu apply` on testing server
+- [ ] Add `--output-directory /mnt/sfs/outputs` to 3 missing deployments
+- [ ] Fix healthcheck `/` → `/system_stats`
 
 **Credentials:** `VERDA_CLIENT_ID` + `VERDA_CLIENT_SECRET` from `/home/dev/comfymulti-scripts/.env`
-**SFS IDs:** PROD `be539393-...` / CLONE `fd7efb9e-...`
 
 ---
 
-## MONITORING STACK (#106) + SUBDOMAINS (#109)
+## MONITORING STACK (#106)
 
 All live. Use `/verda-monitoring-check` to verify.
 
 | Tool | Port | Access |
 |------|------|--------|
-| Prometheus | :9090 | https://prometheus.aiworkshop.art (basic auth) |
-| Grafana | :3001 | https://grafana.aiworkshop.art (admin login) |
+| Prometheus | :9090 | https://prometheus.aiworkshop.art |
+| Grafana | :3001 | https://grafana.aiworkshop.art |
 | Loki | :3100 | via Grafana or SSH |
 | cAdvisor | :8081 | via Prometheus |
-| Promtail | :9080 | ships Docker logs → Loki |
 | Portainer | :9443 | https://portainer.aiworkshop.art |
-
-**12 skills:** `/verda-ssh`, `/verda-status`, `/verda-logs`, `/verda-containers`, `/verda-terraform`, `/verda-open-tofu`, `/verda-prometheus`, `/verda-dry`, `/verda-loki`, `/verda-grafana`, `/verda-monitoring-check`, `/verda-debug-containers`
-
----
-
-## KEY RESEARCH FINDINGS
-
-**ComfyUI folder_paths.py:**
-- `extra_config.py:load_extra_path_config()` iterates yaml keys
-- Each key passed to `folder_paths.add_model_folder_path(key, path)`
-- `map_legacy()` only maps `unet`→`diffusion_models` and `clip`→`text_encoders`
-- Yaml key IS the folder type verbatim — no other aliasing
-
-**Verda SDK:**
-- `update_deployment(name, deployment)` takes a full `Deployment` object, NOT kwargs
-- No container logs via SDK or API; no exec/shell into containers
-- `get_deployments()` returns all 4 deployments, `get_deployment_scaling_options(name)` for scaling
-- Deployment object has no `id` field — import by name works
-
-**OpenTofu `verda_container` schema:**
-- `entrypoint_overrides`: `enabled`, `entrypoint` (list), `cmd` (list) — live uses exec-style (no shell)
-- `volume_mounts`: `type` (scratch/memory/secret/shared), `mount_path`, `volume_id` (for shared)
-- `scaling`: `deadline_seconds` exists alongside `queue_message_ttl_seconds`
-- SFS has NO provider resource (`verda_sfs` doesn't exist)
 
 ---
 
 ## GITHUB ISSUES
 
-- **#101** — Yaml key fix applied. Inference BROKEN — regression. No deployment drift found via tofu.
-- **#103** — SFS mount resolved. Instance sees SFS.
-- **#106** — [x] Monitoring stack complete.
-- **#109** — [x] SSL certs complete.
-- **#43** — Fixed (container restart). Close after confirming inference works.
-- **#44** — OPEN. GPU progress banner for serverless mode.
-- **#45** — OPEN. Cookie-based auth persistence.
-- **#46** — OPEN. Cold start silent failure UX.
-- **#48** — [x] QM error logging deployed. Needs image rebuild to persist.
-- **#54** — IN PROGRESS. OpenTofu IaC for Verda serverless. Import done, apply on testing next.
+- **#66** — TOP PRIORITY. SFS-based result delivery architecture. Root cause of #101.
+- **#101** — Inference regression. Root cause = LB routing (#66). Symptom, not the fix target.
+- **#54** — OpenTofu IaC. Import done, apply on testing-009 next.
+- **#48** — QM logging gap: doesn't catch "prompt never appeared" timeout. Needs fix.
+- **#63** — Browser console log tracking (user-created).
+- **#44** — GPU progress banner for serverless mode.
+- **#45** — Cookie-based auth persistence.
+- **#46** — Cold start silent failure UX.
+- **#22** — Image delivery gap. Root cause same as #66 (LB routing).
+- **#43** — NFS model visibility. Fixed, close after inference works.
 
 ---
 
 ## SESSION START CHECKLIST
 
 - [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
-- [ ] Run `/verda-monitoring-check` to verify stack is healthy
-- [ ] Trigger test job to capture inference error via new QM logging (#48)
-- [ ] After error captured: diagnose root cause of inference regression (#101)
-- [ ] First `tofu apply` on testing server (#54)
-- [ ] Fix 3 deployments missing `--output-directory` via .tf change
+- [ ] Read `docs/comfyui-debugging.md` if investigating any ComfyUI issue
+- [ ] Work on #66: implement SFS filesystem watching in QM (on testing-009)
+- [ ] First `tofu apply` on testing-009 (#54)
 - [ ] After inference fixed: close #43, work on #44/#45/#46
