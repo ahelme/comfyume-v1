@@ -43,6 +43,14 @@
 ---
 ## 1. PRIORITY TASKS
 
+✅ **(COMPLETE) - comfyume-v1 #70 - Restore testing instance 009 + fix E2E inference**
+    - Created: 2026-02-17 | Updated: 2026-02-17
+    - Testing instance 009 (anegg.app) fully operational with E2E inference
+    - Flux Klein 4B: 18s warm, 307s cold (model loading)
+    - HTTP polling works when container is warm (LB stabilizes)
+    - SFS volume mismatch: serverless uses PROD_SFS, testing uses CLONE_SFS
+    - Related: #66, #54, #101, #48, #22
+
 ✅ **(COMPLETE) - comfyume #65 - Admin Dashboard Phase 1: Core Dashboard MVP**
     - Created: 2026-02-06 | Updated: 2026-02-06
     - System status cards (Redis, Queue Manager, Serverless GPU, Disk Usage)
@@ -158,6 +166,50 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 16 - 2026-02-17 - Testing instance 009 restored, E2E inference working (#70)
+
+**Date:** 2026-02-17 | **Issues:** #70, #54, #66
+
+**Done:**
+- Created GH #70: infra: restore testing instance 009 (anegg.app) + fix E2E inference
+- Phase 0: Created learnings doc `docs/learnings-testing-instance-009.md`
+- Phase 1: SSH to instance, updated OS (`apt upgrade`), mounted CLONE_SFS + scratch disk
+- Phase 2: Created testing variant of restore script (`-testing.sh`):
+  - Changed hostname/IP/instance-ID to 009 (intelligent-rain-shrinks)
+  - Domain: anegg.app (SSL cert obtained via certbot webroot)
+  - SSH keys: switched from production to testing identity
+  - Removed old PUB_KEY_VERDA (production host key)
+- Phase 3: Restore completed. Fixed post-restore issues:
+  - Wrong git remote (comfy-multi → comfyume-v1), switched to feature branch
+  - .env was bare-bones — wrote comprehensive testing .env with all serverless config
+  - USE_HOST_NGINX=false (containerized), stopped host nginx
+  - nginx/.htpasswd was directory (Docker auto-created) — removed + recreated as file
+  - Frontend image rebuilt from correct branch (old image missing `requests` module)
+  - Generated docker-compose.users.yml for 5 users
+  - nginx CORS: changed hardcoded `aiworkshop.art` to `$http_origin`
+- Phase 4: All containers healthy (nginx, redis, QM, admin, user001-005)
+  - 24 models visible, no Missing Models popup
+  - SSL cert valid until 2026-05-18
+  - QM: serverless mode, H200-SPOT active
+- Phase 5: Fixed --output-directory in containers.tf (all 4 deployments)
+  - Added anegg.app to QM CORS allow_origins
+  - First inference attempt: 307s cold start, execution success, but `/outputs/user001` permission denied
+  - Fixed permissions: `chmod -R 777 /mnt/scratch/outputs/`
+  - Second inference: 18s warm, image generated + saved + displayed in ComfyUI
+  - **E2E inference confirmed working**
+
+**Key findings:**
+- LB routing issue (#66) mitigated by warm containers — history poll succeeds after model loading
+- SFS volume mismatch: serverless containers mount PROD_SFS, testing mounts CLONE_SFS
+- SFS image delivery won't work cross-environment, but HTTP /view fallback works
+- Restore script clones wrong repo (comfy-multi), needs manual remote URL fix
+- Cold start ~5 min (model loading), warm inference ~18s
+
+**Commits:**
+- `eab1a1b` fix: add --output-directory to all serverless deployments + CORS for anegg.app (#70, #54)
+- `2a81358` docs: update learnings from testing instance 009 — E2E inference confirmed (#70)
 
 ---
 ## Progress Report 15 - 2026-02-17 - anegg.app testing domain, branch strategy
