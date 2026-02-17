@@ -66,4 +66,4 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 # Run ComfyUI in frontend-testing mode
 # Uses --cpu flag (ComfyUI built-in) to disable GPU inference
 # Each frontend container shows UI only - GPU inference happens on workers
-CMD ["python", "/comfyui/main.py", "--listen", "0.0.0.0", "--port", "8188", "--cpu"]
+CMD ["python", "/comfyui/main.py", "--listen", "0.0.0.0", "--port", "8188", "--cpu", "--verbose"]

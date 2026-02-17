@@ -48,8 +48,9 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 3. **CHECK FOR EXISTING CODE FIRST** -- NEVER rewrite code that already exists. ALWAYS check for previous solutions.
 4. **ALL COMFYUI CUSTOMISATIONS GO IN `comfyume-extensions/`** -- Any code that modifies, extends, or wraps ComfyUI behavior MUST live in `comfyume-extensions/`, never inside `comfyui-frontend/`. This is for separation of concerns, easy bugfixing, modularity, migration-friendliness, and ease of finding our changes vs upstream ComfyUI. Enable/disable extensions via `comfyume-extensions/extensions.conf`.
 5. **DEPLOY VIA GIT FLOW** -- Use `./scripts/deploy.sh`. Never SCP files directly to production. Flow: edit → commit → push → deploy script handles the rest.
-6. **INFRASTRUCTURE AS CODE (IaC) — MANDATORY** -- All Verda infrastructure MUST be managed via OpenTofu. NEVER make manual changes to serverless deployments, instance configs, or SFS settings via SDK calls, console clicks, or ad-hoc scripts. Untracked changes cause silent regressions.
-7. **NEVER GENERATE SSH KEYS WITHOUT CONSULTING THE USER. EVER!** -- SSH keys are identity. Do not create, delete, or modify SSH keys on any machine without explicit user approval. Always check `.env` and `secrets/ssh/` for existing keys first.
+6. **USE `docs/comfyui-debugging.md` FOR ALL COMFYUI BUGS** -- Comprehensive debugging reference: CLI flags, API endpoints, container logs, monitoring, serverless-specific issues, common workflows. Check this BEFORE investigating any ComfyUI-related issue.
+7. **INFRASTRUCTURE AS CODE (IaC) — MANDATORY** -- All Verda infrastructure MUST be managed via OpenTofu. NEVER make manual changes to serverless deployments, instance configs, or SFS settings via SDK calls, console clicks, or ad-hoc scripts. Untracked changes cause silent regressions.
+8. **NEVER GENERATE SSH KEYS WITHOUT CONSULTING THE USER. EVER!** -- SSH keys are identity. Do not create, delete, or modify SSH keys on any machine without explicit user approval. Always check `.env` and `secrets/ssh/` for existing keys first.
 
 ### IaC Workflow (OpenTofu)
 

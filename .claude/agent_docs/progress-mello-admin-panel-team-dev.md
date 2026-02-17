@@ -74,8 +74,17 @@
     - Fixed by batched restart of all 20 frontend containers (no code changes)
     - All models visible inside containers after restart
 
+🚨 **TOP PRIORITY - comfyume-v1 #66 - Migrate from HTTP polling to SFS-based result delivery**
+    - Created: 2026-02-17
+    - ROOT CAUSE of inference regression: Verda LB routes history polls to wrong instance
+    - Architecture: fire-and-forget POST /prompt → worker writes to SFS → QM watches filesystem
+    - Kill serverless_proxy extension (fragile), move progress to QM WebSocket
+    - Workers become vanilla ComfyUI (zero custom code) — migration-proof
+    - Related: #101 (symptom), #48 (logging gap), #54 (missing --output-directory)
+
 🚨 **CRITICAL - comfyume-v1 #101, #103 - Serverless Inference BROKEN**
-    - Created: 2026-02-09 | Updated: 2026-02-16
+    - Created: 2026-02-09 | Updated: 2026-02-17
+    - ROOT CAUSE IDENTIFIED: Verda load balancer routes history polls to different instance (#66)
     - Yaml key on SFS confirmed CORRECT as of Feb 16 (latent_upscale_models)
     - Flux Klein WAS working (Feb 15 18:20 UTC — 2 images generated successfully)
     - **BROKEN** as of Feb 16 04:57 UTC — serverless returns `status=error`, not a cold start issue

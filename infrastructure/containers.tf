@@ -21,7 +21,8 @@ locals {
     "python3", "/workspace/ComfyUI/main.py",
     "--listen", "0.0.0.0",
     "--port", "8188",
-    "--extra-model-paths-config", "/mnt/sfs/extra_model_paths.yaml"
+    "--extra-model-paths-config", "/mnt/sfs/extra_model_paths.yaml",
+    "--verbose"
   ]
 
   # H200-spot has --output-directory, others do NOT (drift discovered 2026-02-16)
