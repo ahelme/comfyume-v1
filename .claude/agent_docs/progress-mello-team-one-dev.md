@@ -109,7 +109,7 @@
       - DONE: Per-environment SSH identities (#55) — 3 key pairs: verda_{production,testing,staging}_ed25519
       - DONE: Renamed ssh_host_ed25519_key → verda_production_ed25519, updated comment to production@verda
       - DONE: Generated testing@verda + staging@verda key pairs (user-approved)
-      - DONE: Moved ecdsa + rsa host keys to secrets/ssh/other-key-types/
+      - DONE: Renamed ALL host keys to verda_production_* (ed25519, ecdsa, rsa) in secrets/ssh/other-key-types/
       - DONE: Restore scripts updated with comment-out block for env selection
       - DONE: .env, setup-verda-solo-script.sh, archive example all updated
       - DONE: All 3 public keys in Mello authorized_keys

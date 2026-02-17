@@ -17,7 +17,7 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-17
 
-- [MELLO-ONE-TEAM] (scripts) feat: per-environment SSH identities — 3 key pairs, restore script comment-out block (#55)
+- [MELLO-ONE-TEAM] (scripts) feat: per-env SSH identities — all host keys renamed verda_production_*, 3 ed25519 pairs (#55)
 - [MELLO-ONE-TEAM] (scripts) refactor: backup-mello.sh → backup-user-data.sh, runs locally on Verda (#48)
 - [MELLO-ONE-TEAM] (scripts) fix: backup-cron.sh v3.2 — local user data backup, double-logging fix (#48)
 - [MELLO-ONE-TEAM] (scripts) b9c204a feat: disk-check --require, backup reports, remove set -e (#48) — PR #53
