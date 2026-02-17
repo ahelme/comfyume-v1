@@ -1,5 +1,9 @@
 # ComfyuME Serverless GPU Deployments
 #
+# !!! DANGER — NEVER RUN tofu plan / tofu apply FROM MELLO OR AGAINST PRODUCTION !!!
+# !!! OpenTofu commands ONLY on a NEW TESTING server instance.                    !!!
+# !!! Edit .tf files here, commit via git flow, apply ONLY on a new testing server. !!!
+#
 # 4 deployment variants: H200/B300 x spot/on-demand
 # All 4 exist in production. Toggle via deploy_* variables.
 #
