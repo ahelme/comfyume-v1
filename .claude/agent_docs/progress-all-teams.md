@@ -17,6 +17,14 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-17
 
+- [MELLO-ONE-TEAM] (scripts) feat: per-environment SSH identities — 3 key pairs, restore script comment-out block (#55)
+- [MELLO-ONE-TEAM] (scripts) refactor: backup-mello.sh → backup-user-data.sh, runs locally on Verda (#48)
+- [MELLO-ONE-TEAM] (scripts) fix: backup-cron.sh v3.2 — local user data backup, double-logging fix (#48)
+- [MELLO-ONE-TEAM] (scripts) b9c204a feat: disk-check --require, backup reports, remove set -e (#48) — PR #53
+- [MELLO-ONE-TEAM] (scripts) SSH key cleanup: removed Claude-generated verda@gpu-worker + dev@verda->mello keys
+- [MELLO-ONE-TEAM] (scripts) Fixed backup cron (was silently crashing since Feb 16), crontab stderr redirect
+- [MELLO-ONE-TEAM] (scripts) Verda→Mello SSH working — host ed25519 key deployed, logged in #45
+- [MELLO-ONE-TEAM] CLAUDE.md rule #7: never generate SSH keys without user approval
 - [ADMIN] (no commit) fix: regenerated nginx/.htpasswd from .env credentials using Python bcrypt (#61, closed)
 - [ADMIN] (no commit) created GH #61: nginx 500 — .htpasswd lost during git operations
 - [ADMIN] (no commit) updated GH #58 title: removed subdomain references (path-based approach kept)

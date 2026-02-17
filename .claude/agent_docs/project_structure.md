@@ -68,8 +68,8 @@
 ├── README-RESTORE.md              # Basic backup/restore doc
 ├── restore-verda-instance.sh      # Production app server restore script (v0.4.0)
 ├── setup-verda-solo-script.sh     # Legacy GPU worker setup script (v0.3.3)
-├── backup-cron.sh                 # Hourly backups: Verda->SFS + triggers mello->R2
-├── backup-mello.sh                # Backs up user files on mello e.g. workflows
+├── backup-cron.sh                 # Hourly backups: Verda->SFS + user data->R2
+├── backup-user-data.sh            # Backs up user files (workflows, outputs, inputs) to R2
 ├── backup-verda.sh                # Backs up all data to R2 before instance deleted
 └── archive/                       # Legacy scripts (quick-start.sh, RESTORE-SFS.sh)
 ```

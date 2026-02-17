@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-16 - Backup system verified, restore script gap analysis, backups-log dashboard
+**Doc Updated:** 2026-02-17 - SFS-clone verified, cron crash diagnosed, backup reports planned
 
 ---
 # Project Progress Tracker
@@ -44,8 +44,10 @@
 ---
 ## 1. PRIORITY TASKS
 
+⚠️ NEXT SESSION FIRST: Rename ssh_host_* keys in comfymulti-scripts/secrets/ssh/ — DECIDE NAMING WITH USER BEFORE PROCEEDING. Also check cron jobs running + review backup reports.
+
 🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
-    - Created: 2026-02-12, Updated: 2026-02-16
+    - Created: 2026-02-12, Updated: 2026-02-17
     - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
     - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames, PR #36 merged
     - PHASE 1.75 DONE: Verda infra cleanup + model vault check (#38 closed)
@@ -74,6 +76,8 @@
       - DONE: Pulled main into branch (admin team PRs #50, #51)
       - FOUND: 6 critical naming mismatches between backup output and restore script
       - FOUND: SFS-clone is EMPTY — needs model data before testing instance
+      - RESOLVED: SFS-clone NOW has all 22 models (192GB), matches SFS-prod exactly (verified 2026-02-17)
+      - FOUND: Backup cron SILENTLY CRASHING since 2026-02-16 06:00 — disk-check.sh --block sees SFS-prod at 90% and aborts
     - PHASE 2 DONE: Restore script v0.5.0 (scripts PR #52, merged)
       - DONE: 6 naming mismatches fixed (container images, R2 paths, SSL, repo, project dir)
       - DONE: 5 bugs fixed (#41 git pull, #42 tarball priority, #43 host nginx, #44 custom nodes, #45 SFS perms)
@@ -81,8 +85,38 @@
       - DONE: SSH key extraction fixed (was extracting to / instead of /etc/ssh/)
       - DONE: All backup scripts installed by restore (not just backup-cron.sh)
       - DONE: GH issues #41-#45 commented, scripts #51 created (CLONE_SFS copy)
-    - PHASE 2.5 (NEXT — URGENT): Provision testing instance
-      - Copy models from SFS-prod to SFS-clone (scripts #51)
+    - PHASE 2.5 (IN PROGRESS): Backup fixes + SSH key cleanup
+      - DONE: SFS-clone models verified 22/22 matching SFS-prod (scripts #51 resolved)
+      - DONE: Backup cron crash fixed — disk-check.sh v2.0 `--require SIZE PATH` replaces `--block` (scripts PR #53)
+      - DONE: Removed `set -e` from backup-cron.sh (sections are independent)
+      - DONE: Crontab fixed: `>> /var/log/backup-cron.log 2>&1` (was silent on crash)
+      - DONE: Backup report generator added: `generate-backup-report.sh` v1.0 — dated markdown reports
+      - DONE: GH issue #48 updated with disk-check redesign + backup reports
+      - DONE: SSH key cleanup — removed Claude-generated `verda@gpu-worker` key from ALL locations
+      - DONE: SSH key cleanup — removed Claude-generated `dev@verda->mello` key from Mello authorized_keys
+      - DONE: Verda→Mello SSH working — host ed25519 key deployed as `/root/.ssh/id_ed25519`
+      - DONE: All `verda_ed25519` refs in restore scripts/.env updated to `ssh_host_ed25519_key`
+      - DONE: CLAUDE.md rule #7 added: NEVER generate SSH keys without user approval
+      - DONE: Verda→Mello SSH key gap logged in scripts issue #45
+      - DONE: Cron verified running hourly — 3 backup reports generated, 8/8 SFS items OK
+      - DONE: Renamed `backup-mello.sh` → `backup-user-data.sh` — runs locally on Verda, not SSH to Mello (#48)
+      - DONE: backup-cron.sh v3.2: local user data backup to R2 (removed SSH/MELLO_HOST dependency)
+      - DONE: Fixed double-logging bug — `tee -a` + cron `>>` wrote every line twice
+      - DONE: Removed `set -e` from backup-user-data.sh (rotation failure shouldn't abort after successful upload)
+      - DONE: Deployed + verified on Verda: 964K user_data tarball uploaded and verified on R2
+      - DONE: Updated 5 docs (backups.md, project_structure.md, security.md, admin-backup-restore.md, README-RESTORE.md)
+      - DONE: Old backup-mello.sh moved to archive/
+      - DONE: Per-environment SSH identities (#55) — 3 key pairs: verda_{production,testing,staging}_ed25519
+      - DONE: Renamed ssh_host_ed25519_key → verda_production_ed25519, updated comment to production@verda
+      - DONE: Generated testing@verda + staging@verda key pairs (user-approved)
+      - DONE: Moved ecdsa + rsa host keys to secrets/ssh/other-key-types/
+      - DONE: Restore scripts updated with comment-out block for env selection
+      - DONE: .env, setup-verda-solo-script.sh, archive example all updated
+      - DONE: All 3 public keys in Mello authorized_keys
+      - DONE: Verda key comment updated, SSH verified working
+      - DONE: CLAUDE.md updated with SSH identities section
+      - TODO: Merge scripts PR #53 (disk-check + backup reports + SSH key cleanup + user data rename + SSH identities)
+    - PHASE 2.75 (NEXT — URGENT): Provision testing instance
       - Provision testing instance (Verda CPU, FIN-01 or FIN-03)
       - Run restore script v0.5.0 on it
       - Fix production issues there (inference regression)
@@ -118,6 +152,31 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 54 - 2026-02-17 - Backup cron fix, backup reports, SSH key cleanup
+
+**Date:** 2026-02-17 | **Issues:** scripts #45, #48, #51 | **Branch:** testing-mello-team-one
+
+### Backup System Fixes
+- **Backup cron was silently crashing** since 2026-02-16 06:00. Root cause: `disk-check.sh --block` + SFS-prod NFS at 90% + `set -e` + no crontab stderr redirect = completely silent failure for 30+ hours.
+- **disk-check.sh v2.0**: Replaced `--block` with `--require SIZE PATH`. Each script specifies what it needs (`--require 200M /mnt/sfs`). Monitoring mode unchanged. No script should abort because an unrelated filesystem is "kinda full."
+- **backup-cron.sh v3.1**: Uses `--require`, removed `set -e` (sections are independent), generates dated markdown backup reports.
+- **generate-backup-report.sh v1.0**: New helper — `backup-report-YYYY-MM-DD-HH.MM.md` with items, sizes, status table.
+- **Crontab fixed**: Added `>> /var/log/backup-cron.log 2>&1`.
+- **All deployed to server and tested.** Backup cron runs to completion (exit 0), reports generating correctly.
+- **Scripts PR #53** created: https://github.com/ahelme/comfymulti-scripts/pull/53
+
+### SSH Key Cleanup
+- **SFS-clone models verified**: 22/22 matching SFS-prod. scripts #51 resolved.
+- **Discovered**: Verda had NO outbound SSH key — Mello backup trigger always failing.
+- **Removed Claude-generated keys**: `dev@verda->mello` (from Mello authorized_keys), `verda@gpu-worker` aka `verda_ed25519` (from secrets/ssh/, Mello authorized_keys, .env, all 3 restore scripts, setup script, archive files).
+- **Deployed host ed25519 key** to Verda `/root/.ssh/id_ed25519` — Verda→Mello SSH now works.
+- **Added host ed25519 public key** (`root@cold-life-wilts-fin-01`) to Mello authorized_keys.
+- **CLAUDE.md rule #7**: "NEVER GENERATE SSH KEYS WITHOUT CONSULTING THE USER. EVER!"
+- **Logged in scripts issue #45**: Verda→Mello SSH key gap, restore script should handle.
+- **TODO next session**: Rename `ssh_host_*` keys to environment-agnostic names — DECIDE WITH USER FIRST.
 
 ---
 
