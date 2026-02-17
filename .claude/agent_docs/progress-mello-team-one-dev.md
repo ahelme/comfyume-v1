@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-11 - comfyume-v1 fresh start, new CPU instance
+**Doc Updated:** 2026-02-16 - Backup system verified, restore script gap analysis, backups-log dashboard
 
 ---
 # Project Progress Tracker
@@ -11,7 +11,7 @@
 ### Implementation Phase
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
-**Branch:** main
+**Branch:** testing-mello-team-one
 **Phase:** PRODUCTION LIVE — aiworkshop.art serving, serverless inference working
 ---
 ## 0. Update Instructions
@@ -44,27 +44,66 @@
 ---
 ## 1. PRIORITY TASKS
 
-🔴 **(CURRENT) - comfyume-v1 #1 - New CPU instance via restore script**
-    - Created: 2026-02-10, Updated: 2026-02-11
-    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
-    - PHASE: Serverless inference works, UI feedback partial, image delivery gap is main blocker
-    - DONE: Full list in Progress Reports 44-47 below. Key milestones:
-      - Core stack running (Redis, QM, admin, nginx, 20 frontends — all healthy)
-      - Nginx dynamic DNS, SSL cert (2026-05-12), .htpasswd restored
-      - Serverless inference confirmed: QM → DataCrunch H200 → HTTP 200 OK
-      - Extensions refactored to `comfyume-extensions/` with `extensions.conf` (PR #15)
-      - `scripts/deploy.sh` — git-based deploy, replaces SCP (PR #14, #15)
-      - Status banner: floating GPU progress indicator in redirect.js (PR #14)
-      - fix loop skill created for autonomous testing with Ralph Loop (PR #17, #18)
-      - CLAUDE.md rules: extensions separation + git flow deploy (PR #16)
-    - **DEPLOYMENT DRIFT RESOLVED**: All code committed, server in sync with git (6714c79)
-    - BLOCKER: Output images stranded on serverless container (never reach browser UI)
-    - INVESTIGATE: WebSocket connectivity — ComfyUI frontend WebSocket connects to local container, not serverless
+🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
+    - Created: 2026-02-12, Updated: 2026-02-16
+    - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
+    - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames, PR #36 merged
+    - PHASE 1.75 DONE: Verda infra cleanup + model vault check (#38 closed)
+      - DONE: Resource naming convention, SFS clone, orphan volume cleanup
+      - DONE: 6 missing models (~65GB) copied from Temp-Model-Vault to both SFS volumes
+      - DONE: R2 backup of 16 missing models (~85GB) — COMPLETE, verified
+      - DONE: Full R2 audit of all 4 buckets — backups-log.md created (scripts repo)
+      - DONE: Backup scripts updated: dated naming, retention, verification (scripts #48)
+      - DONE: Found 2 broken tarballs (ssh-host-keys, ssl-certs — wrong paths)
+      - DONE: SFS-prod fstab entry added (auto-mount on reboot)
+      - DONE: SFS share-settings gotcha documented
+      - DONE: Deployment checklist updated — SFS-first, R2 fallback
+      - DONE: PROD_OS disaster recovery clone (block-vol 009, 100GB, 2026-02-16)
+      - DONE: Instance 007 (RTX A6000 spot) → deleted after model check
+      - DONE: Instance 008 (CPU.4V.16G spot, tall-heart-dances) → deleted by spot termination
+      - DONE: Hostname prefix exception documented (immutable, no prefix)
+      - DONE: #31 task 2.0 complete — scripts #45 updated with infrastructure items
+      - NOTE: FIN-01 CPU instances scarce — considering FIN-03 with new SFS
+      - PENDING: Username rename dev→aeon (#37)
+    - PHASE 1.75 CONTINUED (this session):
+      - DONE: Redis image uploaded to R2 (16.4 MiB, verified)
+      - DONE: Backup scripts end-to-end verified: 13 uploads, 0 failures, all VERIFIED
+      - DONE: Cron confirmed running hourly + 4x daily R2 uploads
+      - DONE: backups-log.md redesigned as status dashboard with WHAT'S MISSING at top
+      - DONE: verify-and-log.sh v2.0 — writes to /var/log/r2-verify.log (not human log)
+      - DONE: Pulled main into branch (admin team PRs #50, #51)
+      - FOUND: 6 critical naming mismatches between backup output and restore script
+      - FOUND: SFS-clone is EMPTY — needs model data before testing instance
+    - PHASE 2 DONE: Restore script v0.5.0 (scripts PR #52, merged)
+      - DONE: 6 naming mismatches fixed (container images, R2 paths, SSL, repo, project dir)
+      - DONE: 5 bugs fixed (#41 git pull, #42 tarball priority, #43 host nginx, #44 custom nodes, #45 SFS perms)
+      - DONE: New helpers: download_config_backups(), get_container_image()
+      - DONE: SSH key extraction fixed (was extracting to / instead of /etc/ssh/)
+      - DONE: All backup scripts installed by restore (not just backup-cron.sh)
+      - DONE: GH issues #41-#45 commented, scripts #51 created (CLONE_SFS copy)
+    - PHASE 2.5 (NEXT — URGENT): Provision testing instance
+      - Copy models from SFS-prod to SFS-clone (scripts #51)
+      - Provision testing instance (Verda CPU, FIN-01 or FIN-03)
+      - Run restore script v0.5.0 on it
+      - Fix production issues there (inference regression)
+      - Deploy to prod via blue-green
+    - PHASE 3 (NEXT): Add advanced code piece by piece
     - INVESTIGATE: Variable warnings in .env on server (#7)
-    - NEXT: **Run fix loop**: `/ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"`
-    - NEXT: Solve image delivery: serverless → user browser (the BIG problem)
-    - NEXT: Complete app flow doc (#8), infrastructure config map (#9)
     - NEXT: Run setup-monitoring.sh, clean up old Docker images (~80GB)
+
+🟢 **RESOLVED - Image delivery gap (#22) — Ralph Loop overnight success**
+    - Created: 2026-02-11, Resolved: 2026-02-12
+    - Ralph Loop ran overnight (4 iterations), fixed 3 bugs:
+      - BUG-001: QM never fetched images from serverless (PRs #23-#28)
+      - BUG-002: SFS /mnt/sfs/outputs permissions 755→1777 (server-side)
+      - BUG-003: Missing --output-directory /mnt/sfs/outputs flag (Verda SDK)
+    - Result: Flux2 Klein 9B text-to-image passing all 8 QA criteria
+    - All changes committed via proper git flow
+
+🟢 **RESOLVED - New CPU instance via restore script (#1)**
+    - Created: 2026-02-10, Resolved: 2026-02-12
+    - Instance: quiet-city-purrs-fin-01 (65.108.33.101), CPU.8V.32G, Ubuntu 24.04
+    - 24 containers healthy, serverless inference working, images delivering
 
 🟢 **RESOLVED - Deployment drift between git, dev, and production**
     - Created: 2026-02-11, Resolved: 2026-02-11
@@ -79,6 +118,242 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 53 - 2026-02-16 - Restore script v0.5.0 — all naming mismatches + bugs fixed
+
+**Date:** 2026-02-16 | **Issues:** scripts #41-#45, #48, #51, comfyume-v1 #31 | **Branch:** testing-mello-team-one
+
+### Changes
+
+**Restore script v0.5.0 (scripts PR #52, merged):**
+- Fixed 6 naming mismatches between backup output and restore expectations
+- Fixed 5 bugs (#41-#45): git pull, tarball priority, host nginx, custom nodes, SFS perms
+- New helpers: `download_config_backups()`, `get_container_image()`, updated `get_cache_file()`
+- SSH key extraction bug: was extracting to `/` instead of `/etc/ssh/`
+- All backup scripts installed by restore (backup-cron, upload-to-r2, verify-and-log, rotate-backups)
+- DataCrunch → Verda branding in comments/output
+- Script: 350 insertions, 209 deletions
+
+**Created scripts #51:** Copy models/backups from SFS-prod to SFS-clone via rsync
+
+### Next
+- Copy models to CLONE_SFS (#51) — required before testing instance
+- Provision testing instance
+- Run restore script on it, verify end-to-end
+- Fix production inference regression on testing instance
+- Deploy to prod via blue-green
+
+---
+
+## Progress Report 52 - 2026-02-16 - Backup system verified, restore script gap analysis
+
+**Date:** 2026-02-16 | **Issues:** #31, scripts #48 | **Branch:** testing-mello-team-one
+
+### Context
+Session 2 of the day. Focused on proving backup system works and assessing readiness for testing instance.
+
+### Changes
+
+**Backup system verified end-to-end:**
+- Redis image uploaded to R2 (16.4 MiB, verified — was the only missing container image)
+- Ran upload-backups-to-r2.sh: 13 uploads, 0 failures, all VERIFIED via head-object size check
+- Confirmed cron running hourly with new scripts (8 items/50M vs old 3 items/13K)
+- Machine verify log at /var/log/r2-verify.log (clean, append-only)
+
+**backups-log.md redesigned (scripts PR #50):**
+- "WHAT'S MISSING" section at very top — impossible to miss gaps
+- Coverage dashboard with per-item date/size/verified status
+- Automation schedule table
+- Audit trail below (append-only)
+
+**verify-and-log.sh v2.0:**
+- Writes to /var/log/r2-verify.log instead of appending pipe-delimited lines to human log
+- Human dashboard maintained separately during audits
+
+**Restore script gap analysis — 6 critical mismatches found:**
+- Script looks for `app-containers.tar.gz` but backups produce individual images
+- `get_cache_file()` looks at R2 root but backups use `config/` prefix
+- Script expects `letsencrypt-backup.tar.gz` but backups produce `ssl-certs-*.tar.gz`
+- GH_APP_REPO still `ahelme/comfyume` (should be `comfyume-v1`)
+- PROJECT_DIR still `/home/dev/comfyume` (should be `comfyume-v1`)
+- SFS-clone is completely empty
+
+### Decisions
+- Keep shell scripts for backups (not OpenTofu) — working, proven, low risk
+- Fix restore script BEFORE trying to provision testing instance
+- OpenTofu for infrastructure provisioning is deferred until after workshop
+
+### Next
+- Fix restore script (6 naming mismatches + bugs #41-#45)
+- Copy models to SFS-clone (or share SFS-prod with testing instance)
+- Provision testing instance
+- Fix production issues on testing, then deploy properly
+
+---
+
+## Progress Report 51 - 2026-02-16 - R2 audit, backup scripts, PR #41 merged
+
+**Date:** 2026-02-16 | **Issues:** #31, #42 | **Branch:** testing-mello-team-one
+
+### Context
+Continuing Phase 1.75 wrap-up. R2 backups completed from last session — this session focused on verifying them, fixing backup scripts, and getting docs merged to main.
+
+### Changes
+
+**PR #41 merged to main:**
+- CLAUDE.md reorganization (deployment checklist, storage naming, backup agent doc)
+- Backup retention policy added to admin-backup-restore.md
+- New agent doc: backups.md
+- Resolved 4 merge conflicts (main had PR #39 merged since last sync)
+- Branch synced with main after merge (prevents stale commits in future PRs)
+
+**R2 audit — all 4 buckets (verified, logged in backups-log.md):**
+- model-vault: COMPLETE — 24 models (~192 GiB), 1:1 with SFS-prod
+- cache: 14 OK, 2 BROKEN (ssh-host-keys & ssl-certs are empty 45B tarballs)
+- worker-container: 6 images valid, no dated naming yet
+- user-files: 1 backup (913 KiB)
+
+**Root causes found:**
+- ssl-certs backup: certs live inside nginx container (/etc/nginx/ssl/), not on host. Need docker cp.
+- ssh-host-keys backup: script used wrong source path
+- 2 SFS diffusion_models are symlinks → checkpoints/flux2_klein_9b.safetensors (R2 has full copies)
+
+**Backup scripts fixed (scripts repo, #48):**
+- backup-cron.sh, backup-verda.sh, upload-backups-to-r2.sh updated
+- Dated naming, retention policy, verification logging
+- Bash arithmetic gotcha with set -e fixed
+- Image naming fix in backup-cron.sh (uncommitted)
+
+### Decisions
+- backups-log.md records VERIFIED (checked) contents, not uploaded — single source of truth for R2 audit trail
+- After merging PR, always `git fetch origin main && git merge origin/main` on working branch
+
+---
+
+## Progress Report 50 - 2026-02-15 - Verda infra cleanup, SFS clone, testing instance prep
+
+**Date:** 2026-02-15 | **Issues:** #37, #38 | **Branch:** testing-mello-team-one
+
+### Context
+Phase 1.75 — cleaning up Verda infrastructure and preparing for Phase 2 (testing instance).
+
+### Changes this session (uncommitted, 3 files changed in comfyume-v1 + scripts repo):
+
+**Verda resource naming convention (new):**
+- Added PROD_/CLONE_/STAG_/TEST_/UNUSED_ prefixes for all Verda console names
+- Updated CLAUDE.md, infrastructure.md, gotchas.md, both .env files, infrastructure-registry.md
+- Renamed 3 production resources in Verda console (OS vol, scratch disk, SFS)
+
+**Infra cleanup:**
+- Deleted 2 orphan block volumes (004: NEW-CPU-INSTANCE_OS, 005: Temp-Model-Vault)
+- Vol 003 (OLD-GPU-INSTANCE-OS) cannot delete — 1-month rental lock, retry ~2026-03-03
+- Restored vol 005 from deleted state to check for extra models (#38)
+
+**SFS-clone created:**
+- CLONE_SFS-Model-Vault-16-Feb-97Es5EBC (220GB, FIN-01, fd7efb9e...)
+- Mounted on prod at /mnt/clone-sfs, rsync from SFS-prod running (~128GB)
+- Registered in infrastructure-registry.md, both .env files
+
+**Username rename plan (#37):**
+- Updated GH issue with clarified plan: NEW aeon user (not rename dev)
+- Full audit of /home/dev references across both repos (~100+ in comfyume-v1, ~80+ in scripts)
+
+**SFS pseudopath risk documented:**
+- Console rename may change pseudopath on next shutdown/remount
+- Added to gotchas.md, infrastructure-registry.md S-Notes
+- After any reboot: verify pseudopath, update .env + restore scripts if changed
+
+**Testing instance (#38):**
+- GH issue created with full step-by-step flow
+- Instance being provisioned, will also check Temp-Model-Vault for extra models
+
+### Decisions
+- New `aeon` user instead of renaming `dev` — avoids downtime and container disruption
+- CLONE_ prefix for SFS shared by testing+staging (not STAG_ or TEST_)
+- Use testing instance to mount restored block vol and check for extra models
+
+---
+
+## Progress Report 49 - 2026-02-15 - Deployment workflow, CLAUDE.md overhaul, Verda rebrand
+
+**Date:** 2026-02-15 | **Issues:** #29, #31 | **Branch:** mello-team-one
+
+### Context
+Phase 1.5 — establishing 3-tier deployment workflow and major CLAUDE.md documentation overhaul before Phase 2 (testing instance).
+
+### Changes this session (not yet committed, 20 files, +271/-139 lines):
+
+**Deployment workflow (new):**
+- 3-tier promotion: testing → staging → production
+- Blue-green deploy via DNS switch (TTL 60s permanently)
+- Dev directories on Mello: testing-main, staging-main, production-main + matching scripts dirs
+- SFS-prod (production only) + SFS-clone (testing/staging, doubles as model backup)
+- Subdomains: testing.aiworkshop.art, staging.aiworkshop.art (user handling DNS)
+
+**CLAUDE.md overhaul:**
+- Architecture Overview: updated to 3-tier environments table, machines table
+- New Deployment Workflow section with dev directories, storage, blue-green process
+- Branch strategy: added `staging` branch, team branch policy
+- Git workflow merged inline: commits, task/issue management, issue trackers, gh CLI gotcha
+- Quick Links: table format with all 3 environments
+- User Preferences: added "fix at source", "option-based config", updated branch policy to include team branches
+
+**Verda rebrand (ex. DataCrunch):**
+- Updated ~25 files across docs, code comments, skills, specs
+- Left `containers.datacrunch.io` URLs intact (live endpoints)
+- Added CRITICAL gotcha in CLAUDE.md and gotchas.md
+
+**Serverless inference gotcha:**
+- New CRITICAL section: "No Direct HTTP Back to Containers"
+- Full explanation + 3 numbered fixes with file:line references
+- Architecture diagrams annotated with SFS flow + load-balancer warning
+- Notes added to storage.md and infrastructure.md
+
+**Other updates:**
+- Mello role: dev+user-dir (not staging/backup)
+- infrastructure.md: full rewrite with tables for all sections
+- infrastructure-registry.md link added (private scripts repo)
+- storage.md: SFS outputs dir + permissions + rationale
+
+### Pending:
+- Username rename dev→aeon (Mello + Verda) — discussed, not yet executed
+- Commit and push these changes
+
+---
+
+## Progress Report 48 - 2026-02-12 - Post-Ralph: docs, git cleanup, Phase 1 (#29, #30)
+
+**Date:** 2026-02-12 | **Issues:** #22, #29, #30, #31 | **PRs:** #32
+
+### Context
+Ralph Loop ran overnight (2026-02-11 → 2026-02-12) and resolved the image delivery blocker. All 8 QA criteria passing for Flux2 Klein 9B workflow. This session commits Ralph's work and creates comprehensive documentation.
+
+### Ralph Loop results (overnight):
+- 4 iterations, 3 bugs found and fixed
+- BUG-001: QM never fetched images (PRs #23-#28, across 6 PRs)
+- BUG-002: SFS permissions 755→1777 (server-side, not in git)
+- BUG-003: Missing --output-directory flag (Verda SDK, not in git)
+- Workflow 1 (Flux2 Klein 9B): ALL 8 criteria passing
+
+### Commits this session:
+1. **PR #32** — `ralph-changes-unlogged` branch: qa-state.json, SERVERLESS_UPDATE.md, ralph-debug-hook.sh
+
+### Docs created this session:
+1. **`docs/admin-changes-to-comfyume-v1.md`** — Complete changelog of all 35 commits, 8 phases, with precise file/container/directory references
+2. **`docs/admin-server-containers-sys-admin.md`** — Server-side changes guide: SFS permissions, DataCrunch container config, wrapper script, SSL, nginx, Redis
+3. **`docs/media-generation-flow.md`** — 21-step end-to-end media generation flow table (button click → image in Assets sidebar), with columns for filenames, line numbers, dirs, containers, services
+
+### GH Issues created:
+- **#30** — Post-Ralph cleanup: commit changes, documentation, testing server
+- **#31** — Post-Ralph-Phase-2: testing site, restore script fixes (created by user)
+- (Note: #29 was created by user earlier)
+
+### Key decisions:
+- Ralph changes committed to separate `ralph-changes-unlogged` branch (not directly to main)
+- Documentation work on `mello-team-one` branch
+- Next: create testing instance for Phase 2
 
 ---
 
@@ -1164,7 +1439,6 @@ df547ff - feat: add workflow templates index file
 - ⏳ Isolated outputs per user
 - ⏳ No queue deadlocks
 - ⏳ Memory usage within limits
->>>>>>> c0e8b1d9a6bfe4819d2573b714b90a56c27a2fb1
 
 ---
 

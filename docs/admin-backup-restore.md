@@ -29,6 +29,10 @@ Quick reference for backing up and restoring the Verda GPU instance.
 
 ## Critical Principles
 
+**0. CRITICAL: Object Storage Is Append-Only**
+
+**NEVER delete backups from R2 or Hetzner Object Storage.** Only add new dated files alongside existing ones. Old backups stay untouched indefinitely. This applies to all buckets (models, user-files, worker-container, cache). 
+
 **1. Check Before Downloading/Restoring**
 
 Never download if file already exists. Priority depends on file type:
@@ -44,10 +48,34 @@ Never download if file already exists. Priority depends on file type:
 If Tailscale starts without the backed-up identity, it gets a **NEW IP address**.
 The restore scripts restore `/var/lib/tailscale/` BEFORE running `tailscale up`.
 This preserves the expected IP: **100.89.38.43**
+Tailscale must be set to exclude ssh.
+
+**3. CRITICAL: R2 .eu Domain**
+
+Cloudflare R2 buckets require `.eu` in the middle of the endpoint URL. Omitting it causes silent connection failures -- uploads/downloads fail with no clear error message. Always use the full endpoint. See: .env 
+
+## Backup Retention Policy
+
+ - **`comfyume-cache-backups`** (Config tarballs: /home/dev, /root, nginx, tailscale, SSL, SSH keys | ~6.5GB )
+    - Naming: `config/<name>-<YYYY-MM-DD>.tar.gz`
+    - SFS: BACKUP: hourly, KEEP: 5 daily, 3 weekly, 3 monthly, rotate
+    - R2: BACKUP: 4x daily 2am, 6am, 2pm, 6pm, KEEP: 5 daily, 3 weekly, 3 monthly, rotate
+ - **`comfyume-model-vault-backups`** (Models: checkpoints, diffusion_models, controlnet, loras, text_encoders, vae | ~192GB)
+     - Naming: retain as original
+     - R2: BACKUP: new models only, KEEP: flat, matches SFS folder structure, never deleted
+ - **`comfyume-worker-container-backups`**(Container images: frontend (1X), worker, queue-manager, nginx, admin | ~20GB)
+      - Naming: `<image-name>-<YYYY-MM-DD>.tar.gz`
+      - SFS: BACKUP: daily at 3am KEEP:  1 daily, 1 monthly, rotate
+      - R2: BACKUP: daily at 4am, KEEP: 1 daily, 3 weekly, 3 monthly, rotate
+ - **`comfyume-user-files-backups`** (user workflows, custom nodes etc.- variable size)
+      - R2: BACKUP: hourly, KEEP: 5 daily, 3 weekly, 3 monthly, rotate
+
 
 ---
 
 ## Backup Scripts Summary
+
+==FOLLOWING SCRIPT NEED REVIEW! OLD & MISSING CORRECT ITEMS & SCHEDULE!==
 
 | Script | Runs From | Destination | Trigger | Schedule |
 |--------|-----------|-------------|---------|----------|

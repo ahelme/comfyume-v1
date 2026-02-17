@@ -1,19 +1,20 @@
 # CLAUDE RESUME - COMFYUME (MELLO TEAM ONE)
 
-**DATE**: 2026-02-11
+**DATE**: 2026-02-16
 
 ---
 
 ## CONTEXT
 
-**We are Mello Team One.** Main dev team. Branch: `main`.
+**We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one` (NOT main).
 
-**Production:** aiworkshop.art runs on quiet-city (65.108.33.101), a Verda CPU instance.
+**Production:** aiworkshop.art on quiet-city (65.108.33.101). 24 containers healthy. Inference BROKEN (admin team investigating — serverless returns status=error).
 
-**Current state:** PRODUCTION LIVE. 24 containers healthy. Serverless inference confirmed working.
-Main blocker: output images stay on serverless container — never reach user's browser.
+**Last session completed:** Restore script v0.5.0 — all 6 naming mismatches and 5 bugs (#41-#45) fixed. Merged as scripts PR #52.
 
-**All code committed, server in sync (6714c79). No deployment drift.**
+**Backup status:** ALL items present and verified on R2. Cron running. Dashboard: `comfymulti-scripts/backups-log.md`.
+
+**Restore script status:** v0.5.0 READY. Matches backup system. Not yet tested on a real instance.
 
 ---
 
@@ -21,64 +22,87 @@ Main blocker: output images stay on serverless container — never reach user's 
 
 Please read:
 
-1. **`./CLAUDE.md`** — Project instructions (Critical Instructions #4 and #5 are NEW)
-2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~100 lines) — Priority tasks + Report 47
+1. **`./CLAUDE.md`** — Project instructions (especially Backup and Restore, Critical Gotchas)
+2. **`.claude/agent_docs/progress-mello-team-one-dev.md`** (top ~100 lines) — Priority tasks + Reports 52-53
 3. **`git log --oneline -10`** — Recent commits
+4. **`comfymulti-scripts/restore-verda-instance.sh`** — The fixed restore script (1828 lines, v0.5.0)
 
 ---
 
 ## IMMEDIATE NEXT STEPS
 
-1. **Run fix loop** (the main goal of this handover):
-   ```
-   /ralph-loop "/comfyui-fix-loop" --max-iterations 50 --completion-promise "ALL_WORKFLOWS_PASSING"
-   ```
-   This tests all 5 workflows via Chrome DevTools, debugs issues with curiosity, fixes via git flow.
+**!! PRIORITY: Provision testing instance — restore script is ready !!**
 
-2. **The BIG unsolved problem — image delivery:**
-   - Serverless GPU generates images but they're saved on the remote container's filesystem
-   - ComfyUI `/prompt` returns only `{prompt_id, number, node_errors}` — NOT images
-   - Images normally come via WebSocket, but QM is the HTTP client, not the user's browser
-   - Need to figure out how to get images back (S3 upload? WebSocket relay? HTTP response?)
+### Step 1: Copy models to CLONE_SFS (scripts #51)
 
-3. **Other pending:**
-   - Complete app flow doc (#8), infrastructure config map (#9)
-   - Investigate .env variable warnings (#7) — y1w, HUFr7, etc.
-   - Run setup-monitoring.sh (Prometheus, Grafana, Loki)
+SFS-clone (`CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` at `/mnt/clone-sfs`) is EMPTY. Testing instance needs models.
+
+```bash
+# On quiet-city (both SFS volumes mounted):
+rsync -avP /mnt/sfs/models/ /mnt/clone-sfs/models/     # ~192 GiB
+rsync -avP /mnt/sfs/cache/ /mnt/clone-sfs/cache/       # backups + container images
+```
+
+Alternative: share SFS-prod with the testing instance (faster, no copy needed).
+
+### Step 2: Provision testing instance
+
+- Verda CPU instance (FIN-01 or FIN-03)
+- Add both SSH keys during provisioning (Mello + Aeon)
+- Create and attach block storage AFTER boot (not during — gets wiped!)
+- Share SFS with new instance via Verda console share settings
+
+### Step 3: Run restore script
+
+```bash
+# On new instance:
+./restore-verda-instance.sh "mount -t nfs -o nconnect=16 nfs.fin-01.datacrunch.io:/<SFS-path> /mnt/sfs" --format-scratch
+```
+
+### Step 4: Fix production issues on testing instance
+
+- Inference regression (serverless returns status=error)
+- Test all 5 workflows end-to-end
+- Deploy to prod via blue-green when confident
+
+**Other pending:**
+- Username rename dev→aeon (#37)
+- Hetzner Object Storage setup (comfyume-v1 #42)
+- Run setup-monitoring.sh
 
 ---
 
-## KEY ARCHITECTURE (quick reference)
+## KEY INFRASTRUCTURE
 
-```
-Browser → redirect.js intercepts Queue Prompt
-  → POST /api/jobs → nginx → queue-manager:3000
-  → QM submit_to_serverless() → POST to DataCrunch H200 /prompt
-  → Response: {prompt_id, number, node_errors} (IMMEDIATE, async)
-  → QM returns JobResponse with status:completed to browser
-  → redirect.js shows floating status banner
-  → BUT: images are on serverless container, NOT in UI
-```
+**Resource naming convention:** `PROD_*` `CLONE_*` `STAG_*` `TEST_*` `UNUSED_*`
+
+**SFS volumes (both on quiet-city, SFS-prod in fstab):**
+- SFS-prod: `/mnt/sfs` — `PROD_SFS-Model-Vault-22-Jan-01-4xR2NHBi`
+- SFS-clone: `/mnt/clone-sfs` — `CLONE_SFS-Model-Vault-16-Feb-97Es5EBC` (EMPTY!)
+
+**R2 Buckets (4):** comfyume-model-vault-backups, comfyume-cache-backups, comfyume-worker-container-backups, comfyume-user-files-backups. Dashboard: `comfymulti-scripts/backups-log.md`.
 
 **Key files:**
 | File | Purpose |
 |------|---------|
-| `comfyume-extensions/queue_redirect/web/redirect.js` | Job submission + GPU progress banner |
-| `comfyume-extensions/extensions.conf` | Enable/disable extensions (queue_redirect ON, loader OFF) |
-| `queue-manager/main.py` | Job routing to serverless |
-| `comfyui-frontend/Dockerfile` | Build context is project root (.) |
-| `comfyui-frontend/docker-entrypoint.sh` | Config-driven extension deployment |
-| `scripts/deploy.sh` | Git-based deploy: push → pull → rebuild → recreate |
-| `.claude/qa-state.json` | fix loop state (persists between Ralph Loop iterations) |
+| `comfymulti-scripts/restore-verda-instance.sh` | v0.5.0 — READY, not yet tested on instance |
+| `comfymulti-scripts/backups-log.md` | R2 backup status dashboard |
+| `comfymulti-scripts/backup-cron.sh` | Hourly SFS backup + R2 trigger |
+| `comfymulti-scripts/upload-backups-to-r2.sh` | R2 upload with verification |
+| `queue-manager/main.py` | Job routing, serverless polling, SFS image fetching |
+| `scripts/deploy.sh` | Git-based deploy (REMOTE_DIR still /home/dev/ — #37 to fix) |
 
 **Deploy:** `./scripts/deploy.sh` (NEVER SCP — CLAUDE.md rule #5)
 
 **Server:** root@65.108.33.101, project at /home/dev/comfyume-v1
+
+**Branch naming:** `testing-mello-team-one` (team), `testing-mello-team-one-<feature>` (feature)
 
 ---
 
 ## SESSION START CHECKLIST
 
 - [ ] `git status` — should be clean
+- [ ] `git pull origin testing-mello-team-one` — get latest
 - [ ] SSH to Verda: `ssh root@65.108.33.101 'docker ps --format "table {{.Names}}\t{{.Status}}" | grep -c healthy'` (expect 24)
 - [ ] Read `.claude/qa-state.json` for fix loop state

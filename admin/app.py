@@ -79,7 +79,7 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
 MODELS_BASE_PATH = Path("/models")
 
-# GPU Deployment options (serverless via DataCrunch)
+# GPU Deployment options (serverless via Verda)
 GPU_DEPLOYMENTS = {
     "h200-spot": {
         "name": "H200 Spot",

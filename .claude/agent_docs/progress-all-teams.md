@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-11
+**Doc Updated:** 2026-02-16
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -8,15 +8,86 @@
 Newest at top. One line per commit. No fluff. Link issues.
 
 ## Team Progress Files (FULL DETAIL)
-- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `mello-team-one-*`
+- **Mello:** [progress-mello-team-one-dev.md](./progress-mello-team-one-dev.md) | Branch: `testing-mello-team-one*`
 - **Verda:** [progress-verda-team-one-dev.md](./progress-verda-team-one-dev.md) | Branch: `verda-team-one-*`
-- **Admin Panel:** [progress-admin-panel-team-dev.md](./progress-admin-panel-team-dev.md) | Branch: `admin-panel-team-*`
-- **Testing Scripts:** [progress-testing-scripts-team-dev.md](./progress-testing-scripts-team-dev.md) | Branch: `testing-scripts-team-*`
+- **Admin Panel:** [progress-mello-admin-panel-team-dev.md](./progress-mello-admin-panel-team-dev.md) | Branch: `mello-admin-panel-team-*`
+- **Scripts:** [progress-mello-scripts-team-dev.md](./progress-mello-scripts-team-dev.md) | Branch: `mello-scripts-team-*`
 
 ---
 
+## 2026-02-16
+
+- [MELLO-ONE-TEAM] 9049b2b fix: restore script v0.5.0 — 6 naming mismatches + bugs #41-#45 (scripts PR #52, merged)
+- [MELLO-ONE-TEAM] (scripts) GH issue #51 created: copy models to CLONE_SFS
+- [MELLO-ONE-TEAM] ca1b1b5 docs: session handover — backup verified, restore gap analysis (#31, #48)
+- [MELLO-ONE-TEAM] Merge PR #52 into main (backup verified, restore gap analysis)
+- [MELLO-ONE-TEAM] git pull main → both repos synced
+- [SCRIPTS] 005f62e fix: redesign backup log dashboard, separate verify log (#48)
+- [SCRIPTS] Merge PR #50 into main (backup log dashboard + verify-and-log)
+- [SCRIPTS] git pull main → scripts repo synced
+- [ADMIN] fdc69ce docs: add OpenTofu debugging/deployment workflow to CLAUDE.md (#54)
+- [ADMIN] e7e7842 feat: import 4 Verda deployments, align .tf with live production (#54) — drift audit complete
+- [ADMIN] 8930d46 Merge PR #55 (import + drift alignment + CLAUDE.md)
+- [ADMIN] ff558b8 feat: add OpenTofu infrastructure for Verda serverless deployments
+- [ADMIN] 54abda4 Merge PR #53 (initial .tf files)
+- [ADMIN] created GH #54: IaC — bring Verda serverless under OpenTofu management
+- [MELLO-ONE-TEAM] (no commit) redis-7-alpine uploaded to R2 (16.4 MiB, verified)
+- [MELLO-ONE-TEAM] (no commit) R2 upload verified: 13 items, 0 failures, all VERIFIED
+- [MELLO-ONE-TEAM] (no commit) restore script gap analysis: 6 critical naming mismatches found
+- [ADMIN] 0829a6c Merge PR #51 (QM logging, IaC mandate, inference investigation)
+- [ADMIN] 694b8ef Merge PR #50 (admin team session handover)
+- [ADMIN] 1d0dc1a fix: log serverless execution error details in QM (#48)
+- [ADMIN] e844b4f docs: IaC mandate in CLAUDE.md, inference regression investigation
+- [MELLO-ONE-TEAM] 09fc66d Merge PR #49 into main (R2 audit, backup scripts, session handover)
+- [MELLO-ONE-TEAM] ab5443c merge: incorporate main (admin team entries)
+- [MELLO-ONE-TEAM] ffca3db docs: context.md — missing container check, backups-log rule
+- [MELLO-ONE-TEAM] 20e35d2 docs: session handover — R2 audit, backup scripts, PR #41 merged (#31, #42)
+- [MELLO-ONE-TEAM] 949fbe1 Merge PR #41 into main (CLAUDE.md reorg, backup docs, infra cleanup)
+- [MELLO-ONE-TEAM] dde0552 merge: incorporate main (PR #39) into testing-mello-team-one
+- [MELLO-ONE-TEAM] 2f34b0f docs: add backup retention policy and backups agent doc (#42)
+- [MELLO-ONE-TEAM] 2a0c4ed docs: reorganize CLAUDE.md — deployment checklist, storage naming
+- [ADMIN] (no commit) fix: restarted all 20 frontend containers — NFS model visibility restored (#43)
+- [ADMIN] (no commit) created GH issues #44 (GPU banner), #45 (cookie auth), #46 (cold start UX)
+- [ADMIN] (no commit) diagnosed: redirect.js serverless early-exit, auth re-prompting, cold start timeout chain
+- [ADMIN] (no commit) SSH updated: Tailscale 100.89.38.43 as dev (root on public IP broken after reprovision)
+- [ADMIN] **REGRESSION**: inference broken for ALL workflows — serverless returns status=error, no deployment drift found
+- [ADMIN] (no commit) investigation: no code drift, QM doesn't log serverless error detail (#48)
+- [ADMIN] created GH #48: QM poll_serverless_history logging gap
+- [ADMIN] 1d0dc1a fix: log serverless execution error details in QM (#48) — deployed to production
+- [ADMIN] e844b4f docs: add IaC mandate to CLAUDE.md — Critical Instruction #6: OpenTofu mandatory
+- [MELLO-ONE-TEAM] eff863a docs: deployment checklist SFS-first, instance 008, DR clone (#38)
+- [MELLO-ONE-TEAM] 92861b9 merge: incorporate main, resolve PR #39 conflicts
+- [MELLO-ONE-TEAM] eaf1631 docs: testing instance provisioned, model vault restored (#38)
+- [MELLO-ONE-TEAM] 817fc51 docs: testing instance in infrastructure table (#38)
+- [MELLO-ONE-TEAM] (scripts) 6658d02 docs: add backups log — verified R2 contents audit (#45)
+- [MELLO-ONE-TEAM] (scripts) c71874c fix: backup scripts — retention policy, dated naming (#48)
+- [MELLO-ONE-TEAM] (scripts) 2de0a45 fix: bash arithmetic gotcha with set -e (#48)
+- [MELLO-ONE-TEAM] (scripts) 01d4e4e fix: backup-cron.sh image naming (#48)
+- [MELLO-ONE-TEAM] (scripts) a4244af Merge PR #49 into main (image naming fix)
+
+## 2026-02-15
+
+- [MELLO-ONE-TEAM] 0ca2ef7 docs: session handover — Phase 1.75 complete (#37, #38)
+- [MELLO-ONE-TEAM] ff2a10a chore: Verda resource naming convention, SFS clone setup, infra cleanup (#37, #38)
+- [MELLO-ONE-TEAM] 876cc8b docs: session handover — Phase 1.5 complete (#29, #31)
+- [MELLO-ONE-TEAM] 5ba7039 docs: 3-tier deployment workflow, team renames, Verda rebrand (#29, #31) — 32 files, +372/-181
+- [MELLO-ONE-TEAM] 0c762c0 merge: incorporate main (PRs #32-#35) into testing-mello-team-one
+
+## 2026-02-12
+
+- [MELLO-ONE-TEAM] 0f9c503 docs: post-Ralph documentation — changelog, server admin, media flow (comfyume-v1 #29, #30, PR #33)
+- [MELLO-ONE-TEAM] e6fd900 fix: log Ralph Loop results — QA passed, image delivery fixed (comfyume-v1 #22, PR #32)
+- [RALPH] f79eefc feat: SFS-based image delivery for serverless mode (comfyume-v1 #22, PR #28)
+- [RALPH] 48fb876 fix: increase poll timeout to 600s, reduce per-request to 10s (comfyume-v1 #22, PR #27)
+- [RALPH] b4116d1 fix: improve serverless polling diagnostics and timeouts (comfyume-v1 #22, PR #26)
+
 ## 2026-02-11
 
+- [RALPH] 77c3a6e fix: set history_result in serverless proxy for ComfyUI v0.11.0 (comfyume-v1 #22, PR #25)
+- [RALPH] b93fe9f fix: /api/health route alias for nginx proxy path (comfyume-v1 #22, PR #24)
+- [RALPH] 74bccc0 feat: image delivery gap fix — serverless proxy + QM image fetching (comfyume-v1 #22, PR #23)
+- [RALPH] 97c4f0c refactor: rename comfyui-qa-loop to comfyui-fix-loop (comfyume-v1 #22, PR #21)
+- [RALPH] cf0be64 docs: QA iteration 1 — Flux2 Klein 9B tested, image delivery gap confirmed (comfyume-v1 #22, PR #21)
 - [RALPH] 467b4d7 fix: reference .env for QA test user credentials instead of hardcoding (comfyume-v1 #1, PR #21)
 - [RALPH] e258c8c feat: create Mello Ralph Team — autonomous engineering agent team identity (comfyume-v1 #1, PR #20)
 - [MELLO-ONE-TEAM] bd358f3 fix: fix loop — context management, 50 iterations, auto-resume, stuck handler (comfyume-v1 #1, PR #18)

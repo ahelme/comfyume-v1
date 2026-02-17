@@ -49,7 +49,7 @@ With serverless inference working well, we can eliminate the expensive RTX 6000 
                          │ HTTPS API calls
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│ Serverless Containers (DataCrunch)                      │
+│ Serverless Containers (Verda)                           │
 │  - H200 Spot €0.97/hr                                   │
 │  - B300 Spot €1.61/hr                                   │
 │  - Auto-scale 0→20 replicas                             │
@@ -125,7 +125,7 @@ With serverless inference working well, we can eliminate the expensive RTX 6000 
                          │ API trigger
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│ Serverless Build Container (DataCrunch)                 │
+│ Serverless Build Container (Verda)                      │
 │                                                         │
 │  Image: ghcr.io/ahelme/comfyume-builder:latest         │
 │  GPU: None (CPU container)                              │

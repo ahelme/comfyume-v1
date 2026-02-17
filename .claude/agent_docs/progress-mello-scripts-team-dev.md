@@ -10,7 +10,7 @@
 **Target:** Workshop Feb 25 2026
 ### Implementation Phase
 **MAIN Repo:** comfyume (https://github.com/ahelme/comfyume)
-**Branch:** testing-scripts-team-*
+**Branch:** mello-scripts-team-*
 **Phase:** Testing Scripts
 ---
 ## 0. Update Instructions

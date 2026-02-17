@@ -6,9 +6,9 @@ user-invocable: true
 Please update the team progress file and central progress file.
 
 **Detect team from project directory:**
-- `/home/dev/projects/comfyume` → `.claude/agent_docs/progress-mello-team-one-dev.md`
-- `/home/dev/projects/testing-scripts/comfyume` → `.claude/agent_docs/progress-testing-scripts-team-dev.md`
-- `/home/dev/projects/comfyume-admin-panel-team/comfyume` → `.claude/agent_docs/progress-admin-panel-team-dev.md`
+- `/home/dev/projects/testing-mello-team-one` → `.claude/agent_docs/progress-mello-team-one-dev.md`
+- `/home/dev/projects/testing-mello-scripts-team` → `.claude/agent_docs/progress-mello-scripts-team-dev.md`
+- `/home/dev/projects/testing-mello-admin-panel-team` → `.claude/agent_docs/progress-mello-admin-panel-team-dev.md`
 - `/home/dev/comfyume` → `.claude/agent_docs/progress-verda-team-one-dev.md`
 
 **Steps:**
