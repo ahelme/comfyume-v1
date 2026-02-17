@@ -21,7 +21,7 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 - 20 isolated ComfyUI web interfaces
 - Central job queue (FIFO/round-robin/priority)
 - Serverless GPU workers scaling on demand
-- HTTPS with aiworkshop.art domain (SSL cert via Namecheap)
+- HTTPS with aiworkshop.art domain (SSL cert via Let's Encrypt)
 - HTTP Basic Auth password protection
 - Tailscale VPN for secure Redis connection
 - Persistent user storage
@@ -53,26 +53,52 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 ### IaC Workflow (OpenTofu)
 
-**Tool:** OpenTofu v1.11.4 (open-source Terraform fork), installed on Verda at `/root/tofu/`
+**Tool:** OpenTofu v1.11.5 · **Provider:** `verda-cloud/verda` v1.1.1
+**Installed on:** Mello (local dev) + Verda (`/root/tofu/`)
+**Config:** `infrastructure/` dir (committed) · State: local `.tfstate` (gitignored)
 
-**What's managed:**
-- Verda serverless deployments (startup command, scaling, GPU type, SFS mounts)
-- Instance provisioning (CPU type, block storage, SFS attachments)
-- DNS / networking config
+**What's managed (4 serverless deployments):**
+- `comfyume-vca-ftv-h200-spot` · `comfyume-vca-ftv-h200-on-demand`
+- `comfyume-vca-ftv-b300-spot` · `comfyume-vca-ftv-b300-on-demand`
+- Each defines: startup command, GPU type, scaling, SFS mount, env vars, healthcheck
 
-**Workflow:**
-1. **Define** — Write `.tf` files in `infrastructure/` dir (committed to git)
-2. **Plan** — `tofu plan` to diff actual state vs desired — review before touching anything
-3. **Apply** — `tofu apply` to converge — auditable, repeatable, version-controlled
-4. **Drift detection** — `tofu plan` on any suspected regression to see exactly what changed
+**NOT managed by provider:** SFS (shared filesystem) — Verda console/API only.
 
-**State:** Remote backend (TBD — for now local state on Verda at `/root/tofu/terraform.tfstate`)
+**Setup (first time):**
+```bash
+export VERDA_CLIENT_ID="..." VERDA_CLIENT_SECRET="..."  # from Verda console > API Keys
+cd infrastructure
+cp terraform.tfvars.example terraform.tfvars  # fill in sfs_volume_id, hf_token
+tofu init  # downloads provider
+```
+
+**Making deployment changes:**
+```bash
+cd infrastructure
+# 1. Edit .tf file (e.g. change startup command, scaling, GPU type)
+# 2. Preview — ALWAYS before apply
+tofu plan
+# 3. Review output with user, then apply
+tofu apply
+# 4. Commit .tf changes via git flow (branch → PR → merge)
+```
+
+**Debugging / drift detection:**
+```bash
+cd infrastructure
+export VERDA_CLIENT_ID="..." VERDA_CLIENT_SECRET="..."
+tofu plan                    # shows ALL differences between .tf and live
+tofu state list              # what's managed
+tofu state show 'verda_container.worker["h200-spot"]'  # full details of one deployment
+```
+If `tofu plan` shows unexpected changes → something was modified outside of IaC (console, SDK, ad-hoc script). The plan diff tells you exactly what changed.
 
 **Rules:**
-- NEVER use Verda SDK/console to modify deployments directly — always through `.tf` files
+- NEVER use Verda SDK/console to modify deployments — always through `.tf` files
 - `tofu plan` before every `tofu apply` — review output, confirm with user
-- State file is sensitive (contains API keys) — never commit to git
+- State file is sensitive (contains secrets) — NEVER commit to git
 - All `.tf` changes go through normal git flow (branch → PR → merge)
+- First test changes on TESTING server, not production
 
 ---
 
@@ -107,7 +133,7 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 | Environment | Domain | Verda Instance | SFS | SSL | Lifecycle |
 |---|---|---|---|---|---|
-| **Production** | aiworkshop.art | quiet-city (persistent) | SFS-prod | Namecheap (exp 2026-04-10) | persistent |
+| **Production** | aiworkshop.art | quiet-city (persistent) | SFS-prod | Let's Encrypt (exp 2026-05-12) | persistent |
 | **Staging** | staging.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
 | **Testing** | testing.aiworkshop.art | ephemeral | SFS-clone | Let's Encrypt | spin up/tear down |
 
@@ -624,7 +650,7 @@ Read these when their trigger matches your task. TL;DR uses: `·` sep `@` locati
 | [models_and_data.md](.claude/agent_docs/models_and_data.md) | models, templates, downloads | Flux+LTX-2 · 22 models 172GB@/mnt/sfs · yaml key = folder type verbatim |
 | [project_structure.md](.claude/agent_docs/project_structure.md) | finding files, dir layout | data/user_data/userXXX/ · .users.yml auto-gen · scripts/ admin/ nginx/ qm/ |
 | [project_management.md](.claude/agent_docs/project_management.md) | commits, issues, PRs | conventional commits · ref GH# always · `gh issue` needs --json |
-| [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-04-10 · !R2 needs .eu |
+| [security.md](.claude/agent_docs/security.md) | auth, firewall, VPN, SSL, R2 | Redis Tailscale-only:6379 · bcrypt auth · SSL exp 2026-05-12 · !R2 needs .eu |
 | [infrastructure.md](.claude/agent_docs/infrastructure.md) | servers, Docker, services | 3-tier Verda (prod·staging·testing) · Mello=dev+user-dir · 20 frontends+qm+redis+nginx+admin · serverless H200/B300 · resource naming: PROD_ STAG_ TEST_ UNUSED_ |
 | [infrastructure-registry.md](https://github.com/ahelme/comfymulti-scripts/blob/main/infrastructure-registry.md) | IPs, instance names, SFS IDs, secrets refs | PRIVATE scripts repo · actual resource IDs · update when provisioning |
 | [monitoring.md](.claude/agent_docs/monitoring.md) | health, logs, dashboards | Prom:9090 Graf:3001 Loki:3100 cAdv:8081 · 12 /verda-* skills |

@@ -1,6 +1,13 @@
 # CLAUDE RESUME - COMFYUME (ADMIN PANEL TEAM)
 
-**DATE**: 2026-02-16
+**DATE**: 2026-02-17
+
+---
+
+## DANGER — READ BEFORE DOING ANYTHING
+
+**NEVER run `tofu plan`, `tofu apply`, or ANY OpenTofu/Terraform command from Mello or against production.**
+OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here change live serverless GPU deployments and cannot be easily reversed. Edit `.tf` files, commit via git flow, apply ONLY on a new testing server.
 
 ---
 
@@ -16,40 +23,44 @@
 
 ## IMMEDIATE PRIORITY
 
-### 1. Fix yaml key on REAL SFS (#101)
+### 1. Inference regression — ALL workflows broken (#101)
 
-**Root cause confirmed:** `/mnt/sfs/extra_model_paths.yaml` has wrong key `upscale_models` — needs `latent_upscale_models`. ComfyUI uses yaml key verbatim as folder type (no aliasing except `unet`→`diffusion_models`, `clip`→`text_encoders`). Confirmed by ComfyUI issue #12004.
+**Status:** Root cause still UNKNOWN. QM error logging (#48) deployed but no new job triggered yet to capture actual error.
 
-**The `sed` fix was applied but DID NOT WORK** — container logs still show `Adding extra search path upscale_models`. The `sed -i 's/^upscale_models:/latent_upscale_models:/'` likely failed because the yaml key is indented (not at column 0). Need a `sed` without the `^` anchor, or use python/awk.
+**Timeline:**
+- Feb 15 18:20 UTC — last successful inference (Flux Klein, 2 images)
+- Feb 16 04:57 UTC — first failure, `status=error` on serverless
+- No code drift, no container restarts between success and failure
 
-**Fix command (corrected — no `^` anchor):**
-```
-bash -c "sed -i 's/upscale_models:/latent_upscale_models:/' /mnt/sfs/extra_model_paths.yaml && python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml"
-```
-After one successful startup, revert to normal cmd:
-```
-python3 /workspace/ComfyUI/main.py --listen 0.0.0.0 --port 8188 --extra-model-paths-config /mnt/sfs/extra_model_paths.yaml
-```
+**OpenTofu drift audit (#54) found NO deployment config drift** — .tf matches live. The regression is NOT caused by a changed startup command, scaling, or mount config.
 
-Also fix `clip:` → `text_encoders:` for consistency (works via legacy map but fragile).
+**Drift audit DID find these inconsistencies (not causing regression but need fixing):**
+- `--output-directory /mnt/sfs/outputs` missing from 3 of 4 deployments (only H200-spot has it)
+- Healthcheck path `/` (should be `/system_stats`)
+- Queue load threshold `2` (documented as `1`)
 
-### 2. Investigate missing UI feedback on job completion
+**Next step:** Trigger a test job to capture actual ComfyUI execution error via new QM logging.
 
-**Flux inference IS WORKING end-to-end!** Jobs submit (201), dispatch to serverless (200), execute (113s). But the user sees no feedback in ComfyUI UI. The generated images stay on the serverless container — no mechanism to push results back to the user's browser. This is a separate issue from #101.
+### 2. OpenTofu IaC — first apply on TESTING server (#54)
 
-**Queue-manager logs confirm:**
-- `POST /api/jobs` → 201 Created
-- `HTTP Request: POST .../comfyume-vca-ftv-h200-spot/prompt "HTTP/1.1 200 OK"`
-- Serverless logs: `Prompt executed in 113.63 seconds` (Flux loaded, VAE, text encoder — all working)
+**DONE:**
+- [x] OpenTofu v1.11.5 installed on Mello
+- [x] `infrastructure/` dir created: providers.tf, variables.tf, containers.tf
+- [x] `verda-cloud/verda` v1.1.1 provider — supports `verda_container`
+- [x] All 4 live deployments imported into tofu state
+- [x] `tofu plan` = 0 real drift (confirms .tf matches production)
+- [x] GH #54 created with full drift audit
+- [x] CLAUDE.md updated: IaC debugging + deployment change workflow
+- [x] PRs #53, #55 merged
 
-### 3. Storage situation (#103)
+**TODO:**
+- [ ] First `tofu apply` on TESTING server (NOT production)
+- [ ] Fix: add `--output-directory /mnt/sfs/outputs` to 3 missing deployments
+- [ ] Fix: healthcheck `/` → `/system_stats`
+- [ ] Set up remote state backend (currently local — fragile)
 
-| Storage | What | Serverless sees? | Instance sees? |
-|---------|------|-----------------|----------------|
-| **REAL SFS** | Verda NFS share (172GB models) | YES at `/mnt/sfs` | NO (NFS mount fails) |
-| **Block storage** | 220GB on CPU instance | NO | YES at `/mnt/models-block-storage` |
-
-Can't SSH-edit REAL SFS — must fix via serverless startup command.
+**Credentials:** `VERDA_CLIENT_ID` + `VERDA_CLIENT_SECRET` from `/home/dev/comfymulti-scripts/.env`
+**SFS IDs:** PROD `be539393-...` / CLONE `fd7efb9e-...`
 
 ---
 
@@ -66,61 +77,53 @@ All live. Use `/verda-monitoring-check` to verify.
 | Promtail | :9080 | ships Docker logs → Loki |
 | Portainer | :9443 | https://portainer.aiworkshop.art |
 
-Subdomains reverse-proxied through Mello nginx → Verda via Tailscale. Let's Encrypt certs auto-renew.
-
 **12 skills:** `/verda-ssh`, `/verda-status`, `/verda-logs`, `/verda-containers`, `/verda-terraform`, `/verda-open-tofu`, `/verda-prometheus`, `/verda-dry`, `/verda-loki`, `/verda-grafana`, `/verda-monitoring-check`, `/verda-debug-containers`
 
 ---
 
-## KEY RESEARCH FINDINGS (this session)
+## KEY RESEARCH FINDINGS
 
 **ComfyUI folder_paths.py:**
 - `extra_config.py:load_extra_path_config()` iterates yaml keys
 - Each key passed to `folder_paths.add_model_folder_path(key, path)`
 - `map_legacy()` only maps `unet`→`diffusion_models` and `clip`→`text_encoders`
 - Yaml key IS the folder type verbatim — no other aliasing
-- The repo's yaml (`comfyui-worker/extra_model_paths.yaml`) already has correct keys
 
 **Verda SDK:**
 - `update_deployment(name, deployment)` takes a full `Deployment` object, NOT kwargs
-- No container logs via SDK or API
-- No exec/shell into containers
-- Can query ComfyUI API through inference endpoint (e.g. `/object_info`)
+- No container logs via SDK or API; no exec/shell into containers
+- `get_deployments()` returns all 4 deployments, `get_deployment_scaling_options(name)` for scaling
+- Deployment object has no `id` field — import by name works
+
+**OpenTofu `verda_container` schema:**
+- `entrypoint_overrides`: `enabled`, `entrypoint` (list), `cmd` (list) — live uses exec-style (no shell)
+- `volume_mounts`: `type` (scratch/memory/secret/shared), `mount_path`, `volume_id` (for shared)
+- `scaling`: `deadline_seconds` exists alongside `queue_message_ttl_seconds`
+- SFS has NO provider resource (`verda_sfs` doesn't exist)
 
 ---
 
 ## GITHUB ISSUES
 
-- **#101** — [x] Yaml key fix applied. Flux inference was working. LTX-2 was blocked. **Inference now BROKEN — regression.**
-- **#103** — [x] SFS mount resolved. Instance now sees SFS. **May relate to regression — container restarts changed mount state.**
-- **#106** — [x] Monitoring stack complete. Subdomains live.
-- **#109** — [x] SSL certs for 5 subdomains complete.
-
-**Added Feb 16:**
-- **#43** — OPEN. Fixed (container restart Feb 16). Close after confirming inference works.
+- **#101** — Yaml key fix applied. Inference BROKEN — regression. No deployment drift found via tofu.
+- **#103** — SFS mount resolved. Instance sees SFS.
+- **#106** — [x] Monitoring stack complete.
+- **#109** — [x] SSL certs complete.
+- **#43** — Fixed (container restart). Close after confirming inference works.
 - **#44** — OPEN. GPU progress banner for serverless mode.
 - **#45** — OPEN. Cookie-based auth persistence.
 - **#46** — OPEN. Cold start silent failure UX.
-- **#101 UPDATE:** Yaml key on SFS now correct. But inference BROKEN — regression after container restarts.
-- **#103 UPDATE:** SFS now also accessible from instance (was only serverless Feb 10).
+- **#48** — [x] QM error logging deployed. Needs image rebuild to persist.
+- **#54** — IN PROGRESS. OpenTofu IaC for Verda serverless. Import done, apply on testing next.
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [x] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
 - [ ] Run `/verda-monitoring-check` to verify stack is healthy
-- [x] Fix #101: re-run sed without `^` anchor via Verda console — **done, yaml key correct on SFS**
-- [ ] Investigate result delivery: how do serverless outputs get back to user? — **partially done, Ralph Loop PRs #23-#28 implemented SFS-based delivery, but now broken**
-
-**Added Feb 16:**
-- [ ] **CRITICAL: Investigate inference regression — Flux Klein and all workflows broken**
-- [ ] Check queue-manager, Redis, serverless state, container env vars
+- [ ] Trigger test job to capture inference error via new QM logging (#48)
+- [ ] After error captured: diagnose root cause of inference regression (#101)
+- [ ] First `tofu apply` on testing server (#54)
+- [ ] Fix 3 deployments missing `--output-directory` via .tf change
 - [ ] After inference fixed: close #43, work on #44/#45/#46
-
-**Added Feb 16 (late):**
-- [ ] **IaC: Set up OpenTofu for Verda serverless deployments — DO THIS ON TESTING SERVER, NOT PRODUCTION**
-- [ ] Write `.tf` files in `infrastructure/` defining serverless deployment config (startup cmd, scaling, GPU, SFS)
-- [ ] Use `tofu plan` to detect drift on serverless deployments — this will reveal what broke inference
-- [ ] Import existing deployment state with `tofu import`
-- [ ] CLAUDE.md #6 added: IaC via OpenTofu is now mandatory

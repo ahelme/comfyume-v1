@@ -10,7 +10,7 @@ Three-tier promotion: testing → staging → production. Blue-green deploy via 
 
 | Environment | Domain | Instance | SFS | SSL | Lifecycle |
 |---|---|---|---|---|---|
-| **Production** | aiworkshop.art | Verda CPU (quiet-city, persistent) | SFS-prod | Namecheap (exp 2026-04-10) | persistent |
+| **Production** | aiworkshop.art | Verda CPU (quiet-city, persistent) | SFS-prod | Let's Encrypt (exp 2026-05-12) | persistent |
 | **Staging** | staging.aiworkshop.art | Verda CPU (ephemeral) | SFS-clone | Let's Encrypt | spin up / tear down |
 | **Testing** | testing.aiworkshop.art | Verda CPU (ephemeral) | SFS-clone | Let's Encrypt | spin up / tear down |
 

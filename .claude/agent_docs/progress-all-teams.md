@@ -25,6 +25,15 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [MELLO-ONE-TEAM] (scripts) Fixed backup cron (was silently crashing since Feb 16), crontab stderr redirect
 - [MELLO-ONE-TEAM] (scripts) Verda→Mello SSH working — host ed25519 key deployed, logged in #45
 - [MELLO-ONE-TEAM] CLAUDE.md rule #7: never generate SSH keys without user approval
+- [ADMIN] (no commit) fix: regenerated nginx/.htpasswd from .env credentials using Python bcrypt (#61, closed)
+- [ADMIN] (no commit) created GH #61: nginx 500 — .htpasswd lost during git operations
+- [ADMIN] (no commit) updated GH #58 title: removed subdomain references (path-based approach kept)
+- [ADMIN] d153c17 fix: SSL docs correction, certbot webroot renewal, CORS cleanup (#58) — PR #59 merged
+- [ADMIN] (verda) fix: captured Ralph Loop local changes from production server — PR #60 merged
+- [ADMIN] (verda) synced .env to Verda: found 10 inconsistencies (R2 double .eu.eu, wrong REDIS_BIND_IP)
+- [ADMIN] (verda) fixed certbot: standalone→webroot, added /var/www/certbot volume mount
+- [ADMIN] (verda) recreated all 24 containers — all healthy
+- [ADMIN] (scripts) updated .env: DOMAIN, SSL paths, USE_HOST_NGINX=false, SERVER_MODE=serverless
 
 ## 2026-02-16
 
@@ -36,7 +45,12 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [SCRIPTS] 005f62e fix: redesign backup log dashboard, separate verify log (#48)
 - [SCRIPTS] Merge PR #50 into main (backup log dashboard + verify-and-log)
 - [SCRIPTS] git pull main → scripts repo synced
-- [ADMIN] a09c8d1 Merge PR (OpenTofu infrastructure files — containers.tf, providers.tf, variables.tf)
+- [ADMIN] fdc69ce docs: add OpenTofu debugging/deployment workflow to CLAUDE.md (#54)
+- [ADMIN] e7e7842 feat: import 4 Verda deployments, align .tf with live production (#54) — drift audit complete
+- [ADMIN] 8930d46 Merge PR #55 (import + drift alignment + CLAUDE.md)
+- [ADMIN] ff558b8 feat: add OpenTofu infrastructure for Verda serverless deployments
+- [ADMIN] 54abda4 Merge PR #53 (initial .tf files)
+- [ADMIN] created GH #54: IaC — bring Verda serverless under OpenTofu management
 - [MELLO-ONE-TEAM] (no commit) redis-7-alpine uploaded to R2 (16.4 MiB, verified)
 - [MELLO-ONE-TEAM] (no commit) R2 upload verified: 13 items, 0 failures, all VERIFIED
 - [MELLO-ONE-TEAM] (no commit) restore script gap analysis: 6 critical naming mismatches found

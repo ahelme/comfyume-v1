@@ -242,11 +242,11 @@ The `comfy-worker-1` container has `profiles: [gpu]` in `docker-compose.yml`. It
 | Property | Value |
 |---|---|
 | Domain | aiworkshop.art |
-| Issuer | Namecheap / Sectigo |
-| Cert location | `/etc/ssl/certs/fullchain.pem` |
-| Key location | `/etc/ssl/private/privkey.pem` |
-| Expiry | 2026-05-12 (approx) |
-| Renewal | Manual (Namecheap dashboard) |
+| Issuer | Let's Encrypt |
+| Cert location | `/etc/letsencrypt/live/aiworkshop.art/fullchain.pem` |
+| Key location | `/etc/letsencrypt/live/aiworkshop.art/privkey.pem` |
+| Expiry | 2026-05-12 |
+| Renewal | Auto via certbot webroot (`certbot renew`) |
 
 ### Verify
 

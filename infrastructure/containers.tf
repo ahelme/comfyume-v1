@@ -1,36 +1,60 @@
 # ComfyuME Serverless GPU Deployments
 #
+# !!! DANGER — NEVER RUN tofu plan / tofu apply FROM MELLO OR AGAINST PRODUCTION !!!
+# !!! OpenTofu commands ONLY on a NEW TESTING server instance.                    !!!
+# !!! Edit .tf files here, commit via git flow, apply ONLY on a new testing server. !!!
+#
 # 4 deployment variants: H200/B300 x spot/on-demand
-# Each toggle-able via deploy_* variables (default: only H200 spot enabled).
+# All 4 exist in production. Toggle via deploy_* variables.
 #
 # Naming: comfyume-vca-ftv-{gpu}-{pricing}
 #   vca = Verda Cloud Accelerated, ftv = Film Tech Video
+#
+# DRIFT AUDIT (2026-02-16):
+#   This file reflects ACTUAL live production state.
+#   Intentional fixes (e.g. adding --output-directory to all deployments)
+#   should be made in a SEPARATE commit with tofu plan review.
 
 locals {
+  # Base startup command (without --output-directory)
+  base_cmd = [
+    "python3", "/workspace/ComfyUI/main.py",
+    "--listen", "0.0.0.0",
+    "--port", "8188",
+    "--extra-model-paths-config", "/mnt/sfs/extra_model_paths.yaml"
+  ]
+
+  # H200-spot has --output-directory, others do NOT (drift discovered 2026-02-16)
+  h200_spot_cmd = concat(local.base_cmd, ["--output-directory", "/mnt/sfs/outputs"])
+
   deployments = {
     "h200-spot" = {
       enabled  = var.deploy_h200_spot
-      gpu_name = "H200 SXM5 141GB"
+      gpu_name = "H200"
       is_spot  = true
       name     = "comfyume-vca-ftv-h200-spot"
+      cmd      = local.h200_spot_cmd
     }
     "h200-on-demand" = {
       enabled  = var.deploy_h200_on_demand
-      gpu_name = "H200 SXM5 141GB"
+      gpu_name = "H200"
       is_spot  = false
       name     = "comfyume-vca-ftv-h200-on-demand"
+      cmd      = local.base_cmd  # MISSING --output-directory (live state)
     }
     "b300-spot" = {
       enabled  = var.deploy_b300_spot
       gpu_name = "B300"
       is_spot  = true
       name     = "comfyume-vca-ftv-b300-spot"
+      cmd      = local.base_cmd  # MISSING --output-directory (live state)
     }
     "b300-on-demand" = {
       enabled  = var.deploy_b300_on_demand
       gpu_name = "B300"
       is_spot  = false
       name     = "comfyume-vca-ftv-b300-on-demand"
+      cmd      = local.base_cmd  # MISSING --output-directory (live state)
     }
   }
 
@@ -52,13 +76,14 @@ resource "verda_container" "worker" {
   }
 
   scaling = {
-    min_replica_count              = var.min_replicas
-    max_replica_count              = var.max_replicas
+    min_replica_count               = var.min_replicas
+    max_replica_count               = var.max_replicas
     concurrent_requests_per_replica = 1
-    queue_message_ttl_seconds      = var.request_ttl
+    queue_message_ttl_seconds       = var.request_ttl
+    deadline_seconds                = var.request_ttl  # Live: matches TTL (36000)
 
     queue_load = {
-      threshold = 1
+      threshold = 2  # Live value (was 1 in initial .tf)
     }
 
     scale_up_policy = {
@@ -74,15 +99,16 @@ resource "verda_container" "worker" {
     image        = var.worker_image
     exposed_port = 8188
 
+    # Live: entrypoint=null, cmd=list of args (exec-style, no shell wrapper)
     entrypoint_overrides = {
-      enabled    = true
-      entrypoint = ["/bin/sh", "-c"]
-      cmd        = [var.comfyui_start_command]
+      enabled = true
+      cmd     = each.value.cmd
     }
 
+    # Live: healthcheck path is "/" (not /system_stats)
     healthcheck = {
       enabled = "true"
-      path    = "/system_stats"
+      path    = "/"
       port    = "8188"
     }
 
@@ -99,11 +125,23 @@ resource "verda_container" "worker" {
       }
     ]
 
-    volume_mounts = [{
-      type       = "shared"
-      volume_id  = var.sfs_volume_id
-      mount_path = "/mnt/sfs"
-    }]
+    # Live: 3 volume mounts (scratch, memory, shared)
+    volume_mounts = [
+      {
+        type       = "scratch"
+        mount_path = "/data"
+      },
+      {
+        type       = "memory"
+        mount_path = "/dev/shm"
+        size_in_mb = 64
+      },
+      {
+        type       = "shared"
+        volume_id  = var.sfs_volume_id
+        mount_path = "/mnt/sfs"
+      }
+    ]
   }]
 }
 

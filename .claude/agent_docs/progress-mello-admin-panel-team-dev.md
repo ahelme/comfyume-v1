@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume
 **Domain:** comfy.ahelme.net (staging) / aiworkshop.art (production)
 **Doc Created:** 2026-02-06
-**Doc Updated:** 2026-02-16
+**Doc Updated:** 2026-02-17
 
 ---
 # Project Progress Tracker
@@ -82,7 +82,34 @@
     - Investigation: no code drift (all files match git), container healthy, models visible
     - Server rebooted Feb 15 15:19 UTC — container restarts NOT the cause (inference worked after)
     - **QM error logging deployed (#48)** — next failed job will log actual error details
-    - NEXT: set up OpenTofu on TESTING server, use `tofu plan` to detect serverless deployment drift
+    - **OpenTofu drift audit complete (#54)** — .tf matches live, no deployment config drift found
+    - NEXT: trigger a test job to capture actual error via new QM logging
+
+✅ **(COMPLETE) - comfyume-v1 #61 - nginx 500: .htpasswd regenerated**
+    - Created: 2026-02-17 | Updated: 2026-02-17
+    - .htpasswd was empty file after git ops from previous session
+    - Regenerated 21 bcrypt entries (20 users + admin) via Python bcrypt from .env
+    - Force-recreated nginx container, all auth working (200/401 verified)
+
+✅ **(COMPLETE) - comfyume-v1 #58 - SSL: certbot renewal, CORS cleanup, doc corrections**
+    - Created: 2026-02-17 | Updated: 2026-02-17
+    - Pivoted from subdomain approach to keep path-based routing (simpler, already works)
+    - Fixed certbot: standalone→webroot, added /var/www/certbot volume mount
+    - Cleaned CORS whitelist (removed stale subdomain/old domain origins)
+    - Corrected SSL references in 6 files (Namecheap→Let's Encrypt, exp 2026-05-12)
+    - Synced .env to Verda (found 10 inconsistencies inc. R2 double .eu.eu bug)
+    - Captured Ralph Loop local changes via PR #60
+    - Recreated all 24 containers — all healthy
+    - PR #59 merged
+
+🔧 **IN PROGRESS - comfyume-v1 #54 - IaC: OpenTofu for Verda Serverless**
+    - Created: 2026-02-16 | Updated: 2026-02-16
+    - OpenTofu v1.11.5 installed on Mello, `verda-cloud/verda` v1.1.1 provider
+    - `infrastructure/` dir: providers.tf, variables.tf, containers.tf, .gitignore, .lock
+    - All 4 deployments imported + plan = 0 real drift
+    - Drift audit found: `--output-directory` missing from 3 of 4 deployments, healthcheck `/` not `/system_stats`
+    - CLAUDE.md updated with debugging + deployment change workflow
+    - NEXT: first `tofu apply` on testing server, fix 3 missing `--output-directory` flags
 
 ✅ **(COMPLETE) - comfyume-v1 #48 - QM Error Logging**
     - Created: 2026-02-16 | Updated: 2026-02-16
@@ -122,6 +149,72 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 14 - 2026-02-17 - nginx .htpasswd fix, session resume (#61)
+
+**Date:** 2026-02-17 | **Issues:** #61, #58
+
+**Context:**
+- Resumed session. Previous session (Report 13) fixed SSL/certbot (#58), synced .env, captured Ralph Loop changes (#60), recreated all 24 containers — but .htpasswd was lost during git operations.
+- #58 resolved: title updated to reflect path-based approach (no subdomains), certbot webroot working, CORS cleaned, docs corrected across 6 files.
+
+**Done:**
+- Created #61: nginx 500 — .htpasswd empty after git operations from previous session
+- Regenerated 21 bcrypt entries (20 users + admin) via Python `bcrypt` from .env USER_CREDENTIALS
+- Docker restart failed (cached directory mount type) — force-recreated nginx container
+- Verified: user001→200, admin→200, no-auth→401, health→200
+- User confirmed login working from browser
+- Closed #61 (htpasswd not installed on Verda)
+
+---
+## Progress Report 13 - 2026-02-17 - SSL/certbot fix, .env sync, container recreation (#58, #59, #60)
+
+**Date:** 2026-02-17 | **Issues:** #58, #59, #60
+
+**Done:**
+- Investigated SSL/nginx/URL confusion — found 4 problems: wrong DNS, no wildcard cert, path-only routing, broken certbot
+- Created #58, then **pivoted from subdomains to path-based** after complexity analysis (CORS issues, duplicated nginx blocks, wildcard cert burden)
+- Fixed certbot: standalone→webroot authenticator, added `/var/www/certbot` volume mount to docker-compose.yml, updated renewal config
+- Cleaned CORS in queue-manager/main.py: removed admin.aiworkshop.art, *.aiworkshop.art, comfy.ahelme.net
+- Corrected SSL references in CLAUDE.md (3 places), security.md, infrastructure.md, admin-server-containers-sys-admin.md
+- Updated private scripts repo .env: DOMAIN, SSL paths, USE_HOST_NGINX=false, SERVER_MODE=serverless
+- Synced .env to Verda — found 10 inconsistencies (R2 double .eu.eu bug, wrong REDIS_BIND_IP, stale domain refs)
+- Captured Ralph Loop local changes from Verda: PR #60 (52 files), handled GitHub push protection (secrets in .env.bak)
+- Recreated all 24 containers with `--force-recreate` — all healthy, certbot dry-run passed
+- **Broke .htpasswd** during git operations → #61
+
+---
+## Progress Report 12 - 2026-02-16 - OpenTofu IaC Setup + Drift Audit (#54)
+
+**Date:** 2026-02-16 | **Issues:** #54
+
+**Done:**
+- Installed OpenTofu v1.11.5 on Mello (ARM64 Ubuntu 24.04)
+- Researched `verda-cloud/verda` provider v1.1.1 — supports `verda_container` for serverless
+- Got full provider schema via `tofu providers schema -json` (7 resource types, `verda_container` confirmed)
+- Created `infrastructure/` dir: providers.tf, variables.tf, containers.tf, terraform.tfvars.example, .gitignore
+- Queried all 4 live deployments via Verda SDK — full config dump
+- Drift audit — significant differences between documented and actual config:
+  - `--output-directory /mnt/sfs/outputs` only on H200-spot (3 missing)
+  - Healthcheck `/` not `/system_stats`
+  - Exec-style entrypoint (no shell wrapper)
+  - GPU names `H200`/`B300` (not `H200 SXM5 141GB`)
+  - Queue load threshold `2` (not `1`), `deadline_seconds` missing from .tf
+  - 3 volume mounts (scratch + memory + shared), not just shared
+- Updated .tf files to match live production exactly
+- Imported all 4 deployments: `tofu import` by name
+- `tofu plan` = 0 real changes (only sensitive value display)
+- Created GH #54 with full rationale, drift table, and remaining work
+- Updated CLAUDE.md IaC section: setup, making changes, debugging workflow
+- Updated `/verda-terraform` and `/verda-open-tofu` skills
+- PRs #53 and #55 merged to main
+
+**SFS volumes identified:**
+- PROD: `be539393-...` (PROD_SFS-Model-Vault-22-Jan-01, 220GB NVMe_Shared)
+- CLONE: `fd7efb9e-...` (CLONE_SFS-Model-Vault-16-Feb, 220GB NVMe_Shared)
+
+**Provider limitations:** No `verda_sfs` resource — SFS management stays manual.
 
 ---
 ## Progress Report 11 - 2026-02-16 - NFS Fix, 3 New Issues, Inference Regression (#43, #44, #45, #46)
