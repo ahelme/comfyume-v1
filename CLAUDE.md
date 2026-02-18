@@ -101,6 +101,19 @@ If `tofu plan` shows unexpected changes → something was modified outside of Ia
 - All `.tf` changes go through normal git flow (branch → PR → merge)
 - First test changes on TESTING server, not production
 
+**Production Safety — State File Isolation:**
+
+| Machine | `.tfstate` exists? | What it knows about |
+|---|---|---|
+| **Mello** (dev) | YES — 4 production deployments imported | `comfyume-vca-ftv-h200-spot`, `h200-on-demand`, `b300-spot`, `b300-on-demand` |
+| **Testing-009** | NO — completely clean | Nothing. Only `.terraform.lock.hcl` (provider version list) |
+
+Why `tofu plan` on testing-009 is safe:
+1. **No state = no knowledge of production.** OpenTofu only manages resources in its state file. No state → no existing resources → cannot modify, destroy, or interfere with production.
+2. **`tofu plan` is read-only.** Only shows what would happen. `tofu apply` would only CREATE new resources.
+3. **Different deployment names.** With `environment = "test"`, names are `comfyume-test-vca-ftv-*` — distinct from production's `comfyume-vca-ftv-*`.
+4. **State is local, not shared.** Each machine's state is independent. Mello's and testing-009's states never interact.
+
 ---
 
 ## Critical ComfyUI Info
