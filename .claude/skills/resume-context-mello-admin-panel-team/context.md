@@ -1,6 +1,6 @@
 # CLAUDE RESUME - COMFYUME (ADMIN PANEL TEAM)
 
-**DATE**: 2026-02-17
+**DATE**: 2026-02-18
 
 ---
 
@@ -21,29 +21,56 @@ OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here chang
 **Testing:** anegg.app on Verda (intelligent-rain-shrinks, 65.108.33.80).
 
 **SSH (production):** `ssh dev@100.89.38.43` (Tailscale IP).
+**SSH (testing):** `ssh root@65.108.33.80` (public IP).
 
 **Debugging reference:** `docs/comfyui-debugging.md` — check BEFORE investigating any ComfyUI issue.
-
-**Branching decision:** Continue with branches (not fork) for #66 architecture work. Feature branches off team branch provide code isolation; testing-009 provides infrastructure isolation.
+**Learnings from testing-009:** `docs/learnings-testing-instance-009.md` — gotchas, root causes, fixes.
 
 ---
 
-## TOP PRIORITY: SFS-Based Result Delivery (#66)
+## CURRENT STATE: Testing Instance 009 (anegg.app) — FULLY OPERATIONAL
 
-### Root Cause of Inference Regression (#101) — CONFIRMED
+### What's Running
+- All containers healthy: nginx, redis, QM, admin, user001-005
+- SSL cert for anegg.app (expires 2026-05-18)
+- QM: serverless mode, H200-SPOT active
+- ComfyUI loads at `https://anegg.app/user001/` (auth: user001/workshop)
+- 24 models visible, no Missing Models popup
+- **E2E inference working** — Flux Klein 4B tested (18s warm, 307s cold)
 
-Verda's serverless load balancer routes each HTTP request to a **different** container instance:
-- `POST /prompt` → instance A (accepts, starts executing)
-- `GET /history/{prompt_id}` → instance B (never saw this prompt, returns `{}`)
+### What Was Fixed This Session (#70)
+- `infrastructure/containers.tf`: All 4 deployments now have `--output-directory /mnt/sfs/outputs` (was only h200-spot)
+- `queue-manager/main.py`: Added `https://anegg.app` to CORS allow_origins
+- `nginx/nginx.conf`: Changed hardcoded CORS origin to `$http_origin` (on testing instance only)
+- `/mnt/scratch/outputs/`: Fixed permissions (`chmod -R 777`)
+- `.htpasswd`: Created in `nginx/` dir (6 users + admin, password: workshop)
+- `.env`: Comprehensive testing config (serverless, NUM_USERS=5, anegg.app domain)
+- Frontend image: Rebuilt from correct branch (comfyume-v1, not comfy-multi)
 
-**Evidence (2026-02-17):** Two test jobs submitted, both accepted (HTTP 200), both timed out after 600s of polling with `Keys: []` — prompt_id never appeared in history.
+### Key Discovery: LB Routing (#66) Partially Mitigated
+- **Cold start (~5 min):** Model loading blocks container. LB routes GETs to different containers → empty history for ~300s. Eventually works when container becomes responsive.
+- **Warm container (~18s):** History poll succeeds quickly. HTTP `/view` fallback downloads image.
+- **SFS volume mismatch:** Serverless containers mount PROD_SFS, testing mounts CLONE_SFS. SFS-based image delivery won't work cross-environment. On production (same SFS), it would work.
 
-### Proposed Architecture: "Dumb Pipes, Smart QM"
+---
+
+## NEXT STEPS
+
+### Immediate (on testing-009)
+- [ ] Apply `--output-directory` fix via `tofu apply` on testing-009 (#54)
+  - File ready: `infrastructure/containers.tf` already updated in git
+  - Need `terraform.tfvars` with CLONE_SFS volume ID for testing
+  - Credentials: `VERDA_CLIENT_ID` + `VERDA_CLIENT_SECRET` from `/home/dev/comfymulti-scripts/.env`
+- [ ] Test with multiple users simultaneously (user001 + user002)
+- [ ] Test LTX-2 video workflow (heavier, longer inference)
+
+### Architecture (#66) — SFS-Based Result Delivery
+The LB routing works for warm containers but is unreliable during cold starts. For production with 20 concurrent users, the full SFS-based architecture is still needed:
 
 ```
-Frontend (ComfyUI + 1 thin extension: queue_redirect)
+Frontend (ComfyUI + queue_redirect extension)
   ↓ POST /api/jobs
-QM (FastAPI — fully ours, fire-and-forget POST /prompt)
+QM (FastAPI — fire-and-forget POST /prompt)
   ↓
 Serverless Worker (VANILLA ComfyUI, --output-directory /mnt/sfs/outputs)
   ↓ writes to SFS
@@ -52,35 +79,17 @@ QM watches /mnt/sfs/outputs/ (filesystem, NOT HTTP polling)
 Frontend serves locally
 ```
 
-**Key changes:**
-- Kill `serverless_proxy` extension (fragile, hooks into ComfyUI WebSocket internals)
+**Key changes needed:**
 - QM watches SFS filesystem instead of polling `/history/{id}` over HTTP
-- Workers = vanilla ComfyUI (zero custom code) — migration-proof
-- QM sends progress via its own WebSocket to frontend
+- Kill `serverless_proxy` extension (fragile)
+- Workers = vanilla ComfyUI (zero custom code)
+- Challenge: Matching output files to jobs (filename doesn't contain prompt_id)
 
-**Challenge:** Matching output files to jobs (ComfyUI filenames don't contain prompt_id). Options: timestamp matching, unique prefix, or single-job attribution (`concurrent_requests_per_replica = 1`).
-
-### Testing Instance Ready
-
-**Instance 009:** `intelligent-rain-shrinks-fin-01` (65.108.33.80, CPU.8V.32G, fixed €0.0474/hr)
-- **Domain:** anegg.app (DNS pointed, PR #68)
-- CLONE_SFS attached (fd7efb9e-..., 220GB)
-- Scratch disk attached (c07825bd-..., 50GB, /dev/vdb)
-- Registered in infrastructure-registry.md (private scripts repo)
-
----
-
-## Completed (Previous Sessions)
-
-- [x] **#61** — nginx .htpasswd regenerated, all auth working
-- [x] **#58** — SSL certbot renewal fixed, CORS cleaned (PR #59 merged)
-- [x] **#66** — Architecture issue created with full design + test results
-- [x] `--verbose` flag added to all containers (PR #67 merged)
-- [x] `docs/comfyui-debugging.md` created
-- [x] CLAUDE.md Critical Instruction #6: use debugging guide
-- [x] OpenTofu danger warnings in context.md + containers.tf
-- [x] Infrastructure registry: instance 009 + block vols 010/011
-- [x] `anegg.app` domain added to infrastructure-registry.md + infrastructure.md (PR #68)
+### Lower Priority
+- [ ] **#44** — GPU progress banner for serverless mode
+- [ ] **#45** — Cookie-based auth persistence
+- [ ] **#46** — Cold start silent failure UX
+- [ ] Create PR from feature branch to team branch
 
 ---
 
@@ -90,52 +99,31 @@ Frontend serves locally
 - [x] OpenTofu v1.11.5 on Mello, provider v1.1.1
 - [x] `infrastructure/` dir: providers.tf, variables.tf, containers.tf
 - [x] All 4 deployments imported, plan = 0 drift
-- [x] `--verbose` added to .tf base_cmd
+- [x] `--output-directory` added to all 4 deployments in .tf (committed)
 
 **TODO (on testing-009 only):**
-- [ ] First `tofu apply` on testing server
-- [ ] Add `--output-directory /mnt/sfs/outputs` to 3 missing deployments
-- [ ] Fix healthcheck `/` → `/system_stats`
-
-**Credentials:** `VERDA_CLIENT_ID` + `VERDA_CLIENT_SECRET` from `/home/dev/comfymulti-scripts/.env`
-
----
-
-## MONITORING STACK (#106)
-
-All live on production. Use `/verda-monitoring-check` to verify.
-
-| Tool | Port | Access |
-|------|------|--------|
-| Prometheus | :9090 | https://prometheus.aiworkshop.art |
-| Grafana | :3001 | https://grafana.aiworkshop.art |
-| Loki | :3100 | via Grafana or SSH |
-| cAdvisor | :8081 | via Prometheus |
-| Portainer | :9443 | https://portainer.aiworkshop.art |
+- [ ] Create `terraform.tfvars` on testing-009 with CLONE_SFS volume ID
+- [ ] `tofu init && tofu plan` — review changes (should show cmd change on 3 deployments)
+- [ ] `tofu apply` after user confirmation
 
 ---
 
 ## GITHUB ISSUES
 
-- **#68** — PR: add anegg.app testing domain. Pending merge.
-- **#66** — TOP PRIORITY. SFS-based result delivery architecture. Root cause of #101.
-- **#101** — Inference regression. Root cause = LB routing (#66). Symptom, not the fix target.
-- **#54** — OpenTofu IaC. Import done, apply on testing-009 next.
-- **#48** — QM logging gap: doesn't catch "prompt never appeared" timeout. Needs fix.
-- **#63** — Browser console log tracking (user-created).
+- **#70** — Testing instance 009 restored + E2E inference working. Comment posted. Can close.
+- **#66** — SFS-based result delivery architecture. Still needed for production reliability.
+- **#54** — OpenTofu IaC. `--output-directory` fix committed, needs `tofu apply` on testing-009.
+- **#101** — Inference regression. Partially fixed (works when warm). Root cause = LB routing (#66).
 - **#44** — GPU progress banner for serverless mode.
 - **#45** — Cookie-based auth persistence.
 - **#46** — Cold start silent failure UX.
-- **#22** — Image delivery gap. Root cause same as #66 (LB routing).
-- **#43** — NFS model visibility. Fixed, close after inference works.
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` top section
-- [ ] Read `docs/comfyui-debugging.md` if investigating any ComfyUI issue
-- [ ] Set up testing-009 with comfyume-v1 stack (deploy to anegg.app)
-- [ ] Work on #66: implement SFS filesystem watching in QM (on testing-009)
-- [ ] First `tofu apply` on testing-009 (#54)
-- [ ] After inference fixed: close #43, work on #44/#45/#46
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (Report 16)
+- [ ] Read `docs/learnings-testing-instance-009.md` for gotchas
+- [ ] Verify testing-009 is still running: `ssh root@65.108.33.80 'docker ps --format "{{.Names}}\t{{.Status}}" | sort'`
+- [ ] If containers down: `cd /home/dev/comfyume-v1 && docker compose --profile container-nginx up -d`
+- [ ] Continue with next steps above
