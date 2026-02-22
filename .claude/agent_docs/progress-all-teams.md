@@ -1,5 +1,5 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform | **Repo:** github.com/ahelme/comfyume-v1
-**Doc Updated:** 2026-02-17
+**Doc Updated:** 2026-02-22
 
 # All-Teams Progress (Ultra-Concise Commit Log)
 
@@ -15,8 +15,24 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ---
 
+## 2026-02-22
+
+- [ADMIN] 4ab61c6 fix: restore correct per-user credentials on testing-009
+- [ADMIN] 5a4cc05 fix: address mello-team-one review — permissions, CORS, verbose (#71)
+- [ADMIN] 0c10d41 feat: add environment variable for isolated serverless deployments (#71)
+- [ADMIN] 6588f93 fix: add OpenTofu state files to .gitignore + production safety docs (#71, #54)
+- [ADMIN] (testing-009) tofu apply: comfyume-test-vca-ftv-h200-spot created, CLONE_SFS (#72)
+- [ADMIN] (testing-009) QM switched to testing endpoint, htpasswd restored to strong passwords
+- [ADMIN] GH #71 created: SFS volume mismatch diagnosis + environment isolation
+- [ADMIN] GH #72 created: apply environment-isolated serverless on testing-009
+
 ## 2026-02-17
 
+- [ADMIN] 2a81358 docs: update learnings from testing instance 009 — E2E inference confirmed (#70)
+- [ADMIN] eab1a1b fix: add --output-directory to all serverless deployments + CORS for anegg.app (#70, #54)
+- [ADMIN] (scripts) restore-verda-instance-comfyume-v1-testing.sh created for instance 009
+- [ADMIN] 6dd9fe5 docs: add anegg.app testing domain to infrastructure (#68)
+- [ADMIN] (scripts) a36088c docs: add anegg.app domain for testing instance 009
 - [MELLO-ONE-TEAM] (scripts) feat: per-env SSH identities — all host keys renamed verda_production_*, 3 ed25519 pairs (#55)
 - [MELLO-ONE-TEAM] (scripts) refactor: backup-mello.sh → backup-user-data.sh, runs locally on Verda (#48)
 - [MELLO-ONE-TEAM] (scripts) fix: backup-cron.sh v3.2 — local user data backup, double-logging fix (#48)
