@@ -51,15 +51,14 @@
 ---
 ## 1. PRIORITY TASKS
 
-⏳ **(IN PROGRESS) - comfyume-v1 #75 - Admin panel: isolate mode toggle**
+✅ **(COMPLETE) - comfyume-v1 #75 - Admin panel: isolate mode toggle**
     - Created: 2026-02-22 | Updated: 2026-02-22
     - Overlay toggle (localStorage `gpu_overlay_mode` = admin/user) for mello-team-one's GPU overlay
     - Isolate mode toggle: OFF = normal, ON = all /api/* return 503 (fault isolation)
     - Backend: GET/POST `/api/admin/isolate`, middleware gate, `ADMIN_ISOLATE_MODE` env var
     - Frontend: localStorage persistence + backend sync on load
     - Deployed to testing-009 (anegg.app)
-    - Serverless timeout table added to README.md
-    - Admin panel described as admin/operator (not instructor)
+    - **PR #76 merged to main**
     - Related: #78, #79, #80
 
 🔲 **NEW - comfyume-v1 #78 - Static assets MIME type + manifest 401**
