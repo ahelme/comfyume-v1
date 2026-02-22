@@ -105,6 +105,7 @@ app.add_middleware(
         "https://aiworkshop.art",
         "https://staging.aiworkshop.art",
         "https://testing.aiworkshop.art",
+        "https://anegg.app",  # Testing instance 009 (harmless in prod — CORS only allows, never blocks)
         "http://localhost:8080",  # Local admin dashboard testing
     ],
     allow_credentials=False,  # Disabled for security - no cookies needed
@@ -175,6 +176,11 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
     Serverless cold start + model loading can block HTTP for 200+ seconds.
     With 10s per-poll timeout, we fail fast and retry often.
     max_wait=600 covers worst case: cold start + model load + inference.
+
+    Early bail: if the server is responding (HTTP 200) but prompt_id never
+    appears in history after 120s, it's likely a load balancer routing issue
+    (GETs hitting a different container than the POST). Bail early instead
+    of waiting the full 600s.
     """
     if not serverless_client:
         raise HTTPException(status_code=503, detail="Serverless client not initialized")
@@ -182,6 +188,8 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
     import time
     start_time = time.monotonic()
     poll_count = 0
+    empty_200_count = 0  # HTTP 200 responses where prompt_id not in history
+    MAX_EMPTY_200 = 60   # ~120s at 2s interval — bail if prompt never appears
 
     while (time.monotonic() - start_time) < max_wait:
         poll_count += 1
@@ -195,6 +203,8 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
             if response.status_code == 200:
                 history = response.json()
                 if prompt_id in history:
+                    # Found — reset empty counter, process result
+                    empty_200_count = 0
                     entry = history[prompt_id]
                     status = entry.get("status", {})
                     completed = status.get("completed", False)
@@ -229,14 +239,30 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
                         logger.info(f"Execution completed after {elapsed:.0f}s ({poll_count} polls)")
                         return entry
                 else:
+                    empty_200_count += 1
                     if poll_count <= 3 or poll_count % 30 == 0:
                         logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): prompt_id not in history. Keys: {list(history.keys())[:5]}")
+
+                    # Early bail: server is responding but prompt never appeared
+                    if empty_200_count >= MAX_EMPTY_200:
+                        logger.error(
+                            f"Early bail: {empty_200_count} consecutive HTTP 200 responses with empty history "
+                            f"after {elapsed:.0f}s ({poll_count} polls). "
+                            f"Likely load balancer routing issue — GET /history hitting different container than POST /prompt."
+                        )
+                        raise HTTPException(
+                            status_code=502,
+                            detail=f"Serverless routing error: prompt accepted but never appeared in history after {elapsed:.0f}s. "
+                            f"Load balancer may be routing requests to different container instances."
+                        )
             else:
                 logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): HTTP {response.status_code}")
         except httpx.TimeoutException:
             # Only log periodically — timeout is expected during model loading
             if poll_count <= 2 or poll_count % 10 == 0:
                 logger.info(f"History poll #{poll_count} ({elapsed:.0f}s): timeout (server busy, likely loading model)")
+        except HTTPException:
+            raise  # Re-raise early bail
         except Exception as e:
             logger.warning(f"History poll #{poll_count} ({elapsed:.0f}s): error: {type(e).__name__}: {e}")
 

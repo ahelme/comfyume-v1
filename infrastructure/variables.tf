@@ -1,4 +1,19 @@
 # --------------------------------------------------------------------------
+# Environment — namespaces deployment names to isolate prod from testing
+# --------------------------------------------------------------------------
+
+variable "environment" {
+  description = "Environment name: 'prod' keeps existing names, anything else prefixes deployments"
+  type        = string
+  default     = "prod"
+
+  validation {
+    condition     = contains(["prod", "test", "staging"], var.environment)
+    error_message = "Environment must be 'prod', 'test', or 'staging'."
+  }
+}
+
+# --------------------------------------------------------------------------
 # Container image
 # --------------------------------------------------------------------------
 

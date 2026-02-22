@@ -1,6 +1,6 @@
 # CLAUDE RESUME - COMFYUME (TESTING SCRIPTS TEAM)
 
-**DATE**: 2026-02-09
+**DATE**: 2026-02-22
 
 ---
 
@@ -9,10 +9,20 @@
 **We are the Mello Scripts Team.** Branch: `mello-scripts-team`.
 
 **Production:** aiworkshop.art runs on Verda CPU instance. Inference is serverless (Verda H200/B300). Mello is staging/backup only (containers removed).
+**Testing:** anegg.app on testing-009 (65.108.33.80). Shared by all teams.
 
 ---
 
-## RECENT WORK (this session — 2026-02-09)
+## TESTING-009 DEPLOYMENT (CRITICAL)
+
+**testing-009 runs the `testing-009` branch ONLY.**
+- NEVER `git checkout <team-branch>` on the server — wipes other team's code
+- Merge your team branch into `testing-009`, then `git pull` on the server
+- See CLAUDE.md "Deploying to Testing-009" for full workflow
+
+---
+
+## RECENT WORK (last session — 2026-02-09)
 
 ### Issue #111 — File sharing + favicon (PR #112 MERGED)
 - Bidirectional file sharing on mello (host nginx config, NOT in repo):
