@@ -17,6 +17,7 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] PR #76 merged to main — isolate mode toggle, testing instance docs, handover updates
 - [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
 - [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
 - [ADMIN] 5a56857 docs: progress update — isolate mode toggle, testing-009 branch (#75)
