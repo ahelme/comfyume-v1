@@ -6,8 +6,10 @@ user-invocable: true
 # HANDOVER TASKS TO BE PERFORMED AT 80% CONTEXT
 
 - YOU MUST update following:
-  - gh issues you are working on (or related testing scripts issues)
-    - + any related gh issues (VERY CONCISE - JUST INFO NEEDED/HELPFUL/RELEVANT)
+  - gh issues: analyse the FULL SESSION for ALL open issues touched, referenced, or discovered
+    - update each with current status, findings, and next steps
+    - include any related gh issues (VERY CONCISE - JUST INFO NEEDED/HELPFUL/RELEVANT)
+    - use `gh issue list --repo ahelme/comfyume-v1 --state open --json number,title` to cross-check
 
   - .claude/agent_docs/progress-mello-scripts-team-dev.md
     - update this doc so that it references CURRENT PENDING work at the bottom
