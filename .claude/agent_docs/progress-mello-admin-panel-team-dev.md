@@ -43,12 +43,36 @@
 ---
 ## 1. PRIORITY TASKS
 
+⏳ **(IN PROGRESS) - comfyume-v1 #75 - Admin panel: isolate mode toggle**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - Overlay toggle (localStorage `gpu_overlay_mode` = admin/user) for mello-team-one's GPU overlay
+    - Isolate mode toggle: OFF = normal, ON = all /api/* return 503 (fault isolation)
+    - Backend: GET/POST `/api/admin/isolate`, middleware gate, `ADMIN_ISOLATE_MODE` env var
+    - Frontend: localStorage persistence + backend sync on load
+    - Deployed to testing-009 (anegg.app)
+    - Serverless timeout table added to README.md
+    - Admin panel described as admin/operator (not instructor)
+    - Related: #78, #79, #80
+
+🔲 **NEW - comfyume-v1 #78 - Static assets MIME type + manifest 401**
+    - Created: 2026-02-22
+    - Non-critical: CSS wrong MIME, manifest-*.json gets 401 behind auth
+    - Likely nginx fix: mime.types + auth_basic off for /assets/
+
+🔲 **NEW - comfyume-v1 #79 - Favicon progress animation 404**
+    - Created: 2026-02-22
+    - Non-critical: /assets/images/favicon_progress_16x16/ not found
+
+🔲 **NEW - comfyume-v1 #80 - Userdata API 404 for subgraphs/templates**
+    - Created: 2026-02-22
+    - Non-critical: expected on fresh install, ComfyUI handles gracefully
+
 ⏳ **(IN PROGRESS) - comfyume-v1 #72 - Apply environment-isolated serverless on testing-009**
     - Created: 2026-02-22 | Updated: 2026-02-22
     - Steps 1-7 COMPLETE: tofu apply done, `comfyume-test-vca-ftv-h200-spot` created
     - QM pointing to testing endpoint, CLONE_SFS mounted
     - Credentials restored (correct per-user strong passwords)
-    - **REMAINING: Step 8 — test inference to verify image delivery works E2E**
+    - **REMAINING: Step 8 — mello-team-one now owns inference testing**
     - Related: #71, #54, #69
 
 ✅ **(COMPLETE) - comfyume-v1 #71 - SFS volume mismatch — environment-isolated serverless**
@@ -184,6 +208,38 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 18 - 2026-02-22 - Admin panel toggles, isolate mode, testing-009 branch (#75)
+
+**Date:** 2026-02-22 | **Issues:** #75, #78, #79, #80
+
+**Done:**
+- Confirmed admin panel code already synced between comfyume and comfyume-v1 (1-line diff only)
+- Created #75: admin panel isolate mode toggle
+- Added GPU overlay mode toggle (localStorage `gpu_overlay_mode` = admin/user) for mello-team-one
+- Added isolate mode toggle: OFF = normal, ON = all `/api/*` return 503 for fault isolation
+- Backend: `GET/POST /api/admin/isolate`, middleware gate, `ADMIN_ISOLATE_MODE` env var (default false)
+- Frontend: localStorage persistence + backend sync on page load
+- Renamed from "Features" to "Isolate" — better semantics (OFF = normal, ON = everything disabled)
+- Dashboard, `/health`, and `/api/admin/isolate` always accessible (can't lock yourself out)
+- Added serverless timeout layers table to README.md (4 layers, only Layer 2 configurable)
+- Fixed admin panel description: admin/operator, not instructor
+- Created `testing-009` shared deployment branch (both teams merge here before deploying)
+- Merged latest main (mello-team-one's GPU overlay, error handling, status_banner)
+- All deployed to anegg.app and verified
+- Created #78 (CSS MIME + manifest 401), #79 (favicon 404), #80 (userdata 404s) — all non-critical
+
+**Commits:**
+- `f0d36fb` feat: add overlay mode + features toggles to admin panel header (#75)
+- `eb8679d` feat: wire admin features toggle to backend + localStorage (#75)
+- `a0728c8` docs: add features toggle fault-isolation workflow to CLAUDE.md (#75)
+- `396baf5` refactor: rename features toggle to isolate mode (#75)
+
+**Branch strategy:**
+- Feature branch: `testing-mello-admin-panel-team-2026-02-22` (off main)
+- Shared deployment: `testing-009` (both teams merge here)
+- PR #76 open for main
 
 ---
 ## Progress Report 17 - 2026-02-22 - Environment-isolated serverless deployed, SFS fix (#71, #72)
