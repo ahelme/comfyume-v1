@@ -17,6 +17,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [MELLO-ONE-TEAM] feat: SFS-based result delivery — prefix injection + SFS polling, replaces HTTP history polling (#82, #74, #66)
+- [MELLO-ONE-TEAM] config.py: 5 new SFS delivery settings (enabled, output_dir, poll_interval, max_wait, settle_time)
+- [MELLO-ONE-TEAM] main.py: 5 new functions + submit_to_serverless refactored (SFS default, HTTP fallback)
+- [MELLO-ONE-TEAM] main.py: fetch_serverless_images HTTP fallback removed (broken with LB), SFS-only
+- [MELLO-ONE-TEAM] GH #82 created: SFS-based result delivery plan (prefix injection + SFS polling) (#66, #74)
+- [MELLO-ONE-TEAM] Reviewed + tested PR #69 (tofu validate + tofu plan with environment=test)
+- [MELLO-ONE-TEAM] ComfyUI internals research: SaveImage counter, filename patterns, v0.11.0–v0.14.2 stability
 - [MELLO-ONE-TEAM] 76fc63b fix: remove fake time-based stages from GPU overlay (#44)
 - [MELLO-ONE-TEAM] b2d0250 fix: extract HTTP error details + time-based overlay stages (#73, #44)
 - [MELLO-ONE-TEAM] 5f43509 docs: add testing-009 shared deployment branch
