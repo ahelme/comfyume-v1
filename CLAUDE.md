@@ -623,6 +623,10 @@ HTTP image download doesn't work with serverless load balancing. Verda routes ea
 
 Verda was previously called `DataCrunch`. ALL docs, code comments, specs, and API references must say **Verda**, not DataCrunch. API endpoint URLs may still use `containers.datacrunch.io` — verify current domain before updating URLs. When writing new docs, always use "Verda". First mention in standalone docs: "Verda (ex. DataCrunch)".
 
+### CRITICAL: `docker compose restart` vs `up -d`
+
+`docker compose restart` just stops/starts the existing container — same image, same filesystem. `docker compose up -d` compares the running container against the latest built image and recreates if they differ. **Always use `up -d` after a build.** Using `restart` after rebuilding an image means the old image keeps running.
+
 ### OTHER GOTCHAS
 
 See [gotchas.md](.claude/agent_docs/gotchas.md) for full details:

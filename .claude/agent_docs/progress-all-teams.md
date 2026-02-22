@@ -17,6 +17,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] 35fe34e chore: sync update-progress skill from testing-009
+- [ADMIN] 80aea57 fix: use POSIX character classes in nginx regex (#78)
+- [ADMIN] fdc584b feat: cookie-based auth persistence + assets auth bypass (#45, #78)
 - [ADMIN] PR #76 merged to main — isolate mode toggle, testing instance docs, handover updates
 - [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
 - [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
