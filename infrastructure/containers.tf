@@ -30,7 +30,7 @@ locals {
     "--listen", "0.0.0.0",
     "--port", "8188",
     "--extra-model-paths-config", "/mnt/sfs/extra_model_paths.yaml",
-    "--verbose"
+    "--verbose"  # NOTE: will apply to production on merge to main — intentional (more logging)
   ]
 
   # All deployments use --output-directory to write images to SFS

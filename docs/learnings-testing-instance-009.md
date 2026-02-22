@@ -67,9 +67,9 @@ Serverless containers mount **PROD_SFS** (configured via `sfs_volume_id` in terr
 
 ## Permissions: `/outputs/user001` Must Be Writable
 
-The QM container runs as `uid=1000 (queuemanager)`. The host `/mnt/scratch/outputs/` directory must be `chmod 777` and user subdirectories must be pre-created or the parent must allow creation.
+The QM container runs as `uid=1000 (queuemanager)`. The host `/mnt/scratch/outputs/` directory must be world-writable and user subdirectories must be pre-created or the parent must allow creation.
 
-**Fix:** `chmod -R 777 /mnt/scratch/outputs/` after provisioning.
+**Fix:** `chmod 1777 /mnt/scratch/outputs/` after provisioning (sticky bit prevents users deleting each other's files). Use `1777`, NOT `777` — the sticky bit is important for production with 20 users.
 
 ## Restore Script: Clones Wrong Repo
 
