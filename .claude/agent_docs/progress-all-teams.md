@@ -21,6 +21,10 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [MELLO-ONE-TEAM] config.py: 5 new SFS delivery settings (enabled, output_dir, poll_interval, max_wait, settle_time)
 - [MELLO-ONE-TEAM] main.py: 5 new functions + submit_to_serverless refactored (SFS default, HTTP fallback)
 - [MELLO-ONE-TEAM] main.py: fetch_serverless_images HTTP fallback removed (broken with LB), SFS-only
+- [ADMIN] PR #76 merged to main — isolate mode toggle, testing instance docs, handover updates
+- [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
+- [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
+- [ADMIN] 5a56857 docs: progress update — isolate mode toggle, testing-009 branch (#75)
 - [MELLO-ONE-TEAM] GH #82 created: SFS-based result delivery plan (prefix injection + SFS polling) (#66, #74)
 - [MELLO-ONE-TEAM] Reviewed + tested PR #69 (tofu validate + tofu plan with environment=test)
 - [MELLO-ONE-TEAM] ComfyUI internals research: SaveImage counter, filename patterns, v0.11.0–v0.14.2 stability
