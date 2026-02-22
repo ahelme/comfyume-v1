@@ -929,12 +929,12 @@ body {
       <span id="overlay-mode-label" class="toggle-mode-label">user</span>
     </div>
     <div class="toggle-group">
-      <label for="toggle-features">Features</label>
+      <label for="toggle-isolate">Isolate</label>
       <div class="toggle-switch">
-        <input type="checkbox" id="toggle-features" checked>
+        <input type="checkbox" id="toggle-isolate">
         <span class="toggle-slider"></span>
       </div>
-      <span id="features-mode-label" class="toggle-mode-label">on</span>
+      <span id="isolate-mode-label" class="toggle-mode-label">off</span>
     </div>
   </div>
 
@@ -1270,29 +1270,30 @@ overlayToggle.addEventListener('change', () => {
   overlayLabel.textContent = mode;
 });
 
-// Admin features on/off: syncs localStorage + backend runtime toggle (#75)
-const featuresToggle = document.getElementById('toggle-features');
-const featuresLabel = document.getElementById('features-mode-label');
-const storedFeatures = localStorage.getItem('admin_features_enabled');
-featuresToggle.checked = storedFeatures !== 'false';
-featuresLabel.textContent = featuresToggle.checked ? 'on' : 'off';
+// Isolate mode: when ON, blocks all /api/* except /api/admin/isolate (#75)
+// OFF = normal operation. ON = isolation mode (everything disabled for fault testing).
+const isolateToggle = document.getElementById('toggle-isolate');
+const isolateLabel = document.getElementById('isolate-mode-label');
+const storedIsolate = localStorage.getItem('admin_isolate_mode');
+isolateToggle.checked = storedIsolate === 'true';
+isolateLabel.textContent = isolateToggle.checked ? 'on' : 'off';
 // Sync with backend on load
-fetch(BASE + '/api/admin/features').then(r => r.json()).then(data => {
-  featuresToggle.checked = data.enabled;
-  featuresLabel.textContent = data.enabled ? 'on' : 'off';
-  localStorage.setItem('admin_features_enabled', String(data.enabled));
+fetch(BASE + '/api/admin/isolate').then(r => r.json()).then(data => {
+  isolateToggle.checked = data.active;
+  isolateLabel.textContent = data.active ? 'on' : 'off';
+  localStorage.setItem('admin_isolate_mode', String(data.active));
 }).catch(() => {});
-featuresToggle.addEventListener('change', async () => {
-  const enabled = featuresToggle.checked;
-  featuresLabel.textContent = enabled ? 'on' : 'off';
-  localStorage.setItem('admin_features_enabled', String(enabled));
+isolateToggle.addEventListener('change', async () => {
+  const active = isolateToggle.checked;
+  isolateLabel.textContent = active ? 'on' : 'off';
+  localStorage.setItem('admin_isolate_mode', String(active));
   try {
-    await fetch(BASE + '/api/admin/features', {
+    await fetch(BASE + '/api/admin/isolate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled }),
+      body: JSON.stringify({ active }),
     });
-  } catch (e) { console.error('Failed to toggle features:', e); }
+  } catch (e) { console.error('Failed to toggle isolate mode:', e); }
 });
 
 // ---- API Helper ----

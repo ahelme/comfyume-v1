@@ -26,7 +26,7 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 - Tailscale VPN for secure Redis connection
 - Persistent user storage
 - Admin dashboard for admin/operator (not instructor-facing)
-  - **Features toggles** (#75): individual feature toggles in the admin header allow turning features on/off at runtime. Use for **fault isolation**: when something breaks (e.g. inference stops working), turn off the broken feature and its dependencies, test the fix in isolation, then re-enable. The dashboard itself, `/health`, and the toggle endpoints always remain accessible.
+  - **Isolate mode** (#75): toggle in the admin header. OFF = normal operation. ON = all `/api/*` endpoints return 503 (except the isolate toggle itself). Use for **fault isolation**: when something breaks, flip Isolate ON to disable everything, then selectively test your fix in isolation. The dashboard UI, `/health`, and `/api/admin/isolate` always remain accessible. Env var: `ADMIN_ISOLATE_MODE=false` (default).
 - Grafana, Prometheus, Loki, Dry for monitoring
 - FUTURE: ComfyGit (formerly ComfyDock)
 

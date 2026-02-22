@@ -79,8 +79,9 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
 MODELS_BASE_PATH = Path("/models")
 
-# Admin features toggle — runtime override of ADMIN_FEATURES_ENABLED env var
-features_enabled = os.getenv("ADMIN_FEATURES_ENABLED", "true").lower() == "true"
+# Isolate mode — when ON, blocks all /api/* except /api/admin/isolate
+# Use for fault isolation: enable isolate mode, then test individual features
+isolate_mode = os.getenv("ADMIN_ISOLATE_MODE", "false").lower() == "true"
 
 # GPU Deployment options (serverless via Verda)
 GPU_DEPLOYMENTS = {
@@ -193,33 +194,33 @@ async def health_check():
 
 
 # ============================================================================
-# Admin Features Toggle (#75)
+# Isolate Mode (#75)
 # ============================================================================
 
-@app.get("/api/admin/features")
-async def get_features_status():
-    """Current features state (no auth — frontend reads on load)"""
-    return {"enabled": features_enabled}
+@app.get("/api/admin/isolate")
+async def get_isolate_status():
+    """Current isolate mode state (no auth — frontend reads on load)"""
+    return {"active": isolate_mode}
 
 
-@app.post("/api/admin/features")
-async def set_features_status(request: Request, username: str = Depends(verify_admin)):
-    """Toggle admin features at runtime"""
-    global features_enabled
+@app.post("/api/admin/isolate")
+async def set_isolate_status(request: Request, username: str = Depends(verify_admin)):
+    """Toggle isolate mode at runtime"""
+    global isolate_mode
     body = await request.json()
-    features_enabled = bool(body.get("enabled", True))
-    logger.info(f"Admin features {'enabled' if features_enabled else 'disabled'} by {username}")
-    return {"enabled": features_enabled}
+    isolate_mode = bool(body.get("active", False))
+    logger.info(f"Isolate mode {'ACTIVE' if isolate_mode else 'off'} — set by {username}")
+    return {"active": isolate_mode}
 
 
 @app.middleware("http")
-async def features_gate(request: Request, call_next):
-    """Block /api/* endpoints (except /api/admin/features) when features disabled"""
+async def isolate_gate(request: Request, call_next):
+    """Block /api/* endpoints (except /api/admin/isolate) when isolate mode is active"""
     path = request.url.path
-    if not features_enabled and path.startswith("/api/") and not path.startswith("/api/admin/features"):
+    if isolate_mode and path.startswith("/api/") and not path.startswith("/api/admin/isolate"):
         return JSONResponse(
             status_code=503,
-            content={"detail": "Admin features are disabled. Toggle on via the dashboard header."},
+            content={"detail": "Isolate mode is active. All features are disabled. Toggle off via the dashboard header."},
         )
     return await call_next(request)
 
