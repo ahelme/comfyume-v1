@@ -1,14 +1,11 @@
 """
 GPU Overlay Extension — ComfyuME
 
-Floating status banner showing GPU inference progress.
-Listens for ComfyUI WebSocket events (execution_start, executed,
-execution_error) sent by the serverless_proxy extension.
+Listens for serverless inference WebSocket events and shows progress
+via the status_banner extension. Serverless mode only.
 
-Works in serverless mode where the server-side proxy handles execution
-and sends progress events via WebSocket. In non-serverless modes,
-queue_redirect has its own HTTP-based progress banner.
+Requires: status_banner extension (provides window.comfyumeStatus).
 """
 
-NODE_CLASS_MAPPINGS = {}  # No custom nodes, only web extension
+NODE_CLASS_MAPPINGS = {}
 WEB_DIRECTORY = "./web"
