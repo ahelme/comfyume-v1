@@ -17,6 +17,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
+- [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
+- [ADMIN] 5a56857 docs: progress update — isolate mode toggle, testing-009 branch (#75)
 - [ADMIN] 396baf5 refactor: rename features toggle to isolate mode (#75)
 - [ADMIN] a0728c8 docs: add features toggle fault-isolation workflow to CLAUDE.md (#75)
 - [ADMIN] eb8679d feat: wire admin features toggle to backend + localStorage (#75)
