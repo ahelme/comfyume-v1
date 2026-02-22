@@ -17,6 +17,8 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] GH #85 created: job timeout knob (plan approved, implementation next session)
+- [ADMIN] PR #84 merged to main — cookie auth + assets auth bypass (#45, #78)
 - [ADMIN] e5b49a7 docs: progress update + docker restart gotcha (#45, #78)
 - [ADMIN] 35fe34e chore: sync update-progress skill from testing-009
 - [ADMIN] 80aea57 fix: use POSIX character classes in nginx regex (#78)
