@@ -9,6 +9,9 @@ Supports three inference modes:
 """
 import logging
 import asyncio
+import copy
+import time
+import uuid
 import httpx
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -77,6 +80,8 @@ async def lifespan(app: FastAPI):
             )
             logger.info(f"Serverless client initialized: {endpoint}")
             logger.info(f"Active GPU: {settings.active_gpu_type}")
+            delivery = "SFS (prefix injection)" if settings.sfs_delivery_enabled else "HTTP (history polling)"
+            logger.info(f"Delivery mode: {delivery}")
 
     # Start background tasks
     asyncio.create_task(cleanup_task())
@@ -170,8 +175,157 @@ async def get_queue_status():
 # Job Management Endpoints
 # ============================================================================
 
+# Output node types whose filename_prefix we inject for SFS-based delivery.
+# All of these store results via ComfyUI's get_save_image_path() in folder_paths.py.
+OUTPUT_NODE_TYPES = {"SaveImage", "SaveAnimatedWEBP", "SaveAnimatedPNG", "SaveVideo", "VHS_VideoCombine"}
+
+
+def extract_save_node_ids(workflow: dict) -> list:
+    """Extract node IDs that have output-type class_type (SaveImage, SaveVideo, etc.)"""
+    save_ids = []
+    for node_id, node_data in workflow.items():
+        class_type = node_data.get("class_type", "")
+        if class_type in OUTPUT_NODE_TYPES:
+            save_ids.append(node_id)
+    return save_ids
+
+
+def inject_output_prefix(workflow: dict, prefix: str) -> dict:
+    """Deep-copy workflow and inject filename_prefix into all output nodes.
+
+    Strips directory component from original prefix (e.g. "video/LTX-2" → prefix)
+    so all outputs land in SFS root. QM scans one flat directory.
+    """
+    modified = copy.deepcopy(workflow)
+    for node_id, node_data in modified.items():
+        class_type = node_data.get("class_type", "")
+        if class_type in OUTPUT_NODE_TYPES:
+            if "inputs" not in node_data:
+                node_data["inputs"] = {}
+            node_data["inputs"]["filename_prefix"] = prefix
+    return modified
+
+
+def snapshot_sfs_directory(sfs_dir: Path) -> set:
+    """Return set of filenames currently in SFS output directory.
+
+    NFS-safe: uses Path.iterdir() which maps to readdir(), not inotify.
+    Propagates OSError so callers can handle retries.
+    """
+    return {f.name for f in sfs_dir.iterdir() if f.is_file()}
+
+
+async def watch_sfs_for_outputs(
+    prefix: str,
+    save_node_ids: list,
+    user_id: str,
+    baseline: set,
+    sfs_dir: Path,
+    max_wait: int,
+    poll_interval: float,
+    settle_time: float,
+) -> dict:
+    """Poll SFS directory for files matching our injected prefix.
+
+    Returns synthetic history entry compatible with fetch_serverless_images().
+    """
+    start = time.monotonic()
+    poll_count = 0
+    first_match_time = None
+    matched_files = set()
+
+    while (time.monotonic() - start) < max_wait:
+        poll_count += 1
+        elapsed = time.monotonic() - start
+
+        try:
+            current = snapshot_sfs_directory(sfs_dir)
+        except Exception as e:
+            if poll_count <= 10:
+                logger.warning(f"SFS scan error (attempt {poll_count}): {e}")
+                await asyncio.sleep(poll_interval)
+                continue
+            raise HTTPException(
+                status_code=503,
+                detail=f"SFS inaccessible after {poll_count} retries: {e}",
+            )
+
+        new_files = current - baseline
+        prefix_matches = {f for f in new_files if f.startswith(prefix)}
+
+        if prefix_matches:
+            matched_files = prefix_matches
+            if first_match_time is None:
+                first_match_time = time.monotonic()
+                logger.info(
+                    f"SFS watch: first match after {elapsed:.0f}s ({poll_count} polls): "
+                    f"{sorted(prefix_matches)[:5]}"
+                )
+
+            # Settle: wait for additional files (multi-image workflows)
+            if (time.monotonic() - first_match_time) >= settle_time:
+                logger.info(
+                    f"SFS watch: settled with {len(matched_files)} file(s) after "
+                    f"{elapsed:.0f}s ({poll_count} polls)"
+                )
+                return build_synthetic_outputs(sorted(matched_files), save_node_ids)
+
+        # Log periodically
+        if poll_count <= 3 or poll_count % 20 == 0:
+            logger.info(
+                f"SFS watch #{poll_count} ({elapsed:.0f}s): "
+                f"{len(new_files)} new files, {len(matched_files)} matched"
+            )
+
+        await asyncio.sleep(poll_interval)
+
+    # Timeout
+    elapsed = time.monotonic() - start
+    if matched_files:
+        # Got some files but settle didn't complete — use what we have
+        logger.warning(
+            f"SFS watch: timeout with {len(matched_files)} partial file(s) after {elapsed:.0f}s"
+        )
+        return build_synthetic_outputs(sorted(matched_files), save_node_ids)
+
+    raise HTTPException(
+        status_code=504,
+        detail=f"No output files found on SFS after {max_wait}s ({poll_count} polls). "
+        f"Prefix: {prefix}",
+    )
+
+
+def build_synthetic_outputs(new_files: list, save_node_ids: list) -> dict:
+    """Build ComfyUI-compatible output metadata from SFS filenames.
+
+    Maps files to node IDs. Single save node (common case): all files go to it.
+    Multiple save nodes: round-robin assignment.
+    """
+    outputs = {}
+
+    if not save_node_ids:
+        save_node_ids = ["output_0"]
+
+    for i, filename in enumerate(new_files):
+        node_id = save_node_ids[i % len(save_node_ids)]
+        if node_id not in outputs:
+            outputs[node_id] = {"images": []}
+        outputs[node_id]["images"].append({
+            "filename": filename,
+            "subfolder": "",
+            "type": "output",
+        })
+
+    return {
+        "outputs": outputs,
+        "status": {"status_str": "success", "completed": True},
+    }
+
+
 async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_interval: float = 2.0) -> dict:
     """Poll serverless /api/history/{prompt_id} until execution completes.
+
+    HTTP fallback — used only when SFS_DELIVERY_ENABLED=false.
 
     Serverless cold start + model loading can block HTTP for 200+ seconds.
     With 10s per-poll timeout, we fail fast and retry often.
@@ -185,7 +339,6 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
     if not serverless_client:
         raise HTTPException(status_code=503, detail="Serverless client not initialized")
 
-    import time
     start_time = time.monotonic()
     poll_count = 0
     empty_200_count = 0  # HTTP 200 responses where prompt_id not in history
@@ -272,15 +425,15 @@ async def poll_serverless_history(prompt_id: str, max_wait: int = 600, poll_inte
 
 
 async def fetch_serverless_images(history_entry: dict, user_id: str) -> dict:
-    """Get output images from serverless execution and save to local outputs.
+    """Copy output images from SFS to user's local output directory.
 
-    Strategy: SFS first (shared storage), HTTP fallback (serverless /view API).
-    The serverless container saves images to /mnt/sfs/outputs/ via a startup
-    wrapper script. The QM reads them directly from SFS (same NFS mount).
-    If SFS isn't available, falls back to HTTP download via /view endpoint.
+    Reads files from /mnt/sfs/outputs/ (shared NFS mount) and copies them
+    to /outputs/{user_id}/ where the frontend serves them.
 
     Returns ComfyUI-compatible output metadata: {node_id: {images: [...]}}
     """
+    import shutil
+
     outputs = history_entry.get("outputs", {})
 
     if not outputs:
@@ -292,7 +445,7 @@ async def fetch_serverless_images(history_entry: dict, user_id: str) -> dict:
     local_output_dir.mkdir(parents=True, exist_ok=True)
 
     saved_outputs = {}
-    sfs_output_dir = Path("/mnt/sfs/outputs")
+    sfs_output_dir = Path(settings.sfs_output_dir)
 
     for node_id, node_output in outputs.items():
         img_list = node_output.get("images", [])
@@ -304,35 +457,13 @@ async def fetch_serverless_images(history_entry: dict, user_id: str) -> dict:
             if not filename:
                 continue
 
-            saved = False
-
-            # Strategy 1: Read from SFS (shared NFS between serverless + app server)
+            # Read from SFS (shared NFS between serverless + app server)
             sfs_path = sfs_output_dir / subfolder / filename if subfolder else sfs_output_dir / filename
             if sfs_path.exists():
-                import shutil
                 dest = local_output_dir / filename
                 shutil.copy2(str(sfs_path), str(dest))
-                logger.info(f"SFS image: {sfs_path} -> {dest} ({dest.stat().st_size} bytes)")
-                saved = True
+                logger.info(f"SFS copy: {sfs_path} -> {dest} ({dest.stat().st_size} bytes)")
 
-            # Strategy 2: HTTP download from serverless /view API (fallback)
-            if not saved and serverless_client:
-                try:
-                    params = {"filename": filename, "type": img_info.get("type", "output")}
-                    if subfolder:
-                        params["subfolder"] = subfolder
-                    response = await serverless_client.get("/view", params=params, timeout=httpx.Timeout(30.0))
-                    if response.status_code == 200:
-                        dest = local_output_dir / filename
-                        dest.write_bytes(response.content)
-                        logger.info(f"HTTP image: {filename} ({len(response.content)} bytes)")
-                        saved = True
-                    else:
-                        logger.warning(f"HTTP /view failed for {filename}: HTTP {response.status_code}")
-                except Exception as e:
-                    logger.warning(f"HTTP download failed for {filename}: {e}")
-
-            if saved:
                 if node_id not in saved_outputs:
                     saved_outputs[node_id] = {"images": []}
                 saved_outputs[node_id]["images"].append({
@@ -341,13 +472,20 @@ async def fetch_serverless_images(history_entry: dict, user_id: str) -> dict:
                     "type": "output",
                 })
             else:
-                logger.error(f"Failed to retrieve image {filename} via both SFS and HTTP")
+                logger.error(f"SFS file not found: {sfs_path}")
 
     return saved_outputs
 
 
 async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
-    """Submit workflow to serverless, wait for completion, fetch and save output images."""
+    """Submit workflow to serverless, wait for completion, fetch and save output images.
+
+    Two delivery modes controlled by SFS_DELIVERY_ENABLED:
+    - SFS (default): inject unique prefix, POST, poll SFS for matching files.
+      Fixes load-balancer routing issue (#66, #74, #82).
+    - HTTP (fallback): POST, poll /history, copy from SFS. Broken with
+      load-balanced serverless but kept for debugging/local testing.
+    """
     if not serverless_client:
         raise HTTPException(
             status_code=503,
@@ -355,46 +493,9 @@ async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
         )
 
     try:
-        # 1. Submit prompt to serverless ComfyUI
-        logger.info(f"Sending to serverless: {len(workflow)} nodes")
-        response = await serverless_client.post(
-            "/prompt",
-            json={"prompt": workflow, "client_id": user_id}
-        )
-        response.raise_for_status()
-        result = response.json()
-        prompt_id = result.get("prompt_id")
-        logger.info(f"Serverless prompt accepted: {prompt_id}")
-
-        if not prompt_id:
-            logger.error(f"No prompt_id in serverless response: {result}")
-            return result
-
-        # 2. Poll history until execution completes
-        logger.info(f"Polling for execution completion: {prompt_id}")
-        history_entry = await poll_serverless_history(prompt_id)
-
-        status = history_entry.get("status", {})
-        if status.get("status_str") != "success":
-            messages = status.get("messages", [])
-            logger.error(f"Execution failed: {messages}")
-            result["execution_error"] = messages
-            return result
-
-        logger.info(f"Execution completed successfully: {prompt_id}")
-
-        # 3. Fetch and save output images (SFS first, HTTP fallback)
-        saved_outputs = await fetch_serverless_images(history_entry, user_id)
-
-        if not saved_outputs:
-            logger.warning(f"No images saved for {prompt_id}")
-            result["outputs"] = history_entry.get("outputs", {})
-            return result
-
-        logger.info(f"Saved outputs for {len(saved_outputs)} node(s)")
-        result["outputs"] = saved_outputs
-        result["execution_status"] = "success"
-        return result
+        if settings.sfs_delivery_enabled:
+            return await _submit_with_sfs_delivery(workflow, user_id)
+        return await _submit_with_http_delivery(workflow, user_id)
 
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Serverless inference timed out")
@@ -406,6 +507,125 @@ async def submit_to_serverless(workflow: dict, user_id: str) -> dict:
     except Exception as e:
         logger.error(f"Serverless submission failed: {e}")
         raise HTTPException(status_code=502, detail=f"Serverless error: {e}")
+
+
+async def _submit_with_sfs_delivery(workflow: dict, user_id: str) -> dict:
+    """SFS-based delivery: inject prefix, POST, poll SFS for output files."""
+    sfs_dir = Path(settings.sfs_output_dir)
+
+    # Verify SFS is accessible
+    if not sfs_dir.is_dir():
+        logger.error(f"SFS output directory not accessible: {sfs_dir}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"SFS output directory not accessible: {sfs_dir}",
+        )
+
+    # 1. Generate unique job prefix
+    job_id = uuid.uuid4().hex[:8]
+    prefix = f"comfyume_{job_id}"
+
+    # 2. Extract save node IDs and inject prefix into workflow copy
+    save_node_ids = extract_save_node_ids(workflow)
+    modified_workflow = inject_output_prefix(workflow, prefix)
+    logger.info(f"SFS delivery: job={job_id}, prefix={prefix}, save_nodes={save_node_ids}")
+
+    # 3. Snapshot SFS before submission (baseline for diff)
+    baseline = snapshot_sfs_directory(sfs_dir)
+
+    # 4. POST modified workflow to serverless
+    logger.info(f"Sending to serverless: {len(workflow)} nodes (SFS delivery)")
+    response = await serverless_client.post(
+        "/prompt",
+        json={"prompt": modified_workflow, "client_id": user_id},
+    )
+    response.raise_for_status()
+    result = response.json()
+    prompt_id = result.get("prompt_id")
+    logger.info(f"Serverless prompt accepted: {prompt_id} (prefix: {prefix})")
+
+    if not prompt_id:
+        logger.error(f"No prompt_id in serverless response: {result}")
+        return result
+
+    # Check for immediate node errors in POST response
+    if result.get("node_errors"):
+        logger.error(f"Serverless node errors: {result['node_errors']}")
+        result["execution_error"] = result["node_errors"]
+        return result
+
+    # 5. Watch SFS for output files matching our prefix
+    history_entry = await watch_sfs_for_outputs(
+        prefix=prefix,
+        save_node_ids=save_node_ids,
+        user_id=user_id,
+        baseline=baseline,
+        sfs_dir=sfs_dir,
+        max_wait=settings.sfs_max_wait,
+        poll_interval=settings.sfs_poll_interval,
+        settle_time=settings.sfs_settle_time,
+    )
+
+    # 6. Copy files from SFS to user's local output directory
+    saved_outputs = await fetch_serverless_images(history_entry, user_id)
+
+    if not saved_outputs:
+        logger.warning(f"No images saved for {prompt_id} (prefix: {prefix})")
+        result["outputs"] = history_entry.get("outputs", {})
+        return result
+
+    logger.info(f"SFS delivery complete: {len(saved_outputs)} node(s), job={job_id}")
+    result["outputs"] = saved_outputs
+    result["execution_status"] = "success"
+    return result
+
+
+async def _submit_with_http_delivery(workflow: dict, user_id: str) -> dict:
+    """HTTP-based delivery (fallback): POST, poll /history, copy from SFS.
+
+    Known limitation: load-balanced serverless routes GET /history to different
+    container than POST /prompt, causing early bail. Use SFS delivery instead.
+    """
+    # 1. Submit prompt to serverless ComfyUI
+    logger.info(f"Sending to serverless: {len(workflow)} nodes (HTTP delivery)")
+    response = await serverless_client.post(
+        "/prompt",
+        json={"prompt": workflow, "client_id": user_id},
+    )
+    response.raise_for_status()
+    result = response.json()
+    prompt_id = result.get("prompt_id")
+    logger.info(f"Serverless prompt accepted: {prompt_id}")
+
+    if not prompt_id:
+        logger.error(f"No prompt_id in serverless response: {result}")
+        return result
+
+    # 2. Poll history until execution completes
+    logger.info(f"Polling for execution completion: {prompt_id}")
+    history_entry = await poll_serverless_history(prompt_id)
+
+    status = history_entry.get("status", {})
+    if status.get("status_str") != "success":
+        messages = status.get("messages", [])
+        logger.error(f"Execution failed: {messages}")
+        result["execution_error"] = messages
+        return result
+
+    logger.info(f"Execution completed successfully: {prompt_id}")
+
+    # 3. Copy output images from SFS
+    saved_outputs = await fetch_serverless_images(history_entry, user_id)
+
+    if not saved_outputs:
+        logger.warning(f"No images saved for {prompt_id}")
+        result["outputs"] = history_entry.get("outputs", {})
+        return result
+
+    logger.info(f"Saved outputs for {len(saved_outputs)} node(s)")
+    result["outputs"] = saved_outputs
+    result["execution_status"] = "success"
+    return result
 
 
 @app.post("/api/jobs", response_model=JobResponse, status_code=201)

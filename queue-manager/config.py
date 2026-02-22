@@ -86,6 +86,16 @@ class Settings(BaseSettings):
     outputs_path: str = "/outputs"
     inputs_path: str = "/inputs"
 
+    # SFS-based delivery (replaces HTTP polling for serverless)
+    # When enabled, QM injects a unique prefix into workflows, POSTs to serverless,
+    # then polls the SFS directory for matching output files instead of HTTP /history.
+    # Fixes load-balancer routing issue where GET hits different container than POST.
+    sfs_delivery_enabled: bool = True   # False = fall back to HTTP history polling
+    sfs_output_dir: str = "/mnt/sfs/outputs"
+    sfs_poll_interval: float = 3.0     # seconds between directory scans
+    sfs_max_wait: int = 600            # max seconds to wait for output files
+    sfs_settle_time: float = 2.0       # wait after first file for multi-image workflows
+
     # Application metadata
     app_name: str = "ComfyUI Queue Manager"
     app_version: str = "0.1.0"

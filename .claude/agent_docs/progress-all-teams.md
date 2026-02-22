@@ -17,10 +17,22 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [MELLO-ONE-TEAM] feat: SFS-based result delivery — prefix injection + SFS polling, replaces HTTP history polling (#82, #74, #66)
+- [MELLO-ONE-TEAM] config.py: 5 new SFS delivery settings (enabled, output_dir, poll_interval, max_wait, settle_time)
+- [MELLO-ONE-TEAM] main.py: 5 new functions + submit_to_serverless refactored (SFS default, HTTP fallback)
+- [MELLO-ONE-TEAM] main.py: fetch_serverless_images HTTP fallback removed (broken with LB), SFS-only
 - [ADMIN] PR #76 merged to main — isolate mode toggle, testing instance docs, handover updates
 - [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
 - [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
 - [ADMIN] 5a56857 docs: progress update — isolate mode toggle, testing-009 branch (#75)
+- [MELLO-ONE-TEAM] GH #82 created: SFS-based result delivery plan (prefix injection + SFS polling) (#66, #74)
+- [MELLO-ONE-TEAM] Reviewed + tested PR #69 (tofu validate + tofu plan with environment=test)
+- [MELLO-ONE-TEAM] ComfyUI internals research: SaveImage counter, filename patterns, v0.11.0–v0.14.2 stability
+- [MELLO-ONE-TEAM] 76fc63b fix: remove fake time-based stages from GPU overlay (#44)
+- [MELLO-ONE-TEAM] b2d0250 fix: extract HTTP error details + time-based overlay stages (#73, #44)
+- [MELLO-ONE-TEAM] 5f43509 docs: add testing-009 shared deployment branch
+- [MELLO-ONE-TEAM] Rebuilt comfyume-frontend:v0.11.0 — all 4 extensions baked in
+- [MELLO-ONE-TEAM] Discovered: entrypoint copies from image on restart, overwrites host copies
 - [ADMIN] 396baf5 refactor: rename features toggle to isolate mode (#75)
 - [ADMIN] a0728c8 docs: add features toggle fault-isolation workflow to CLAUDE.md (#75)
 - [ADMIN] eb8679d feat: wire admin features toggle to backend + localStorage (#75)
