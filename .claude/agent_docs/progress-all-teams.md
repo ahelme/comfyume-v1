@@ -17,6 +17,11 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [MELLO-ONE-TEAM] 76fc63b fix: remove fake time-based stages from GPU overlay (#44)
+- [MELLO-ONE-TEAM] b2d0250 fix: extract HTTP error details + time-based overlay stages (#73, #44)
+- [MELLO-ONE-TEAM] 5f43509 docs: add testing-009 shared deployment branch
+- [MELLO-ONE-TEAM] Rebuilt comfyume-frontend:v0.11.0 — all 4 extensions baked in
+- [MELLO-ONE-TEAM] Discovered: entrypoint copies from image on restart, overwrites host copies
 - [ALL-TEAMS] docs: add testing-009 shared deployment branch to CLAUDE.md + all resume-context files
 - [MELLO-ONE-TEAM] Deployed fixes to testing-009 — QM rebuilt, extensions copied, early bail verified in container
 - [MELLO-ONE-TEAM] Diagnosed branch collision: testing-009 was on admin team's branch, our fixes not deployed
