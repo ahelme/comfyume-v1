@@ -1270,13 +1270,29 @@ overlayToggle.addEventListener('change', () => {
   overlayLabel.textContent = mode;
 });
 
-// Admin features on/off: controls ADMIN_FEATURES_ENABLED via API
+// Admin features on/off: syncs localStorage + backend runtime toggle (#75)
 const featuresToggle = document.getElementById('toggle-features');
 const featuresLabel = document.getElementById('features-mode-label');
+const storedFeatures = localStorage.getItem('admin_features_enabled');
+featuresToggle.checked = storedFeatures !== 'false';
 featuresLabel.textContent = featuresToggle.checked ? 'on' : 'off';
-featuresToggle.addEventListener('change', () => {
-  featuresLabel.textContent = featuresToggle.checked ? 'on' : 'off';
-  // TODO: POST to /api/admin/features { enabled: true/false } when backend supports it (#75)
+// Sync with backend on load
+fetch(BASE + '/api/admin/features').then(r => r.json()).then(data => {
+  featuresToggle.checked = data.enabled;
+  featuresLabel.textContent = data.enabled ? 'on' : 'off';
+  localStorage.setItem('admin_features_enabled', String(data.enabled));
+}).catch(() => {});
+featuresToggle.addEventListener('change', async () => {
+  const enabled = featuresToggle.checked;
+  featuresLabel.textContent = enabled ? 'on' : 'off';
+  localStorage.setItem('admin_features_enabled', String(enabled));
+  try {
+    await fetch(BASE + '/api/admin/features', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    });
+  } catch (e) { console.error('Failed to toggle features:', e); }
 });
 
 // ---- API Helper ----
