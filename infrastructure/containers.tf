@@ -7,7 +7,12 @@
 # 4 deployment variants: H200/B300 x spot/on-demand
 # All 4 exist in production. Toggle via deploy_* variables.
 #
-# Naming: comfyume-vca-ftv-{gpu}-{pricing}
+# Environment isolation (#71):
+#   environment = "prod"  → comfyume-vca-ftv-{gpu}-{pricing}       (unchanged)
+#   environment = "test"  → comfyume-test-vca-ftv-{gpu}-{pricing}  (isolated)
+#   Each environment has its own tofu state + SFS volume.
+#
+# Naming: comfyume-[{env}-]vca-ftv-{gpu}-{pricing}
 #   vca = Verda Cloud Accelerated, ftv = Film Tech Video
 #
 # DRIFT AUDIT (2026-02-16):
@@ -16,6 +21,9 @@
 #   should be made in a SEPARATE commit with tofu plan review.
 
 locals {
+  # Environment prefix: "prod" → no prefix (backward compatible), others → "test-", "staging-"
+  env_prefix = var.environment == "prod" ? "" : "${var.environment}-"
+
   # Base startup command — includes --output-directory for SFS-based image delivery (#54, #70)
   base_cmd = [
     "python3", "/workspace/ComfyUI/main.py",
@@ -33,28 +41,28 @@ locals {
       enabled  = var.deploy_h200_spot
       gpu_name = "H200"
       is_spot  = true
-      name     = "comfyume-vca-ftv-h200-spot"
+      name     = "comfyume-${local.env_prefix}vca-ftv-h200-spot"
       cmd      = local.full_cmd
     }
     "h200-on-demand" = {
       enabled  = var.deploy_h200_on_demand
       gpu_name = "H200"
       is_spot  = false
-      name     = "comfyume-vca-ftv-h200-on-demand"
+      name     = "comfyume-${local.env_prefix}vca-ftv-h200-on-demand"
       cmd      = local.full_cmd
     }
     "b300-spot" = {
       enabled  = var.deploy_b300_spot
       gpu_name = "B300"
       is_spot  = true
-      name     = "comfyume-vca-ftv-b300-spot"
+      name     = "comfyume-${local.env_prefix}vca-ftv-b300-spot"
       cmd      = local.full_cmd
     }
     "b300-on-demand" = {
       enabled  = var.deploy_b300_on_demand
       gpu_name = "B300"
       is_spot  = false
-      name     = "comfyume-vca-ftv-b300-on-demand"
+      name     = "comfyume-${local.env_prefix}vca-ftv-b300-on-demand"
       cmd      = local.full_cmd
     }
   }
