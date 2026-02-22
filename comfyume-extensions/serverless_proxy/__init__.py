@@ -52,8 +52,15 @@ def _apply_execution_patch():
         """
         prompt_server = server.PromptServer.instance
 
-        # Notify frontend: execution starting
+        # Notify frontend: execution starting (comfyume_progress for admin overlay)
         prompt_server.send_sync("execution_start", {"prompt_id": prompt_id})
+        prompt_server.send_sync("comfyume_progress", {
+            "prompt_id": prompt_id,
+            "phase": "submitting",
+            "user_id": USER_ID,
+            "node_count": len(prompt),
+            "qm_url": QUEUE_MANAGER_URL,
+        })
 
         # Send "executing" for the first node (UI shows activity)
         node_ids = list(prompt.keys())
@@ -73,11 +80,17 @@ def _apply_execution_patch():
             while heartbeat_active.is_set():
                 time.sleep(5)
                 if heartbeat_active.is_set() and node_ids:
+                    idx += 1
                     prompt_server.send_sync("executing", {
                         "node": node_ids[idx % len(node_ids)],
                         "prompt_id": prompt_id,
                     })
-                    idx += 1
+                    prompt_server.send_sync("comfyume_progress", {
+                        "prompt_id": prompt_id,
+                        "phase": "polling",
+                        "heartbeat": idx,
+                        "elapsed": idx * 5,
+                    })
 
         heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
         heartbeat_thread.start()
@@ -175,6 +188,15 @@ def _apply_execution_patch():
                 ("execution_start", {"prompt_id": prompt_id}),
                 ("execution_complete", {}),
             ]
+
+            # Admin progress: completion details
+            output_summary = {nid: len(nout.get("images", [])) for nid, nout in outputs.items()}
+            prompt_server.send_sync("comfyume_progress", {
+                "prompt_id": prompt_id,
+                "phase": "complete",
+                "output_nodes": output_summary,
+                "status": result.get("status"),
+            })
 
             logger.info(f"Proxy execution complete: {prompt_id}, {len(outputs)} output node(s)")
 
