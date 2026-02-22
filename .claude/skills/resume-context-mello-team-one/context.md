@@ -6,20 +6,20 @@
 
 ## CONTEXT
 
-**We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one` (NOT main).
-**Feature branch:** `testing-mello-team-one-new-testing-instance` (current work).
+**We are Mello Team One.** Main dev team. Branch: `testing-mello-team-one-2026-02-22`.
 
 **Production:** aiworkshop.art on quiet-city (65.108.33.101). 24 containers healthy.
 **Testing:** anegg.app on testing-009 (65.108.33.80). Shared by all teams via `testing-009` branch.
 
 **This session completed:**
-- #73 DONE: serverless_proxy error handling + early bail + HTTP error body extraction
-- #44 DONE: GPU overlay (modular: status_banner + gpu_overlay), admin/user modes, no fake stages
-- Shared `testing-009` deployment branch (prevents teams overwriting each other)
-- Rebuilt comfyume-frontend:v0.11.0 with all 4 extensions baked in
-- PR #77 merged to main
+- #82 SFS-based result delivery implemented + deployed to testing-009 (PR #83 merged)
+- QM startup confirmed: "Delivery mode: SFS (prefix injection)"
+- SFS watch runs correctly: 200 polls/600s, prefix matching, clean timeout
+- BLOCKED: serverless container accepts prompt but never executes (VRAM empty, no model loaded)
+- SaladTechnologies research: sidecar pattern vs our split architecture
+- `/update-progress` skill updated to include GH issue updates (step 4)
 
-**Key discovery:** Docker entrypoint copies extensions from baked image on EVERY restart. Host-level `cp` gets overwritten. Must rebuild image to update extensions permanently.
+**Key finding:** The SFS delivery code works. The problem is upstream — the serverless container's ComfyUI accepts the HTTP POST but the execution engine never processes the prompt. Models never load into VRAM.
 
 ---
 
@@ -36,13 +36,16 @@ Please read:
 
 ## IMMEDIATE NEXT STEPS
 
-**!! PRIORITY: Cold-start inference failure (#74, #66) !!**
-- Testing-009 works warm (31s), fails cold (LB routing — POST hits container A, GET /history hits container B)
-- Early bail detects this in ~170s with detailed error message
-- Full fix needed: SFS-based result delivery (#66) — QM watches SFS filesystem instead of HTTP polling
-- This is the main blocker for production with 20 users
+**!! PRIORITY: Debug serverless container execution (#82, #74, #66) !!**
+- SFS delivery code is deployed and working — QM correctly injects prefix, polls SFS, times out cleanly
+- The blocker is the serverless container itself — it accepts prompts but never executes them
+- `system_stats` showed `torch_vram_total: 0` after 10 min — no model loaded
+- Possible causes: model loading fails silently on CLONE_SFS, container recycled, execution engine issue
+- Try: warm inference test (container may still be up), production endpoint, check Verda container logs
+- The `comfyui-debugging.md` doc has API endpoints and CLI flags for diagnosis
+- User credentials for testing: `USER_CREDENTIALS_USER001` in `/home/dev/comfymulti-scripts/.env`
 
-**Also pending:** Username rename dev→aeon (#37), ComfyUI native progress bar not working during serverless inference
+**Also pending:** Username rename dev→aeon (#37), GPU overlay real-time status from QM via WebSocket
 
 ---
 
@@ -51,6 +54,7 @@ Please read:
 **testing-009 runs the `testing-009` branch ONLY.**
 - NEVER `git checkout <team-branch>` on the server — wipes other team's code
 - Merge your team branch into `testing-009`, then `git pull` on the server
+- **After `docker compose build`, use `up -d` NOT `restart`** — restart reuses old image!
 - Must rebuild Docker image to update extensions: `docker build -t comfyume-frontend:v0.11.0 -f comfyui-frontend/Dockerfile .`
 - See CLAUDE.md "Deploying to Testing-009" for full workflow
 
@@ -58,9 +62,10 @@ Please read:
 
 ## KEY INFRASTRUCTURE
 
-**SFS volumes (both on quiet-city, SFS-prod in fstab):**
-- SFS-prod: `/mnt/sfs` — 192GB, 22 models, all backups
-- SFS-clone: `/mnt/clone-sfs` — 192GB, mirrors SFS-prod (verified 2026-02-17)
+**SFS volumes:**
+- Testing-009 mounts CLONE_SFS at `/mnt/sfs` (192GB, 22 models)
+- Serverless containers mount same CLONE_SFS via terraform.tfvars `sfs_volume_id = fd7efb9e-...`
+- Both confirmed to be the same volume
 
 **R2 Buckets (4):** model-vault, cache, worker-container, user-files
 
@@ -73,6 +78,6 @@ Please read:
 ## SESSION START CHECKLIST
 
 - [ ] `git status` — should be clean
-- [ ] `git pull origin testing-mello-team-one` — get latest
-- [ ] SSH to Verda: `ssh root@65.108.33.101 'docker ps --format "table {{.Names}}\t{{.Status}}" | grep -c healthy'` (expect 24)
+- [ ] `git pull origin testing-mello-team-one-2026-02-22` — get latest
+- [ ] SSH to testing-009: `ssh root@65.108.33.80 'docker logs comfy-queue-manager --tail 5 2>&1'` — check QM running
 - [ ] Read `.claude/qa-state.json` for fix loop state
