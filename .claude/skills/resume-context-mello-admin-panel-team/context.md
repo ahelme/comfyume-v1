@@ -43,7 +43,7 @@ OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here chang
 - `queue-manager/main.py`: Added `https://anegg.app` to CORS allow_origins
 - `nginx/nginx.conf`: Changed hardcoded CORS origin to `$http_origin` (on testing instance only)
 - `/mnt/scratch/outputs/`: Fixed permissions (`chmod -R 777`)
-- `.htpasswd`: Created in `nginx/` dir (6 users + admin, password: workshop)
+- `.htpasswd`: Regenerated with correct per-user passwords from `comfymulti-scripts/.env` (21 entries)
 - `.env`: Comprehensive testing config (serverless, NUM_USERS=5, anegg.app domain)
 - Frontend image: Rebuilt from correct branch (comfyume-v1, not comfy-multi)
 
