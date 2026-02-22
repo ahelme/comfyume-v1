@@ -37,6 +37,7 @@ services:
     environment:
       - DOMAIN=${DOMAIN}
       - NUM_USERS=${NUM_USERS:-20}
+      - AUTH_COOKIE_SECRET=${AUTH_COOKIE_SECRET:-}
     depends_on:
       queue-manager:
         condition: service_healthy

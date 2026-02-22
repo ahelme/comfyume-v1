@@ -15,4 +15,5 @@ Please update the team progress file and central progress file.
 1. Identify which team progress file matches the current working directory
 2. Update that team's progress file with recent work done this session
 3. Update `.claude/agent_docs/progress-all-teams.md` with 1-line-per-commit entries
-4. Show me what was added before committing
+4. **Update relevant GitHub issues** — add a comment to any GH issues worked on this session with a concise status update (what was done, what's pending). Use `gh issue comment <number> --body "..."`. If an issue is now fully resolved, close it with `gh issue close <number>`.
+5. Show me what was added before committing

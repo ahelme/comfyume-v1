@@ -17,6 +17,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] 35fe34e chore: sync update-progress skill from testing-009
+- [ADMIN] 80aea57 fix: use POSIX character classes in nginx regex (#78)
+- [ADMIN] fdc584b feat: cookie-based auth persistence + assets auth bypass (#45, #78)
+- [ADMIN] PR #76 merged to main — isolate mode toggle, testing instance docs, handover updates
+- [ADMIN] 626401e docs: add testing instance details to all team progress files + CLAUDE.md
+- [ADMIN] e64f351 docs: add full-session GH issue analysis to all handover skills
+- [ADMIN] 5a56857 docs: progress update — isolate mode toggle, testing-009 branch (#75)
 - [ADMIN] 396baf5 refactor: rename features toggle to isolate mode (#75)
 - [ADMIN] a0728c8 docs: add features toggle fault-isolation workflow to CLAUDE.md (#75)
 - [ADMIN] eb8679d feat: wire admin features toggle to backend + localStorage (#75)
