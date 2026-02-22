@@ -15,16 +15,17 @@ See CLAUDE.md "Production Safety — State File Isolation" for details.
 ## CONTEXT
 
 **We are the Mello Admin Panel Team.**
-- **Team branch:** `testing-mello-admin-panel-team`
+- **Feature branch:** `testing-mello-admin-panel-team-2026-02-22`
+- **Deploy branch:** `testing-009` (shared — ALL teams merge here before deploying)
+- **PR:** #76 (open, targeting main)
 
-**Production:** aiworkshop.art on Verda (quiet-city, 65.108.33.101), NOT Mello.
-**Testing:** anegg.app on Verda (intelligent-rain-shrinks, 65.108.33.80).
+**Production:** aiworkshop.art on Verda (quiet-city, 65.108.33.101) — DO NOT TOUCH.
+**Testing:** anegg.app on Verda (intelligent-rain-shrinks, 65.108.33.80) — all teams work here.
 
 **SSH (production):** `ssh dev@100.89.38.43` (Tailscale IP).
 **SSH (testing):** `ssh root@65.108.33.80` (public IP).
 
-**Debugging reference:** `docs/comfyui-debugging.md` — check BEFORE investigating any ComfyUI issue.
-**Learnings from testing-009:** `docs/learnings-testing-instance-009.md` — gotchas, root causes, fixes.
+**All teams are currently working on the testing instance (anegg.app). Do NOT deploy to production.**
 
 ---
 
@@ -36,72 +37,77 @@ See CLAUDE.md "Production Safety — State File Isolation" for details.
 - See CLAUDE.md "Deploying to Testing-009" for full workflow
 
 **Workflow:**
-1. Push changes to `testing-mello-admin-panel-team`
-2. Merge into `testing-009` (PR or local merge + push)
+1. Push changes to `testing-mello-admin-panel-team-2026-02-22`
+2. Merge into `testing-009`: `git checkout testing-009 && git merge <branch> && git push`
 3. On server: `cd /home/dev/comfyume-v1 && git pull origin testing-009`
-4. Rebuild/restart as needed
+4. Rebuild/restart as needed: `docker compose build admin && docker compose up -d admin`
 
 ---
 
-## CURRENT STATE: Testing Instance 009 (anegg.app)
+## CURRENT STATE
 
-### Infrastructure
+### What Was Built This Session (#75)
+
+**Isolate mode toggle** — admin panel header toggle for fault isolation:
+- OFF (default) = normal operation, everything works
+- ON = all `/api/*` endpoints return 503 (isolation mode for debugging)
+- Dashboard UI, `/health`, and `/api/admin/isolate` always accessible
+- Backend: `GET/POST /api/admin/isolate`, middleware gate, `ADMIN_ISOLATE_MODE` env var
+- Frontend: localStorage persistence (`admin_isolate_mode`) + backend sync on load
+
+**GPU overlay mode toggle** — also in admin header:
+- Sets `localStorage.setItem('gpu_overlay_mode', 'admin'|'user')`
+- For mello-team-one's gpu_overlay extension (admin shows more detail)
+
+**Docs updated:**
+- CLAUDE.md: isolate mode docs, Quick Links with anegg.app, admin=operator not instructor
+- README.md: serverless timeout layers table (4 layers, only Layer 2 configurable)
+- All 5 team progress files: testing instance details at top
+- All 5 handover skills: full-session GH issue analysis step added
+
+### Infrastructure (unchanged from previous session)
 - All containers healthy: nginx, redis, QM, admin, user001-005
 - SSL cert for anegg.app (expires 2026-05-18)
-- Credentials: per-user strong passwords from `comfymulti-scripts/.env` (21 entries in htpasswd)
-- 24 models visible on CLONE_SFS
+- Credentials: per-user strong passwords (21 entries in htpasswd)
+- `comfyume-test-vca-ftv-h200-spot` deployed, mounting CLONE_SFS
 
-### Environment-Isolated Serverless (#71, #72) — DEPLOYED
-- `comfyume-test-vca-ftv-h200-spot` created via `tofu apply` on testing-009
-- Mounts CLONE_SFS (same volume as testing instance) — SFS image delivery should now work
-- QM confirmed using testing endpoint: `https://containers.datacrunch.io/comfyume-test-vca-ftv-h200-spot`
-- OpenTofu v1.11.5 installed on testing-009, state in `/home/dev/comfyume-v1/infrastructure/`
-- Production deployments (`comfyume-vca-ftv-*`) completely untouched
+---
 
-### Mello Team One Fixes (deployed 2026-02-22)
-- serverless_proxy error handling — malformed execution_error fixed (#73)
-- Early bail on LB routing miss — ~120s instead of 600s timeout (#73)
-- GPU overlay extension — modular progress banner (admin/user modes, #44)
-- status_banner extension — reusable UI component (window.comfyumeStatus API)
-- Inference verified on testing-009 — 31s warm, Flux Klein 4B
+## GITHUB ISSUES
+
+- **#75** — Isolate mode toggle. IMPLEMENTED and deployed. PR #76 open.
+- **#78** — Static assets MIME type + manifest 401 (non-critical, nginx fix needed)
+- **#79** — Favicon progress animation 404 (non-critical)
+- **#80** — Userdata API 404 for subgraphs/templates (non-critical, normal for fresh install)
+- **#72** — Environment-isolated serverless. Steps 1-7 done. Step 8 (inference testing) owned by mello-team-one.
+- **#66** — SFS-based result delivery architecture. Still needed for production.
+- **#45** — Cookie-based auth persistence (not started)
+- **#46** — Cold start silent failure UX (not started)
 
 ---
 
 ## NEXT STEPS
 
 ### Immediate
-- [ ] Test inference on anegg.app — verify image delivery via CLONE_SFS
-- [ ] Test with multiple users simultaneously (user001 + user002)
-- [ ] Close #72 once E2E verified
+- [ ] Merge PR #76 to main (user approved — safe to merge)
+- [ ] Fix non-critical frontend issues (#78, #79, #80) — nginx MIME types + auth
+- [ ] Add job timeout knob to admin panel (Layer 2: poll_serverless_history max_wait)
 
-### Architecture (#66) — SFS-Based Result Delivery (Production)
-For production with 20 concurrent users, the full SFS-based architecture is still needed:
-- QM watches SFS filesystem instead of polling `/history/{id}` over HTTP
-- Workers = vanilla ComfyUI (zero custom code on serverless)
-- Challenge: Matching output files to jobs (filename doesn't contain prompt_id)
-
-### Lower Priority
-- [ ] **#44** — GPU progress banner — DONE (status_banner + gpu_overlay extensions)
+### Admin Panel Enhancements
+- [ ] Per-feature isolate toggles (currently master on/off — future: granular)
 - [ ] **#45** — Cookie-based auth persistence
 - [ ] **#46** — Cold start silent failure UX
 
----
-
-## GITHUB ISSUES
-
-- **#72** — Apply environment-isolated serverless on testing-009. Steps 1-7 done. Step 8 (test inference) remaining.
-- **#73** — Serverless proxy error handling — FIXED by Mello Team One
-- **#74** — Cold-start inference failure — LB routing issue, needs #66
-- **#71** — SFS volume mismatch diagnosis. Resolved via environment isolation.
-- **#69** — PR covering environment isolation work.
-- **#66** — SFS-based result delivery architecture. Still needed for production.
+### Architecture (#66) — SFS-Based Result Delivery (Production)
+- QM watches SFS filesystem instead of polling `/history/{id}` over HTTP
+- Workers = vanilla ComfyUI (zero custom code on serverless)
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (latest report)
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (Report 18)
 - [ ] Verify testing-009 is running: `ssh root@65.108.33.80 'docker ps --format "{{.Names}}\t{{.Status}}" | sort'`
-- [ ] If containers down: `cd /home/dev/comfyume-v1 && docker compose --profile container-nginx up -d`
-- [ ] Test inference on anegg.app — verify image delivery via CLONE_SFS
+- [ ] If containers down: `cd /home/dev/comfyume-v1 && docker compose up -d`
+- [ ] Check PR #76 status — merge if approved
 - [ ] Continue with next steps above
