@@ -2,8 +2,8 @@
  * GPU Overlay Extension — ComfyuME
  *
  * Two display modes (set via localStorage):
- *   "user"  — simple progress messages with time-based stages (default)
- *   "admin" — detailed technical info (prompt_id, stage, heartbeats, errors)
+ *   "user"  — simple progress messages (default)
+ *   "admin" — detailed technical info (prompt_id, heartbeats, errors)
  *
  * Toggle: localStorage.setItem('gpu_overlay_mode', 'admin')
  *         localStorage.setItem('gpu_overlay_mode', 'user')
@@ -13,12 +13,6 @@
  *   comfyume_progress  → detailed phase updates
  *   executed           → output ready
  *   execution_error    → failure details (shown in overlay, not just dialog)
- *
- * Time-based stages (serverless cold start → model load → inference):
- *   0-30s:   submitting / cold starting
- *   30-90s:  cold starting GPU
- *   90-180s: loading model
- *   180s+:   generating
  *
  * Only active in serverless mode.
  * Requires: status_banner extension (window.comfyumeStatus).
@@ -64,14 +58,6 @@ app.registerExtension({
 
         console.log(`[GPUOverlay] Active — mode: ${mode()}, GPU: ${activeGpu}, endpoint: ${serverlessEndpoint}`);
 
-        // Time-based stage detection
-        function getStage(elapsed) {
-            if (elapsed < 30) return { label: 'Submitting', color: '#4fc3f7' };
-            if (elapsed < 90) return { label: 'Cold starting GPU', color: '#ffb74d' };
-            if (elapsed < 180) return { label: 'Loading model', color: '#ffb74d' };
-            return { label: 'Generating', color: '#ffb74d' };
-        }
-
         // --- execution_start: job submitted ---
         app.api.addEventListener("execution_start", (evt) => {
             startTime = Date.now();
@@ -80,24 +66,22 @@ app.registerExtension({
 
             if (mode() === 'admin') {
                 const short = promptId.slice(0, 8);
-                status.show(`GPU [${activeGpu}] ${short} | submitting...`, '#4fc3f7');
+                status.show(`GPU [${activeGpu}] ${short} | submitted`, '#4fc3f7');
             } else {
                 status.show('Sending to GPU...', '#4fc3f7');
             }
 
             timer = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const stage = getStage(elapsed);
-
                 if (mode() === 'admin') {
                     const short = promptId.slice(0, 8);
                     const hb = lastHeartbeat ? ` | hb #${lastHeartbeat}` : '';
                     status.show(
-                        `GPU [${activeGpu}] ${short} | ${stage.label}${hb} | ${elapsed}s`,
-                        stage.color
+                        `GPU [${activeGpu}] ${short} | waiting${hb} | ${elapsed}s`,
+                        '#ffb74d'
                     );
                 } else {
-                    status.show(`${stage.label}... ${elapsed}s`, stage.color);
+                    status.show(`Processing on GPU... ${elapsed}s`, '#ffb74d');
                 }
             }, 1000);
         });
@@ -118,7 +102,6 @@ app.registerExtension({
                     break;
                 case 'polling':
                     lastHeartbeat = d.heartbeat || 0;
-                    // Timer handles display — just track heartbeat
                     break;
                 case 'complete': {
                     const nodes = Object.entries(d.output_nodes || {})
@@ -165,10 +148,9 @@ app.registerExtension({
                     '#ef5350'
                 );
             } else {
-                // Show a user-friendly version
                 let userMsg = errMsg;
                 if (errMsg.includes('routing error') || errMsg.includes('never appeared in history')) {
-                    userMsg = 'GPU routing error — please try again (cold start issue)';
+                    userMsg = 'GPU routing error — please try again';
                 } else if (errMsg.includes('timed out')) {
                     userMsg = 'GPU timed out — please try again';
                 }
