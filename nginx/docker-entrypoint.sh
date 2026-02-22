@@ -1,6 +1,37 @@
 #!/bin/sh
 set -e
 
+# Cookie-based auth persistence (#45)
+# If AUTH_COOKIE_SECRET is set, enable cookie bypass for Basic Auth
+AUTH_SECRET="${AUTH_COOKIE_SECRET:-}"
+if [ -n "$AUTH_SECRET" ]; then
+    echo "Cookie auth enabled (24h session persistence)"
+    cat > /etc/nginx/conf.d/auth-cookie-map.conf <<EOF
+# Cookie-based auth persistence (#45)
+# Valid session cookie bypasses HTTP Basic Auth
+map \$cookie_comfyume_session \$auth_bypass {
+    "${AUTH_SECRET}" "off";
+    default "ComfyuME Workshop";
+}
+EOF
+    cat > /etc/nginx/conf.d/auth-cookie-header.conf <<EOF
+# Set session cookie after successful auth (#45)
+# HttpOnly: no JS access · Secure: HTTPS only · SameSite=Strict: no CSRF
+add_header Set-Cookie "comfyume_session=${AUTH_SECRET}; Path=/; Max-Age=86400; HttpOnly; Secure; SameSite=Strict" always;
+EOF
+else
+    echo "Cookie auth disabled (set AUTH_COOKIE_SECRET to enable)"
+    cat > /etc/nginx/conf.d/auth-cookie-map.conf <<EOF
+# Cookie auth not configured — standard Basic Auth only
+map \$x_unused_cookie_auth \$auth_bypass {
+    default "ComfyuME Workshop";
+}
+EOF
+    cat > /etc/nginx/conf.d/auth-cookie-header.conf <<EOF
+# Cookie auth not configured — no Set-Cookie header
+EOF
+fi
+
 # Generate user frontend routing configuration
 echo "Generating nginx configuration for ${NUM_USERS:-20} users..."
 
