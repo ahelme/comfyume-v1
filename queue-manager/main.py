@@ -18,7 +18,7 @@ from typing import List, Optional
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -32,6 +32,10 @@ from websocket_manager import WebSocketManager
 
 # HTTP client for serverless mode
 serverless_client: Optional[httpx.AsyncClient] = None
+
+# Runtime-adjustable serverless timeout (seconds) — set via /api/admin/timeout (#85)
+# Initialized from SFS_MAX_WAIT config; controls both SFS and HTTP delivery paths.
+serverless_max_wait: int = settings.sfs_max_wait
 
 # Configure logging
 logging.basicConfig(
@@ -169,6 +173,27 @@ async def get_queue_status():
     except Exception as e:
         logger.error(f"Failed to get queue status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# Admin Endpoints
+# ============================================================================
+
+@app.get("/api/admin/timeout")
+async def get_timeout():
+    """Get current serverless inference timeout (seconds)."""
+    return {"max_wait": serverless_max_wait}
+
+
+@app.post("/api/admin/timeout")
+async def set_timeout(request: Request):
+    """Set serverless inference timeout (clamped 60-1800s). Controls both SFS and HTTP delivery paths."""
+    global serverless_max_wait
+    body = await request.json()
+    value = int(body.get("max_wait", 600))
+    serverless_max_wait = max(60, min(1800, value))
+    logger.info(f"Serverless timeout set to {serverless_max_wait}s via admin API")
+    return {"max_wait": serverless_max_wait}
 
 
 # ============================================================================
@@ -561,7 +586,7 @@ async def _submit_with_sfs_delivery(workflow: dict, user_id: str) -> dict:
         user_id=user_id,
         baseline=baseline,
         sfs_dir=sfs_dir,
-        max_wait=settings.sfs_max_wait,
+        max_wait=serverless_max_wait,
         poll_interval=settings.sfs_poll_interval,
         settle_time=settings.sfs_settle_time,
     )
@@ -603,7 +628,7 @@ async def _submit_with_http_delivery(workflow: dict, user_id: str) -> dict:
 
     # 2. Poll history until execution completes
     logger.info(f"Polling for execution completion: {prompt_id}")
-    history_entry = await poll_serverless_history(prompt_id)
+    history_entry = await poll_serverless_history(prompt_id, max_wait=serverless_max_wait)
 
     status = history_entry.get("status", {})
     if status.get("status_str") != "success":

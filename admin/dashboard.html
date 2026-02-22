@@ -191,6 +191,34 @@ body {
   font-size: 10px;
   min-width: 32px;
 }
+/* Timeout range slider (#85) */
+.timeout-range {
+  width: 80px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.timeout-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+.timeout-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
 
 /* Live indicator */
 .live-indicator {
@@ -936,6 +964,11 @@ body {
       </div>
       <span id="isolate-mode-label" class="toggle-mode-label">off</span>
     </div>
+    <div class="toggle-group timeout-group">
+      <label for="timeout-slider">Timeout</label>
+      <input type="range" id="timeout-slider" class="timeout-range" min="60" max="1800" step="60" value="600">
+      <span id="timeout-value-label" class="toggle-mode-label">10m</span>
+    </div>
   </div>
 
   <div class="live-indicator">
@@ -1294,6 +1327,40 @@ isolateToggle.addEventListener('change', async () => {
       body: JSON.stringify({ active }),
     });
   } catch (e) { console.error('Failed to toggle isolate mode:', e); }
+});
+
+// Timeout knob: serverless inference max wait (60-1800s) (#85)
+// Uses absolute path /api/admin/timeout — routes to QM via nginx, NOT admin backend.
+const timeoutSlider = document.getElementById('timeout-slider');
+const timeoutLabel = document.getElementById('timeout-value-label');
+function formatTimeout(s) { return s >= 60 ? Math.round(s / 60) + 'm' : s + 's'; }
+
+// Init from localStorage
+const storedTimeout = localStorage.getItem('admin_serverless_timeout');
+if (storedTimeout) {
+  timeoutSlider.value = storedTimeout;
+  timeoutLabel.textContent = formatTimeout(+storedTimeout);
+}
+// Sync with QM on load
+fetch('/api/admin/timeout').then(r => r.json()).then(data => {
+  timeoutSlider.value = data.max_wait;
+  timeoutLabel.textContent = formatTimeout(data.max_wait);
+  localStorage.setItem('admin_serverless_timeout', String(data.max_wait));
+}).catch(() => {});
+// On change: update label + localStorage + POST to QM
+timeoutSlider.addEventListener('input', () => {
+  timeoutLabel.textContent = formatTimeout(+timeoutSlider.value);
+});
+timeoutSlider.addEventListener('change', async () => {
+  const val = +timeoutSlider.value;
+  localStorage.setItem('admin_serverless_timeout', String(val));
+  try {
+    await fetch('/api/admin/timeout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ max_wait: val }),
+    });
+  } catch (e) { console.error('Failed to set timeout:', e); }
 });
 
 // ---- API Helper ----
