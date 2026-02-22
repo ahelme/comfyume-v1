@@ -2,6 +2,12 @@
 # terraform.tfvars is gitignored — NEVER commit secrets.
 #
 # Auth: set VERDA_CLIENT_ID and VERDA_CLIENT_SECRET as env vars.
+#
+# Environment isolation (#71):
+#   "prod"    → comfyume-vca-ftv-*       (production, PROD_SFS)
+#   "test"    → comfyume-test-vca-ftv-*  (testing-009, CLONE_SFS)
+#   "staging" → comfyume-staging-vca-ftv-* (staging, CLONE_SFS)
+environment = "prod"
 
 # Required — Verda shared volume ID for SFS (models, outputs, cache)
 # PROD: be539393-4946-42fa-9adf-d72fe62cded7 (PROD_SFS-Model-Vault-22-Jan-01)

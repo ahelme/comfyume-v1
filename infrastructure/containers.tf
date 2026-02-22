@@ -7,7 +7,12 @@
 # 4 deployment variants: H200/B300 x spot/on-demand
 # All 4 exist in production. Toggle via deploy_* variables.
 #
-# Naming: comfyume-vca-ftv-{gpu}-{pricing}
+# Environment isolation (#71):
+#   environment = "prod"  → comfyume-vca-ftv-{gpu}-{pricing}       (unchanged)
+#   environment = "test"  → comfyume-test-vca-ftv-{gpu}-{pricing}  (isolated)
+#   Each environment has its own tofu state + SFS volume.
+#
+# Naming: comfyume-[{env}-]vca-ftv-{gpu}-{pricing}
 #   vca = Verda Cloud Accelerated, ftv = Film Tech Video
 #
 # DRIFT AUDIT (2026-02-16):
@@ -16,46 +21,49 @@
 #   should be made in a SEPARATE commit with tofu plan review.
 
 locals {
-  # Base startup command (without --output-directory)
+  # Environment prefix: "prod" → no prefix (backward compatible), others → "test-", "staging-"
+  env_prefix = var.environment == "prod" ? "" : "${var.environment}-"
+
+  # Base startup command — includes --output-directory for SFS-based image delivery (#54, #70)
   base_cmd = [
     "python3", "/workspace/ComfyUI/main.py",
     "--listen", "0.0.0.0",
     "--port", "8188",
     "--extra-model-paths-config", "/mnt/sfs/extra_model_paths.yaml",
-    "--verbose"
+    "--verbose"  # NOTE: will apply to production on merge to main — intentional (more logging)
   ]
 
-  # H200-spot has --output-directory, others do NOT (drift discovered 2026-02-16)
-  h200_spot_cmd = concat(local.base_cmd, ["--output-directory", "/mnt/sfs/outputs"])
+  # All deployments use --output-directory to write images to SFS
+  full_cmd = concat(local.base_cmd, ["--output-directory", "/mnt/sfs/outputs"])
 
   deployments = {
     "h200-spot" = {
       enabled  = var.deploy_h200_spot
       gpu_name = "H200"
       is_spot  = true
-      name     = "comfyume-vca-ftv-h200-spot"
-      cmd      = local.h200_spot_cmd
+      name     = "comfyume-${local.env_prefix}vca-ftv-h200-spot"
+      cmd      = local.full_cmd
     }
     "h200-on-demand" = {
       enabled  = var.deploy_h200_on_demand
       gpu_name = "H200"
       is_spot  = false
-      name     = "comfyume-vca-ftv-h200-on-demand"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      name     = "comfyume-${local.env_prefix}vca-ftv-h200-on-demand"
+      cmd      = local.full_cmd
     }
     "b300-spot" = {
       enabled  = var.deploy_b300_spot
       gpu_name = "B300"
       is_spot  = true
-      name     = "comfyume-vca-ftv-b300-spot"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      name     = "comfyume-${local.env_prefix}vca-ftv-b300-spot"
+      cmd      = local.full_cmd
     }
     "b300-on-demand" = {
       enabled  = var.deploy_b300_on_demand
       gpu_name = "B300"
       is_spot  = false
-      name     = "comfyume-vca-ftv-b300-on-demand"
-      cmd      = local.base_cmd  # MISSING --output-directory (live state)
+      name     = "comfyume-${local.env_prefix}vca-ftv-b300-on-demand"
+      cmd      = local.full_cmd
     }
   }
 
