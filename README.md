@@ -43,7 +43,7 @@ Multi-user ComfyUI platform for video generation workshops with professional fil
 - 20 isolated ComfyUI web interfaces with HTTP Basic Auth
 - Central job queue (FIFO/round-robin/priority)
 - Serverless GPU inference (no always-on GPU cost)
-- Admin dashboard for instructor
+- Admin dashboard for admin/operator (not instructor-facing)
 - Monitoring via Grafana, Prometheus, Loki
 
 ---
@@ -53,7 +53,7 @@ Multi-user ComfyUI platform for video generation workshops with professional fil
 ```
 comfyume-v1/
 ├── queue-manager/          <- FastAPI job queue + serverless dispatch
-├── admin/                  <- Instructor dashboard
+├── admin/                  <- Admin dashboard (operator, not instructor)
 ├── nginx/                  <- Reverse proxy (SSL, routing, auth)
 ├── comfyui-frontend/       <- User UI container (v0.11.0)
 ├── comfyui-worker/         <- GPU worker (local dev/testing only)
@@ -86,6 +86,17 @@ Uses consolidated `.env` file. See `.env.example` for all variables.
 | `DOMAIN` | `aiworkshop.art` | Production domain |
 
 For production `.env`, use the consolidated file from [comfymulti-scripts](https://github.com/ahelme/comfymulti-scripts) (private repo).
+
+### Serverless Timeout Layers
+
+Four timeout layers protect the serverless inference pipeline. Only the job timeout (Layer 2) is admin-configurable.
+
+| Layer | Value | Location | Configurable | Purpose |
+|-------|-------|----------|:---:|---------|
+| 1. POST /prompt | 300s | `queue-manager/main.py:75` | No | Submission to serverless container. If it can't accept in 5min, it's broken. |
+| 2. Poll max_wait | 600s | `queue-manager/main.py:173` | **Yes** | Job timeout — total wait for results. Varies by workflow (18s warm, 300s+ cold). |
+| 3. Per-poll HTTP | 10s | `queue-manager/main.py:194` | No | Individual history poll. Short = fail fast + retry during model loading. |
+| 4. Proxy urllib | 600s | `comfyume-extensions/serverless_proxy/__init__.py:106` | No | Frontend→QM request. Must be >= Layer 2 (derived, not independent). |
 
 ---
 

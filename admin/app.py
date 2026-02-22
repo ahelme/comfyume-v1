@@ -79,6 +79,10 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 NTFY_TOPIC = os.getenv("NTFY_TOPIC", "")
 MODELS_BASE_PATH = Path("/models")
 
+# Isolate mode — when ON, blocks all /api/* except /api/admin/isolate
+# Use for fault isolation: enable isolate mode, then test individual features
+isolate_mode = os.getenv("ADMIN_ISOLATE_MODE", "false").lower() == "true"
+
 # GPU Deployment options (serverless via Verda)
 GPU_DEPLOYMENTS = {
     "h200-spot": {
@@ -187,6 +191,38 @@ async def dashboard(username: str = Depends(verify_admin)):
 async def health_check():
     """Health check endpoint (no auth required)"""
     return {"status": "healthy", "service": "admin-dashboard", "version": "2.0.0"}
+
+
+# ============================================================================
+# Isolate Mode (#75)
+# ============================================================================
+
+@app.get("/api/admin/isolate")
+async def get_isolate_status():
+    """Current isolate mode state (no auth — frontend reads on load)"""
+    return {"active": isolate_mode}
+
+
+@app.post("/api/admin/isolate")
+async def set_isolate_status(request: Request, username: str = Depends(verify_admin)):
+    """Toggle isolate mode at runtime"""
+    global isolate_mode
+    body = await request.json()
+    isolate_mode = bool(body.get("active", False))
+    logger.info(f"Isolate mode {'ACTIVE' if isolate_mode else 'off'} — set by {username}")
+    return {"active": isolate_mode}
+
+
+@app.middleware("http")
+async def isolate_gate(request: Request, call_next):
+    """Block /api/* endpoints (except /api/admin/isolate) when isolate mode is active"""
+    path = request.url.path
+    if isolate_mode and path.startswith("/api/") and not path.startswith("/api/admin/isolate"):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Isolate mode is active. All features are disabled. Toggle off via the dashboard header."},
+        )
+    return await call_next(request)
 
 
 # ============================================================================

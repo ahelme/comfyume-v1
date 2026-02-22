@@ -6,8 +6,10 @@ user-invocable: true
 # HANDOVER TASKS TO BE PERFORMED AT 80% CONTEXT
 
 - YOU MUST update following:
-  - gh issues you are working on
-    - + any related gh issues (VERY CONCISE)
+  - gh issues: analyse the FULL SESSION for ALL open issues touched, referenced, or discovered
+    - update each with current status, findings, and next steps
+    - include any related gh issues (VERY CONCISE)
+    - use `gh issue list --repo ahelme/comfyume-v1 --state open --json number,title` to cross-check
 
   - .claude/qa-state.json
     - CRITICAL: save current test progress, bugs found, iteration count
