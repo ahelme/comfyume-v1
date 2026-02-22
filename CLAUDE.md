@@ -25,19 +25,22 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 - HTTP Basic Auth password protection
 - Tailscale VPN for secure Redis connection
 - Persistent user storage
-- Admin dashboard for instructor
+- Admin dashboard for admin/operator (not instructor-facing)
+  - **Isolate mode** (#75): toggle in the admin header. OFF = normal operation. ON = all `/api/*` endpoints return 503 (except the isolate toggle itself). Use for **fault isolation**: when something breaks, flip Isolate ON to disable everything, then selectively test your fix in isolation. The dashboard UI, `/health`, and `/api/admin/isolate` always remain accessible. Env var: `ADMIN_ISOLATE_MODE=false` (default).
 - Grafana, Prometheus, Loki, Dry for monitoring
 - FUTURE: ComfyGit (formerly ComfyDock)
 
 ### Quick Links
 
-| Environment | URL | Health |
-|---|---|---|
-| **Production** | https://aiworkshop.art/ | /health |
-| **Staging** | https://staging.aiworkshop.art/ | /health |
-| **Testing** | https://testing.aiworkshop.art/ | /health |
-| **Admin** | https://aiworkshop.art/admin | — |
-| **API** | https://aiworkshop.art/api/queue/status | — |
+| Environment | URL | Health | Instance |
+|---|---|---|---|
+| **Production** | https://aiworkshop.art/ | /health | quiet-city (65.108.33.101) |
+| **Testing (active)** | https://anegg.app/ | /health | intelligent-rain-shrinks (65.108.33.80) |
+| **Testing Admin** | https://anegg.app/admin | — | — |
+| **Prod Admin** | https://aiworkshop.art/admin | — | — |
+| **Prod API** | https://aiworkshop.art/api/queue/status | — | — |
+
+**All teams are currently working on the testing instance (anegg.app).** Production (aiworkshop.art) is stable — do not deploy to production without explicit approval.
 
 ---
 

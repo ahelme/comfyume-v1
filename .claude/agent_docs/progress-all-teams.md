@@ -22,6 +22,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 - [MELLO-ONE-TEAM] 5f43509 docs: add testing-009 shared deployment branch
 - [MELLO-ONE-TEAM] Rebuilt comfyume-frontend:v0.11.0 — all 4 extensions baked in
 - [MELLO-ONE-TEAM] Discovered: entrypoint copies from image on restart, overwrites host copies
+- [ADMIN] 396baf5 refactor: rename features toggle to isolate mode (#75)
+- [ADMIN] a0728c8 docs: add features toggle fault-isolation workflow to CLAUDE.md (#75)
+- [ADMIN] eb8679d feat: wire admin features toggle to backend + localStorage (#75)
+- [ADMIN] f0d36fb feat: add overlay mode + features toggles to admin panel header (#75)
+- [ADMIN] Created `testing-009` shared deployment branch (both teams merge before deploying)
+- [ADMIN] GH #75 created: admin panel isolate mode toggle
+- [ADMIN] GH #78, #79, #80 created: non-critical frontend console errors
 - [ALL-TEAMS] docs: add testing-009 shared deployment branch to CLAUDE.md + all resume-context files
 - [MELLO-ONE-TEAM] Deployed fixes to testing-009 — QM rebuilt, extensions copied, early bail verified in container
 - [MELLO-ONE-TEAM] Diagnosed branch collision: testing-009 was on admin team's branch, our fixes not deployed

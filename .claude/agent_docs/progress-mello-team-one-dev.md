@@ -1,9 +1,16 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **Repository:** github.com/ahelme/comfyume-v1
-**Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
+**Domain:** aiworkshop.art (production) · anegg.app (testing)
 **Doc Created:** 2026-01-04
 **Doc Updated:** 2026-02-22 - Error handling fixes, GPU overlay, testing-009 inference verified
+
+| Environment | URL | Instance | SSH |
+|---|---|---|---|
+| **Production** | https://aiworkshop.art | quiet-city (65.108.33.101) | `ssh dev@100.89.38.43` |
+| **Testing (active)** | https://anegg.app | intelligent-rain-shrinks (65.108.33.80) | `ssh root@65.108.33.80` |
+
+**All teams are currently working on the testing instance (anegg.app). Do NOT deploy to production without explicit approval.**
 
 ---
 # Project Progress Tracker
@@ -12,6 +19,7 @@
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **OLD Repo:** comfyume (https://github.com/ahelme/comfyume) — advanced but broken
 **Branch:** testing-mello-team-one
+**Deploy branch:** testing-009 (shared — merge here before deploying to anegg.app)
 **Phase:** PRODUCTION LIVE — aiworkshop.art serving, serverless inference working
 ---
 ## 0. Update Instructions
