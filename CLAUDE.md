@@ -32,13 +32,15 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 
 ### Quick Links
 
-| Environment | URL | Health |
-|---|---|---|
-| **Production** | https://aiworkshop.art/ | /health |
-| **Staging** | https://staging.aiworkshop.art/ | /health |
-| **Testing** | https://testing.aiworkshop.art/ | /health |
-| **Admin** | https://aiworkshop.art/admin | — |
-| **API** | https://aiworkshop.art/api/queue/status | — |
+| Environment | URL | Health | Instance |
+|---|---|---|---|
+| **Production** | https://aiworkshop.art/ | /health | quiet-city (65.108.33.101) |
+| **Testing (active)** | https://anegg.app/ | /health | intelligent-rain-shrinks (65.108.33.80) |
+| **Testing Admin** | https://anegg.app/admin | — | — |
+| **Prod Admin** | https://aiworkshop.art/admin | — | — |
+| **Prod API** | https://aiworkshop.art/api/queue/status | — | — |
+
+**All teams are currently working on the testing instance (anegg.app).** Production (aiworkshop.art) is stable — do not deploy to production without explicit approval.
 
 ---
 

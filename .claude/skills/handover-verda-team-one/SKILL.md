@@ -6,8 +6,10 @@ user-invocable: true
 # HANDOVER TASKS TO BE PERFORMED AT 80% CONTEXT
 
 - YOU MUST update following:
-    - gh issues you are working on
-    - related gh issues (VERY CONCISE - JUST INFO NEEDED/HELPFUL/RELEVANT)
+    - gh issues: analyse the FULL SESSION for ALL open issues touched, referenced, or discovered
+        - update each with current status, findings, and next steps
+        - include any related gh issues (VERY CONCISE - JUST INFO NEEDED/HELPFUL/RELEVANT)
+        - use `gh issue list --repo ahelme/comfyume-v1 --state open --json number,title` to cross-check
     - .claude/agent_docs/progress-verda-team-one-dev.md
         - **MANDATORY:** Clean up Task Management section
             - Remove completed/outdated tasks

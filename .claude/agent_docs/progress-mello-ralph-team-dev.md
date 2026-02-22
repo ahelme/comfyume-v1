@@ -1,15 +1,23 @@
 **Project:** ComfyuME Multi-User ComfyUI Workshop Platform
 **Project Started:** 2026-01-02
 **Repository:** github.com/ahelme/comfyume-v1
-**Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
+**Domain:** aiworkshop.art (production) · anegg.app (testing)
 **Doc Created:** 2026-02-11
-**Doc Updated:** 2026-02-12
+**Doc Updated:** 2026-02-22
+
+| Environment | URL | Instance | SSH |
+|---|---|---|---|
+| **Production** | https://aiworkshop.art | quiet-city (65.108.33.101) | `ssh dev@100.89.38.43` |
+| **Testing (active)** | https://anegg.app | intelligent-rain-shrinks (65.108.33.80) | `ssh root@65.108.33.80` |
+
+**All teams are currently working on the testing instance (anegg.app). Do NOT deploy to production without explicit approval.**
 
 ---
 # Project Progress Tracker — MELLO RALPH TEAM (Autonomous QA)
 **Target:** Workshop Feb 25 2026
 **MAIN Repo:** comfyume-v1 (https://github.com/ahelme/comfyume-v1)
 **Branch:** mello-ralph-team
+**Deploy branch:** testing-009 (shared — merge here before deploying to anegg.app)
 **Phase:** FIX LOOP — autonomous workflow testing via Ralph Loop
 ---
 ## 0. Update Instructions
