@@ -17,6 +17,13 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [MELLO-ONE-TEAM] 4e10bd3 feat: gpu_overlay admin/user modes + comfyume_progress events (#44, #73)
+- [MELLO-ONE-TEAM] 2b5cc87 refactor: extract status_banner as reusable extension (#73, #44)
+- [MELLO-ONE-TEAM] abc8e2d feat: gpu_overlay extension — modular progress banner (#73, #44)
+- [MELLO-ONE-TEAM] 86fadcd fix: early bail on LB routing miss + better error messages (#73)
+- [MELLO-ONE-TEAM] 0770cb5 fix: serverless_proxy error handling — prevent frontend dialog crash (#73)
+- [MELLO-ONE-TEAM] GH #73 created: serverless_proxy malformed execution_error
+- [MELLO-ONE-TEAM] GH #74 created: inference broken on testing-009 after IaC deployment
 - [ADMIN] 4ab61c6 fix: restore correct per-user credentials on testing-009
 - [ADMIN] 5a4cc05 fix: address mello-team-one review — permissions, CORS, verbose (#71)
 - [ADMIN] 0c10d41 feat: add environment variable for isolated serverless deployments (#71)

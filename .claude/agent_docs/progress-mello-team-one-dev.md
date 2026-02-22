@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume-v1
 **Domain:** aiworkshop.art (production) / comfy.ahelme.net (staging)
 **Doc Created:** 2026-01-04
-**Doc Updated:** 2026-02-17 - SFS-clone verified, cron crash diagnosed, backup reports planned
+**Doc Updated:** 2026-02-22 - Error handling fixes, GPU overlay, testing-009 inference verified
 
 ---
 # Project Progress Tracker
@@ -44,10 +44,21 @@
 ---
 ## 1. PRIORITY TASKS
 
-⚠️ NEXT SESSION: Phase 2.75 — Provision testing instance (Verda CPU). SFS-clone ready, restore script ready, SSH identities ready.
+⚠️ NEXT: Fix cold-start inference failure (#74, #66). Testing-009 works warm (31s), fails cold (LB routing). SFS-based delivery needed for production reliability.
+
+🔴 **(CURRENT) - comfyume-v1 #73, #74, #44 - Error handling + GPU overlay + inference debugging**
+    - Created: 2026-02-22, Updated: 2026-02-22
+    - DONE: #73 serverless_proxy error handling — malformed execution_error crashed frontend dialog
+    - DONE: #73 early bail — LB routing miss detected in ~120s instead of 600s
+    - DONE: #44 gpu_overlay extension — modular progress banner (admin/user modes)
+    - DONE: status_banner extension — reusable UI component (window.comfyumeStatus API)
+    - DONE: redirect.js refactored — banner code removed, queue interception only
+    - DONE: Inference verified on testing-009 — 31s warm, Flux Klein 4B, SFS image delivery
+    - OPEN: #74 cold-start inference failure — LB routing breaks HTTP polling
+    - OPEN: #66 SFS-based result delivery — needed for production with 20 users
 
 🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
-    - Created: 2026-02-12, Updated: 2026-02-17
+    - Created: 2026-02-12, Updated: 2026-02-22
     - PHASE 1 DONE: Ralph changes committed, docs created, progress updated
     - PHASE 1.5 DONE: Deployment workflow, CLAUDE.md overhaul, team renames, PR #36 merged
     - PHASE 1.75 DONE: Verda infra cleanup + model vault check (#38 closed)
@@ -152,6 +163,41 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 55 - 2026-02-22 - Error handling, GPU overlay, inference verified (#73, #74, #44)
+
+**Date:** 2026-02-22 | **Issues:** #73, #74, #44 | **Branch:** testing-mello-team-one-new-testing-instance
+
+### Reviewed PR #69 (admin panel team)
+- Environment-isolated serverless deployments (#71), `--output-directory` fix, CORS, .gitignore
+- Flagged: `chmod 777` vs documented `1777`, CORS hardcoded anegg.app, `--verbose` bundled
+
+### Error Handling (#73)
+- **Bug A:** serverless_proxy `execution_error` event missing `traceback`, `node_id`, `node_type` fields — frontend `dialogService.ts` crashed on `.join()` of undefined
+- **Bug B:** QM execution errors silently ignored — proxy treated failed inference as success with empty outputs. Now checks `result["execution_error"]` and forwards properly
+- **Early bail:** `poll_serverless_history()` bails after 60 consecutive HTTP 200 with empty history (~120s) instead of 600s. Returns 502 with LB routing error message
+
+### Inference Verified
+- Testing-009 (anegg.app): Flux Klein 4B, 31s warm, SFS image delivery working
+- Cold start still fails due to LB routing (#66) — 3 attempts, only warm succeeded
+
+### GPU Overlay (#44) — 3 modular extensions
+- **status_banner:** Reusable floating banner UI (`window.comfyumeStatus` API)
+- **gpu_overlay:** WebSocket event listener, two modes:
+  - `user` (default): "Processing on GPU... Ns"
+  - `admin`: prompt_id, GPU type, endpoint, heartbeat count, output details
+  - Toggle: `localStorage.setItem('gpu_overlay_mode', 'admin'|'user')`
+- **queue_redirect:** Refactored — banner code removed, pure queue interception
+- **serverless_proxy:** New `comfyume_progress` events for admin overlay
+
+### Commits
+- `0770cb5` fix: serverless_proxy error handling (#73)
+- `86fadcd` fix: early bail on LB routing miss (#73)
+- `abc8e2d` feat: gpu_overlay extension (#73, #44)
+- `2b5cc87` refactor: extract status_banner as reusable extension (#73, #44)
+- `4e10bd3` feat: gpu_overlay admin/user modes + comfyume_progress events (#44, #73)
 
 ---
 
