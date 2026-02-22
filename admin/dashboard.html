@@ -135,6 +135,63 @@ body {
 }
 .tab-icon { font-size: 15px; }
 
+/* ---- Header Toggles ---- */
+.header-toggles {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  margin-right: 16px;
+}
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.toggle-group label { cursor: pointer; white-space: nowrap; }
+.toggle-switch {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-dim);
+  border-radius: 50%;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(16px);
+  background: var(--accent);
+}
+.toggle-mode-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  min-width: 32px;
+}
+
 /* Live indicator */
 .live-indicator {
   display: flex;
@@ -142,7 +199,6 @@ body {
   gap: 6px;
   font-size: 12px;
   color: var(--text-dim);
-  margin-left: auto;
 }
 .live-dot {
   width: 8px;
@@ -863,6 +919,25 @@ body {
     </button>
   </nav>
 
+  <div class="header-toggles">
+    <div class="toggle-group">
+      <label for="toggle-overlay">Overlay</label>
+      <div class="toggle-switch">
+        <input type="checkbox" id="toggle-overlay">
+        <span class="toggle-slider"></span>
+      </div>
+      <span id="overlay-mode-label" class="toggle-mode-label">user</span>
+    </div>
+    <div class="toggle-group">
+      <label for="toggle-features">Features</label>
+      <div class="toggle-switch">
+        <input type="checkbox" id="toggle-features" checked>
+        <span class="toggle-slider"></span>
+      </div>
+      <span id="features-mode-label" class="toggle-mode-label">on</span>
+    </div>
+  </div>
+
   <div class="live-indicator">
     <div class="live-dot" id="live-dot"></div>
     <span id="live-text">Connecting...</span>
@@ -1181,6 +1256,27 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (tab === 'queue') { loadQueueStatus(); loadJobs(); }
     if (tab === 'templates') { loadTemplates(); checkActiveDownload(); }
   });
+});
+
+// ---- Header Toggles ----
+// GPU overlay mode: 'admin' shows detailed info, 'user' shows minimal
+const overlayToggle = document.getElementById('toggle-overlay');
+const overlayLabel = document.getElementById('overlay-mode-label');
+overlayToggle.checked = localStorage.getItem('gpu_overlay_mode') === 'admin';
+overlayLabel.textContent = overlayToggle.checked ? 'admin' : 'user';
+overlayToggle.addEventListener('change', () => {
+  const mode = overlayToggle.checked ? 'admin' : 'user';
+  localStorage.setItem('gpu_overlay_mode', mode);
+  overlayLabel.textContent = mode;
+});
+
+// Admin features on/off: controls ADMIN_FEATURES_ENABLED via API
+const featuresToggle = document.getElementById('toggle-features');
+const featuresLabel = document.getElementById('features-mode-label');
+featuresLabel.textContent = featuresToggle.checked ? 'on' : 'off';
+featuresToggle.addEventListener('change', () => {
+  featuresLabel.textContent = featuresToggle.checked ? 'on' : 'off';
+  // TODO: POST to /api/admin/features { enabled: true/false } when backend supports it (#75)
 });
 
 // ---- API Helper ----

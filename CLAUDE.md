@@ -25,7 +25,7 @@ A multi-user ComfyUI platform for video generation workshops for professional fi
 - HTTP Basic Auth password protection
 - Tailscale VPN for secure Redis connection
 - Persistent user storage
-- Admin dashboard for instructor
+- Admin dashboard for admin/operator (not instructor-facing)
 - Grafana, Prometheus, Loki, Dry for monitoring
 - FUTURE: ComfyGit (formerly ComfyDock)
 
