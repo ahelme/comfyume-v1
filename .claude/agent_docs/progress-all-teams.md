@@ -17,6 +17,10 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ADMIN] e5b49a7 docs: progress update + docker restart gotcha (#45, #78)
+- [ADMIN] 35fe34e chore: sync update-progress skill from testing-009
+- [ADMIN] 80aea57 fix: use POSIX character classes in nginx regex (#78)
+- [ADMIN] fdc584b feat: cookie-based auth persistence + assets auth bypass (#45, #78)
 - [MELLO-ONE-TEAM] feat: SFS-based result delivery — prefix injection + SFS polling, replaces HTTP history polling (#82, #74, #66)
 - [MELLO-ONE-TEAM] config.py: 5 new SFS delivery settings (enabled, output_dir, poll_interval, max_wait, settle_time)
 - [MELLO-ONE-TEAM] main.py: 5 new functions + submit_to_serverless refactored (SFS default, HTTP fallback)

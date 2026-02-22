@@ -61,10 +61,11 @@
     - **PR #76 merged to main**
     - Related: #78, #79, #80
 
-🔲 **NEW - comfyume-v1 #78 - Static assets MIME type + manifest 401**
-    - Created: 2026-02-22
-    - Non-critical: CSS wrong MIME, manifest-*.json gets 401 behind auth
-    - Likely nginx fix: mime.types + auth_basic off for /assets/
+✅ **(COMPLETE) - comfyume-v1 #78 - Static assets MIME type + manifest 401**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - **Fixed:** manifest 401 — regex location `auth_basic off` for `/userXXX/assets/`
+    - **Noted:** CSS MIME issue is upstream ComfyUI behavior (userdata API), cosmetic only
+    - Deployed to testing-009 (anegg.app), verified manifest returns 200
 
 🔲 **NEW - comfyume-v1 #79 - Favicon progress animation 404**
     - Created: 2026-02-22
@@ -189,10 +190,12 @@
     - serverless_proxy sends WebSocket events but no browser-side listener
     - Fix: listen to WebSocket events in redirect.js, show progress banner
 
-🔲 **NEW - comfyume-v1 #45 - Cookie-Based Auth Persistence**
-    - Created: 2026-02-16
-    - HTTP Basic Auth re-prompts too often, especially on mobile
-    - Fix: nginx map + Set-Cookie — cookie bypasses auth for 24h
+✅ **(COMPLETE) - comfyume-v1 #45 - Cookie-Based Auth Persistence**
+    - Created: 2026-02-16 | Updated: 2026-02-22
+    - nginx `map` checks `comfyume_session` cookie against `AUTH_COOKIE_SECRET` env var
+    - Match → bypass Basic Auth. After successful auth, Set-Cookie persists 24h
+    - Cookie: HttpOnly, Secure, SameSite=Strict. Disabled by default (set env var to enable)
+    - Deployed to testing-009 (anegg.app), user confirmed working
 
 🔲 **NEW - comfyume-v1 #46 - Cold Start Silent Failure UX**
     - Created: 2026-02-16
@@ -215,6 +218,38 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 19 - 2026-02-22 - Cookie auth persistence + assets auth bypass (#45, #78)
+
+**Date:** 2026-02-22 | **Issues:** #45, #78
+
+**Done:**
+- Implemented cookie-based auth persistence (#45):
+  - nginx `map` checks `comfyume_session` cookie against `AUTH_COOKIE_SECRET` env var
+  - Match = bypass Basic Auth, no match = normal prompt
+  - After successful auth, `Set-Cookie` persists session for 24h (HttpOnly, Secure, SameSite=Strict)
+  - Disabled by default — set `AUTH_COOKIE_SECRET` to enable
+  - Generated conf files via `docker-entrypoint.sh` (existing pattern, no Dockerfile changes)
+- Fixed manifest 401 (#78):
+  - Added regex location `auth_basic off` for `/userXXX/assets/*` paths
+  - Content-hashed build artifacts — no security risk from skipping auth
+  - Hit nginx PCRE issue with `\d{3}` — fixed with `[0-9][0-9][0-9]`
+  - CSS MIME issue noted as upstream ComfyUI behavior (cosmetic only)
+- Deployed to testing-009 (anegg.app), user confirmed both working
+- Synced `update-progress` skill from testing-009 (removed GH issue auto-commenting)
+
+**Commits:**
+- `fdc584b` feat: cookie-based auth persistence + assets auth bypass (#45, #78)
+- `80aea57` fix: use POSIX character classes in nginx regex (#78)
+- `35fe34e` chore: sync update-progress skill from testing-009
+
+**Verification:**
+- Auth with credentials → 200 + Set-Cookie ✅
+- Cookie only (no password) → 200 ✅
+- No cookie/auth → 401 ✅
+- Wrong cookie → 401 ✅
+- `/assets/manifest.json` without auth → 200 ✅
 
 ---
 ## Progress Report 18 - 2026-02-22 - Admin panel toggles, isolate mode, testing-009 branch (#75)
