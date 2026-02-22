@@ -52,23 +52,27 @@
 ---
 ## 1. PRIORITY TASKS
 
-⚠️ NEXT: Deploy + test SFS delivery (#82, #74, #66). Code implemented — rebuild QM on testing-009, trigger cold-start inference, verify output files arrive via SFS.
+⚠️ NEXT: Debug why serverless container accepts prompt but never executes (#82, #74, #66). SFS delivery code works — container-side execution is the blocker.
 
-🟡 **(IMPLEMENTED, NEEDS DEPLOY+TEST) - comfyume-v1 #82, #74, #66 - SFS-based result delivery**
+🟡 **(DEPLOYED, BLOCKED ON CONTAINER EXECUTION) - comfyume-v1 #82, #74, #66 - SFS-based result delivery**
     - Created: 2026-02-22, Updated: 2026-02-22
-    - IMPLEMENTED: config.py — 5 new env vars (SFS_DELIVERY_ENABLED, SFS_OUTPUT_DIR, SFS_POLL_INTERVAL, SFS_MAX_WAIT, SFS_SETTLE_TIME)
-    - IMPLEMENTED: main.py — 5 new functions (extract_save_node_ids, inject_output_prefix, snapshot_sfs_directory, watch_sfs_for_outputs, build_synthetic_outputs)
-    - IMPLEMENTED: main.py — submit_to_serverless branches SFS (default) vs HTTP (fallback via SFS_DELIVERY_ENABLED=false)
-    - IMPLEMENTED: main.py — fetch_serverless_images HTTP fallback removed (never worked with LB), SFS-only
-    - IMPLEMENTED: main.py — startup logs delivery mode (SFS vs HTTP)
-    - PENDING: Deploy to testing-009 — rebuild QM, restart, trigger inference
-    - PENDING: Verify cold start works (scale to zero, then trigger)
+    - DONE: Code implemented, committed (9fe8c28), PR #83 merged to testing-009
+    - DONE: Deployed to testing-009 — QM rebuilt, "Delivery mode: SFS (prefix injection)" confirmed in logs
+    - DONE: SFS mount verified inside QM container — /mnt/sfs/outputs accessible, 9 existing files
+    - DONE: CLONE_SFS volume ID matches between terraform.tfvars and server NFS mount (fd7efb9e)
+    - TESTED: Triggered inference from anegg.app/user001 via Chrome DevTools
+    - RESULT: POST /prompt accepted (200 OK, prompt_id returned) after ~56s cold start
+    - RESULT: SFS watch ran correctly — 200 polls over 600s, logged every 20th poll, clean 504 timeout
+    - RESULT: **No files appeared on SFS** — container accepted prompt but never executed it
+    - FOUND: system_stats showed torch_vram_total=0 (no model loaded), VRAM empty
+    - FOUND: /queue and /history empty — but these hit different container (LB routing, as expected)
+    - DIAGNOSIS: Serverless container starts ComfyUI HTTP server, accepts prompts, but execution engine never runs
+    - RESEARCH: SaladTechnologies uses sidecar pattern (API wrapper inside same container as ComfyUI) — avoids LB entirely
+    - RESEARCH: Our SFS approach is correct adaptation for split architecture, but container must actually execute
+    - PENDING: Debug why container accepts but doesn't execute — model loading failure? container recycled?
+    - PENDING: Try warm inference test (container should be up from system_stats probes)
+    - PENDING: Try production endpoint (was working warm at 31s before)
     - PENDING: Verify SFS_DELIVERY_ENABLED=false fallback
-    - PLAN: #82 — prefix injection + SFS polling (plan: `iterative-whistling-matsumoto.md`)
-    - RESEARCH: ComfyUI SaveImage internals verified — counter per-prefix, all nodes use `filename_prefix`
-    - RESEARCH: SaladTechnologies/comfyui-api uses same pattern (unique prefix, out-of-band delivery)
-    - RESEARCH: No breaking changes in ComfyUI v0.11.0–v0.14.2 to output pipeline
-    - NOTE: Warm inference works fine (31s), only cold start fails due to LB routing
 
 ✅ **(DONE) - comfyume-v1 #73, #44 - Error handling + GPU overlay**
     - Created: 2026-02-22, Resolved: 2026-02-22
@@ -208,10 +212,24 @@
 - inject_output_prefix strips subdirectory from original prefix (e.g. `video/LTX-2`) — all outputs land at SFS root
 - Both files pass Python syntax validation
 
+### Deployment & Testing
+- PR #83 merged to testing-009 (resolved progress-all-teams merge conflict)
+- Deployed: `git pull` + `docker compose build queue-manager` + `docker compose up -d queue-manager`
+- **Gotcha:** `docker compose restart` reuses old image — must use `up -d` after build
+- Startup log confirmed: "Delivery mode: SFS (prefix injection)"
+- SFS mount verified: `/mnt/sfs/outputs` accessible, 9 existing files, CLONE_SFS volume matches tfvars
+- Triggered inference via Chrome DevTools on anegg.app/user001 (Flux2 Klein 4B workflow)
+- POST `/prompt` accepted after ~56s (cold start), prompt_id returned
+- SFS watch ran: 200 polls over 600s, correct logging pattern, clean timeout
+- **No output files appeared on SFS** — container accepted but never executed
+- system_stats: torch_vram_total=0, H200 VRAM empty — model never loaded
+- /queue and /history empty — confirmed LB routing (different container instance)
+- SaladTechnologies research: sidecar pattern (wrapper inside container), our SFS approach is correct adaptation
+
 ### Pending
-- Deploy to testing-009 — rebuild QM container, restart, trigger inference
-- Verify cold start (scale to zero, then trigger)
-- Verify SFS_DELIVERY_ENABLED=false fallback works
+- Debug serverless container execution failure — prompt accepted, never processed
+- Try warm inference (container should be up), try production endpoint
+- Verify SFS_DELIVERY_ENABLED=false fallback
 
 ---
 

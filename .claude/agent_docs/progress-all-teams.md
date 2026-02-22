@@ -17,6 +17,11 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [MELLO-ONE-TEAM] 8bca7a5 merge: resolve progress-all-teams conflict with testing-009
+- [MELLO-ONE-TEAM] 9fe8c28 feat: SFS-based result delivery — prefix injection + SFS polling (#82, #74, #66)
+- [MELLO-ONE-TEAM] Deployed SFS delivery to testing-009 — QM rebuilt, "Delivery mode: SFS" confirmed
+- [MELLO-ONE-TEAM] Test: SFS watch ran 200 polls/600s correctly, but no output — container never executed prompt
+- [MELLO-ONE-TEAM] Research: SaladTechnologies uses sidecar pattern (wrapper inside container), our SFS is correct for split arch
 - [MELLO-ONE-TEAM] feat: SFS-based result delivery — prefix injection + SFS polling, replaces HTTP history polling (#82, #74, #66)
 - [MELLO-ONE-TEAM] config.py: 5 new SFS delivery settings (enabled, output_dir, poll_interval, max_wait, settle_time)
 - [MELLO-ONE-TEAM] main.py: 5 new functions + submit_to_serverless refactored (SFS default, HTTP fallback)
