@@ -2,17 +2,23 @@
  * GPU Overlay Extension — ComfyuME
  *
  * Two display modes (set via localStorage):
- *   "user"  — simple progress messages (default)
- *   "admin" — detailed technical info (prompt_id, heartbeats, endpoints, errors)
+ *   "user"  — simple progress messages with time-based stages (default)
+ *   "admin" — detailed technical info (prompt_id, stage, heartbeats, errors)
  *
  * Toggle: localStorage.setItem('gpu_overlay_mode', 'admin')
  *         localStorage.setItem('gpu_overlay_mode', 'user')
  *
  * Listens for WebSocket events from serverless_proxy:
  *   execution_start    → job submitted
- *   comfyume_progress  → detailed phase updates (admin mode)
+ *   comfyume_progress  → detailed phase updates
  *   executed           → output ready
- *   execution_error    → failure details
+ *   execution_error    → failure details (shown in overlay, not just dialog)
+ *
+ * Time-based stages (serverless cold start → model load → inference):
+ *   0-30s:   submitting / cold starting
+ *   30-90s:  cold starting GPU
+ *   90-180s: loading model
+ *   180s+:   generating
  *
  * Only active in serverless mode.
  * Requires: status_banner extension (window.comfyumeStatus).
@@ -54,62 +60,79 @@ app.registerExtension({
         let timer = null;
         let startTime = null;
         let promptId = '';
+        let lastHeartbeat = 0;
 
         console.log(`[GPUOverlay] Active — mode: ${mode()}, GPU: ${activeGpu}, endpoint: ${serverlessEndpoint}`);
+
+        // Time-based stage detection
+        function getStage(elapsed) {
+            if (elapsed < 30) return { label: 'Submitting', color: '#4fc3f7' };
+            if (elapsed < 90) return { label: 'Cold starting GPU', color: '#ffb74d' };
+            if (elapsed < 180) return { label: 'Loading model', color: '#ffb74d' };
+            return { label: 'Generating', color: '#ffb74d' };
+        }
 
         // --- execution_start: job submitted ---
         app.api.addEventListener("execution_start", (evt) => {
             startTime = Date.now();
             promptId = evt?.detail?.prompt_id || '';
+            lastHeartbeat = 0;
 
             if (mode() === 'admin') {
                 const short = promptId.slice(0, 8);
-                status.show(`GPU [${activeGpu}] Submitting ${short}...`, '#4fc3f7');
+                status.show(`GPU [${activeGpu}] ${short} | submitting...`, '#4fc3f7');
             } else {
                 status.show('Sending to GPU...', '#4fc3f7');
             }
 
             timer = setInterval(() => {
                 const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const stage = getStage(elapsed);
+
                 if (mode() === 'admin') {
                     const short = promptId.slice(0, 8);
-                    status.show(`GPU [${activeGpu}] ${short} polling... ${elapsed}s`, '#ffb74d');
+                    const hb = lastHeartbeat ? ` | hb #${lastHeartbeat}` : '';
+                    status.show(
+                        `GPU [${activeGpu}] ${short} | ${stage.label}${hb} | ${elapsed}s`,
+                        stage.color
+                    );
                 } else {
-                    status.show(`Processing on GPU... ${elapsed}s`, '#ffb74d');
+                    status.show(`${stage.label}... ${elapsed}s`, stage.color);
                 }
             }, 1000);
         });
 
-        // --- comfyume_progress: detailed phase updates (admin mode) ---
+        // --- comfyume_progress: detailed phase updates ---
         app.api.addEventListener("comfyume_progress", (evt) => {
-            if (mode() !== 'admin') return;
-
             const d = evt?.detail || {};
             const short = (d.prompt_id || '').slice(0, 8);
 
             switch (d.phase) {
                 case 'submitting':
-                    status.show(
-                        `GPU [${activeGpu}] ${short} | ${d.node_count} nodes | ${serverlessEndpoint}`,
-                        '#4fc3f7'
-                    );
+                    if (mode() === 'admin') {
+                        status.show(
+                            `GPU [${activeGpu}] ${short} | ${d.node_count} nodes | ${serverlessEndpoint}`,
+                            '#4fc3f7'
+                        );
+                    }
                     break;
                 case 'polling':
-                    status.show(
-                        `GPU [${activeGpu}] ${short} | heartbeat #${d.heartbeat} | ${d.elapsed}s`,
-                        '#ffb74d'
-                    );
+                    lastHeartbeat = d.heartbeat || 0;
+                    // Timer handles display — just track heartbeat
                     break;
-                case 'complete':
+                case 'complete': {
                     const nodes = Object.entries(d.output_nodes || {})
                         .map(([id, count]) => `${id}:${count}img`)
                         .join(', ');
                     const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
-                    status.show(
-                        `GPU [${activeGpu}] ${short} | done ${elapsed}s | ${nodes}`,
-                        '#66bb6a'
-                    );
+                    if (mode() === 'admin') {
+                        status.show(
+                            `GPU [${activeGpu}] ${short} | done ${elapsed}s | ${nodes}`,
+                            '#66bb6a'
+                        );
+                    }
                     break;
+                }
             }
         });
 
@@ -118,32 +141,40 @@ app.registerExtension({
             if (timer) { clearInterval(timer); timer = null; }
             const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
 
-            if (mode() !== 'admin') {
+            if (mode() === 'admin') {
+                const short = promptId.slice(0, 8);
+                status.show(`GPU [${activeGpu}] ${short} | complete | ${elapsed}s`, '#66bb6a');
+            } else {
                 status.show(`Inference complete! (${elapsed}s)`, '#66bb6a');
             }
-            // Admin mode shows details via comfyume_progress 'complete' phase
             status.hide(4000);
         });
 
-        // --- execution_error: failure ---
+        // --- execution_error: failure details shown in overlay ---
         app.api.addEventListener("execution_error", (evt) => {
             if (timer) { clearInterval(timer); timer = null; }
             const detail = evt?.detail || {};
             const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+            const errType = detail.exception_type || 'Unknown';
+            const errMsg = detail.exception_message || 'Unknown error';
 
             if (mode() === 'admin') {
                 const short = promptId.slice(0, 8);
-                const type = detail.exception_type || 'Unknown';
-                const msg = detail.exception_message || '';
                 status.show(
-                    `GPU ERROR [${activeGpu}] ${short} | ${elapsed}s | ${type}: ${msg}`,
+                    `GPU ERROR [${activeGpu}] ${short} | ${elapsed}s | ${errType}: ${errMsg}`,
                     '#ef5350'
                 );
             } else {
-                const msg = detail.exception_message || 'Unknown error';
-                status.show(`Error: ${msg}`, '#ef5350');
+                // Show a user-friendly version
+                let userMsg = errMsg;
+                if (errMsg.includes('routing error') || errMsg.includes('never appeared in history')) {
+                    userMsg = 'GPU routing error — please try again (cold start issue)';
+                } else if (errMsg.includes('timed out')) {
+                    userMsg = 'GPU timed out — please try again';
+                }
+                status.show(`Error: ${userMsg}`, '#ef5350');
             }
-            status.hide(8000);
+            status.hide(10000);
         });
     }
 });
