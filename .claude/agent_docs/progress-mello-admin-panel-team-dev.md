@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume
 **Domain:** comfy.ahelme.net (staging) / aiworkshop.art (production)
 **Doc Created:** 2026-02-06
-**Doc Updated:** 2026-02-17
+**Doc Updated:** 2026-02-22
 
 ---
 # Project Progress Tracker
@@ -42,6 +42,24 @@
       - decisions made
 ---
 ## 1. PRIORITY TASKS
+
+⏳ **(IN PROGRESS) - comfyume-v1 #72 - Apply environment-isolated serverless on testing-009**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - Steps 1-7 COMPLETE: tofu apply done, `comfyume-test-vca-ftv-h200-spot` created
+    - QM pointing to testing endpoint, CLONE_SFS mounted
+    - Credentials restored (correct per-user strong passwords)
+    - **REMAINING: Step 8 — test inference to verify image delivery works E2E**
+    - Related: #71, #54, #69
+
+✅ **(COMPLETE) - comfyume-v1 #71 - SFS volume mismatch — environment-isolated serverless**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - Diagnosed: serverless mounts PROD_SFS, testing mounts CLONE_SFS → images invisible
+    - Fix: IaC `environment` variable namespaces deployments per-environment
+    - `environment=prod` → unchanged names, `environment=test` → `comfyume-test-*`
+    - .gitignore fixed across all 7 repos (tfstate, terraform.tfvars)
+    - Production safety docs added to CLAUDE.md
+    - mello-team-one review: permissions 777→1777, CORS comment, --verbose note
+    - Related: #70, #54, #66, #69
 
 ✅ **(COMPLETE) - comfyume-v1 #70 - Restore testing instance 009 + fix E2E inference**
     - Created: 2026-02-17 | Updated: 2026-02-17
@@ -166,6 +184,41 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 17 - 2026-02-22 - Environment-isolated serverless deployed, SFS fix (#71, #72)
+
+**Date:** 2026-02-22 | **Issues:** #71, #72, #54, #69
+
+**Done:**
+- Diagnosed SFS volume mismatch: serverless mounts PROD_SFS, testing mounts CLONE_SFS → images invisible to testing instance
+- Created GH #71 (diagnosis) and #72 (apply steps)
+- Added `environment` variable to IaC: `prod` → unchanged names, `test` → `comfyume-test-*` deployments
+- Fixed .gitignore across ALL 7 repos on Mello (tfstate, terraform.tfvars — were NOT excluded)
+- Added production safety verification to CLAUDE.md (state file isolation table)
+- Addressed mello-team-one review: permissions 777→1777, CORS comment, --verbose note
+- Installed OpenTofu v1.11.5 on testing-009
+- `tofu plan` → 1 to add, 0 to change, 0 to destroy (production untouched)
+- `tofu apply` → `comfyume-test-vca-ftv-h200-spot` created, mounting CLONE_SFS
+- Updated testing-009 `.env` with testing endpoint, recreated QM container
+- Restored htpasswd to correct per-user strong passwords (was incorrectly set to "workshop")
+- Scrubbed docs of "workshop" password references
+- Updated PR #69 title/description to cover all work on this branch
+
+**Key learnings:**
+- `docker restart` does NOT reload `.env` changes — must use `docker compose up -d`
+- OpenTofu state is per-machine — fresh state on testing-009 cannot affect production
+- `environment = "prod"` → empty prefix → deployment names byte-identical to production (backward compatible)
+
+**Commits:**
+- `6588f93` fix: add OpenTofu state files to .gitignore + production safety docs (#71, #54)
+- `0c10d41` feat: add environment variable for isolated serverless deployments (#71)
+- `5a4cc05` fix: address mello-team-one review — permissions, CORS, verbose (#71)
+- `4ab61c6` fix: restore correct per-user credentials on testing-009, remove "workshop" refs
+
+**Remaining:**
+- Test inference on anegg.app → verify images appear via CLONE_SFS (not stale hedgehog)
+- CLIP model error on cold start needs investigation (Feb 18 logs showed `clip input is invalid: None`)
 
 ---
 ## Progress Report 16 - 2026-02-17 - Testing instance 009 restored, E2E inference working (#70)

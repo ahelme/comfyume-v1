@@ -1,13 +1,14 @@
 # CLAUDE RESUME - COMFYUME (ADMIN PANEL TEAM)
 
-**DATE**: 2026-02-18
+**DATE**: 2026-02-22
 
 ---
 
 ## DANGER — READ BEFORE DOING ANYTHING
 
-**NEVER run `tofu plan`, `tofu apply`, or ANY OpenTofu/Terraform command from Mello or against production.**
-OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here change live serverless GPU deployments and cannot be easily reversed. Edit `.tf` files, commit via git flow, apply ONLY on a new testing server.
+**NEVER run `tofu plan`, `tofu apply`, or ANY OpenTofu/Terraform command from Mello against PRODUCTION.**
+Testing-009 has its own tofu state managing `comfyume-test-*` deployments only. Production state lives on Mello.
+See CLAUDE.md "Production Safety — State File Isolation" for details.
 
 ---
 
@@ -28,61 +29,47 @@ OpenTofu commands ONLY run on a NEW TESTING server instance. Mistakes here chang
 
 ---
 
-## CURRENT STATE: Testing Instance 009 (anegg.app) — FULLY OPERATIONAL
+## CURRENT STATE: Testing Instance 009 (anegg.app)
 
-### What's Running
+### Infrastructure
 - All containers healthy: nginx, redis, QM, admin, user001-005
 - SSL cert for anegg.app (expires 2026-05-18)
-- QM: serverless mode, H200-SPOT active
-- ComfyUI loads at `https://anegg.app/user001/` (auth: user001/workshop)
-- 24 models visible, no Missing Models popup
-- **E2E inference working** — Flux Klein 4B tested (18s warm, 307s cold)
+- Credentials: per-user strong passwords from `comfymulti-scripts/.env` (21 entries in htpasswd)
+- 24 models visible on CLONE_SFS
 
-### What Was Fixed This Session (#70)
-- `infrastructure/containers.tf`: All 4 deployments now have `--output-directory /mnt/sfs/outputs` (was only h200-spot)
-- `queue-manager/main.py`: Added `https://anegg.app` to CORS allow_origins
-- `nginx/nginx.conf`: Changed hardcoded CORS origin to `$http_origin` (on testing instance only)
-- `/mnt/scratch/outputs/`: Fixed permissions (`chmod -R 777`)
-- `.htpasswd`: Regenerated with correct per-user passwords from `comfymulti-scripts/.env` (21 entries)
-- `.env`: Comprehensive testing config (serverless, NUM_USERS=5, anegg.app domain)
-- Frontend image: Rebuilt from correct branch (comfyume-v1, not comfy-multi)
+### Environment-Isolated Serverless (#71, #72) — DEPLOYED
+- `comfyume-test-vca-ftv-h200-spot` created via `tofu apply` on testing-009
+- Mounts CLONE_SFS (same volume as testing instance) — SFS image delivery should now work
+- QM confirmed using testing endpoint: `https://containers.datacrunch.io/comfyume-test-vca-ftv-h200-spot`
+- OpenTofu v1.11.5 installed on testing-009, state in `/home/dev/comfyume-v1/infrastructure/`
+- Production deployments (`comfyume-vca-ftv-*`) completely untouched
 
-### Key Discovery: LB Routing (#66) Partially Mitigated
-- **Cold start (~5 min):** Model loading blocks container. LB routes GETs to different containers → empty history for ~300s. Eventually works when container becomes responsive.
-- **Warm container (~18s):** History poll succeeds quickly. HTTP `/view` fallback downloads image.
-- **SFS volume mismatch:** Serverless containers mount PROD_SFS, testing mounts CLONE_SFS. SFS-based image delivery won't work cross-environment. On production (same SFS), it would work.
+### What Was Fixed This Session
+- `infrastructure/`: `environment` variable added — `prod` unchanged, `test` creates `comfyume-test-*`
+- `.gitignore`: Added tfstate/tfvars exclusions across all 7 repos on Mello
+- `CLAUDE.md`: Production safety verification table (state file isolation)
+- `docs/learnings`: permissions 777→1777 (sticky bit), CORS comment, --verbose note
+- htpasswd: restored correct per-user strong passwords (was incorrectly "workshop")
 
 ---
 
 ## NEXT STEPS
 
-### Immediate (on testing-009)
-- [ ] Apply `--output-directory` fix via `tofu apply` on testing-009 (#54)
-  - File ready: `infrastructure/containers.tf` already updated in git
-  - Need `terraform.tfvars` with CLONE_SFS volume ID for testing
-  - Credentials: `VERDA_CLIENT_ID` + `VERDA_CLIENT_SECRET` from `/home/dev/comfymulti-scripts/.env`
+### Immediate — Test Inference (#72 step 8)
+- [ ] Submit Flux2 Klein generation from anegg.app/user001/
+- [ ] Verify the generated image appears (not the stale hedgehog from Feb 17)
+- [ ] Check QM logs for `SFS image:` (Strategy 1 — direct SFS read should now work)
+- [ ] If CLIP model error appears (`clip input is invalid: None`), investigate text encoder path on CLONE_SFS
+
+### After Inference Verified
 - [ ] Test with multiple users simultaneously (user001 + user002)
 - [ ] Test LTX-2 video workflow (heavier, longer inference)
+- [ ] Close #72 once E2E verified
 
-### Architecture (#66) — SFS-Based Result Delivery
-The LB routing works for warm containers but is unreliable during cold starts. For production with 20 concurrent users, the full SFS-based architecture is still needed:
-
-```
-Frontend (ComfyUI + queue_redirect extension)
-  ↓ POST /api/jobs
-QM (FastAPI — fire-and-forget POST /prompt)
-  ↓
-Serverless Worker (VANILLA ComfyUI, --output-directory /mnt/sfs/outputs)
-  ↓ writes to SFS
-QM watches /mnt/sfs/outputs/ (filesystem, NOT HTTP polling)
-  ↓ copies to /outputs/userXXX/
-Frontend serves locally
-```
-
-**Key changes needed:**
+### Architecture (#66) — SFS-Based Result Delivery (Production)
+For production with 20 concurrent users, the full SFS-based architecture is still needed:
 - QM watches SFS filesystem instead of polling `/history/{id}` over HTTP
-- Kill `serverless_proxy` extension (fragile)
-- Workers = vanilla ComfyUI (zero custom code)
+- Workers = vanilla ComfyUI (zero custom code on serverless)
 - Challenge: Matching output files to jobs (filename doesn't contain prompt_id)
 
 ### Lower Priority
@@ -93,37 +80,21 @@ Frontend serves locally
 
 ---
 
-## OpenTofu IaC (#54) — ON NEW TESTING SERVER ONLY
-
-**DONE:**
-- [x] OpenTofu v1.11.5 on Mello, provider v1.1.1
-- [x] `infrastructure/` dir: providers.tf, variables.tf, containers.tf
-- [x] All 4 deployments imported, plan = 0 drift
-- [x] `--output-directory` added to all 4 deployments in .tf (committed)
-
-**TODO (on testing-009 only):**
-- [ ] Create `terraform.tfvars` on testing-009 with CLONE_SFS volume ID
-- [ ] `tofu init && tofu plan` — review changes (should show cmd change on 3 deployments)
-- [ ] `tofu apply` after user confirmation
-
----
-
 ## GITHUB ISSUES
 
-- **#70** — Testing instance 009 restored + E2E inference working. Comment posted. Can close.
-- **#66** — SFS-based result delivery architecture. Still needed for production reliability.
-- **#54** — OpenTofu IaC. `--output-directory` fix committed, needs `tofu apply` on testing-009.
-- **#101** — Inference regression. Partially fixed (works when warm). Root cause = LB routing (#66).
-- **#44** — GPU progress banner for serverless mode.
-- **#45** — Cookie-based auth persistence.
-- **#46** — Cold start silent failure UX.
+- **#72** — Apply environment-isolated serverless on testing-009. Steps 1-7 done. Step 8 (test inference) remaining.
+- **#71** — SFS volume mismatch diagnosis. Resolved via environment isolation. Comment posted.
+- **#69** — PR covering all work on this branch (9 commits). Updated title/description.
+- **#70** — Testing instance 009 restored. Can close.
+- **#66** — SFS-based result delivery architecture. Still needed for production.
+- **#54** — OpenTofu IaC. `--output-directory` applied via tofu on testing-009.
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (Report 16)
-- [ ] Read `docs/learnings-testing-instance-009.md` for gotchas
-- [ ] Verify testing-009 is still running: `ssh root@65.108.33.80 'docker ps --format "{{.Names}}\t{{.Status}}" | sort'`
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (Report 17)
+- [ ] Verify testing-009 is running: `ssh root@65.108.33.80 'docker ps --format "{{.Names}}\t{{.Status}}" | sort'`
 - [ ] If containers down: `cd /home/dev/comfyume-v1 && docker compose --profile container-nginx up -d`
+- [ ] Test inference on anegg.app — verify image delivery via CLONE_SFS
 - [ ] Continue with next steps above
