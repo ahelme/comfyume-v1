@@ -46,16 +46,24 @@
 
 ⚠️ NEXT: Fix cold-start inference failure (#74, #66). Testing-009 works warm (31s), fails cold (LB routing). SFS-based delivery needed for production reliability.
 
-🔴 **(CURRENT) - comfyume-v1 #73, #74, #44 - Error handling + GPU overlay + inference debugging**
+🔴 **(CURRENT) - comfyume-v1 #74, #66 - Cold-start inference + SFS-based delivery**
     - Created: 2026-02-22, Updated: 2026-02-22
+    - OPEN: #74 cold-start inference failure — LB routing breaks HTTP polling (confirmed again this session)
+    - OPEN: #66 SFS-based result delivery — needed for production with 20 users
+    - NOTE: Warm inference works fine (31s), only cold start fails
+
+✅ **(DONE) - comfyume-v1 #73, #44 - Error handling + GPU overlay**
+    - Created: 2026-02-22, Resolved: 2026-02-22
     - DONE: #73 serverless_proxy error handling — malformed execution_error crashed frontend dialog
     - DONE: #73 early bail — LB routing miss detected in ~120s instead of 600s
-    - DONE: #44 gpu_overlay extension — modular progress banner (admin/user modes)
+    - DONE: #73 HTTP error body extraction — shows actual QM error detail instead of generic "502"
+    - DONE: #44 gpu_overlay extension — modular progress banner (admin/user modes, no fake stages)
     - DONE: status_banner extension — reusable UI component (window.comfyumeStatus API)
     - DONE: redirect.js refactored — banner code removed, queue interception only
-    - DONE: Inference verified on testing-009 — 31s warm, Flux Klein 4B, SFS image delivery
-    - OPEN: #74 cold-start inference failure — LB routing breaks HTTP polling
-    - OPEN: #66 SFS-based result delivery — needed for production with 20 users
+    - DONE: Shared `testing-009` deployment branch — prevents teams overwriting each other's code
+    - DONE: Rebuilt comfyume-frontend:v0.11.0 image with all extensions baked in
+    - DONE: All 5 resume-context files + CLAUDE.md updated with testing-009 workflow
+    - DONE: PR #77 merged to main, testing-009 branch created off main
 
 🔴 **(CURRENT) - comfyume-v1 #31, #37 - Phase 2: testing instance, restore script, username rename**
     - Created: 2026-02-12, Updated: 2026-02-22
@@ -163,6 +171,30 @@
 ---
 
 # Progress Reports
+
+---
+
+## Progress Report 57 - 2026-02-22 - Image rebuild, error extraction, deployment fix
+
+**Date:** 2026-02-22 | **Issues:** #73, #74, #44 | **Branch:** testing-mello-team-one-new-testing-instance
+
+### Extension Deployment Discovery
+- **Root cause:** Docker entrypoint copies extensions from baked image (`/build/comfyume-extensions/`) on EVERY container restart, overwriting host-level copies
+- **Fix:** Rebuilt `comfyume-frontend:v0.11.0` image with all 4 extensions (serverless_proxy, queue_redirect, status_banner, gpu_overlay)
+- `.dockerignore` uses allowlist pattern (`*` then `!comfyume-extensions/`) — needed `--no-cache` to pick up new dirs
+
+### HTTP Error Body Extraction
+- serverless_proxy now reads `urllib.error.HTTPError` response body and extracts JSON `detail` field
+- Early bail error now shows: "Serverless routing error: prompt accepted but never appeared in history after 170s"
+- User mode translates common errors: "GPU routing error — please try again"
+
+### Fake Stages Removed
+- Removed time-based stage labels (cold starting/loading model/generating) — were elapsed-time guesses, not real state
+- Could mislead debugging. Overlay now shows honest "waiting" + elapsed time
+
+### Inference Testing
+- Two test jobs (CLI + browser) both hit LB routing issue — early bail at 170s confirmed working
+- Container was cold from previous session's spot termination
 
 ---
 
