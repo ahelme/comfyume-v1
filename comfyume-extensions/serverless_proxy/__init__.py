@@ -202,15 +202,28 @@ def _apply_execution_patch():
 
         except Exception as e:
             heartbeat_active.clear()
-            logger.error(f"Proxy execution failed: {prompt_id}: {e}")
+
+            # Extract meaningful error detail from HTTP errors
+            error_type = type(e).__name__
+            error_msg = str(e)
+            if isinstance(e, urllib.error.HTTPError):
+                try:
+                    body = e.read().decode('utf-8', errors='replace')
+                    detail = json.loads(body).get('detail', body)
+                    error_msg = f"{detail}"
+                    error_type = f"HTTP {e.code}"
+                except Exception:
+                    error_msg = f"HTTP {e.code}: {e.reason}"
+
+            logger.error(f"Proxy execution failed: {prompt_id}: {error_msg}")
 
             prompt_server.send_sync("execution_error", {
                 "prompt_id": prompt_id,
                 "node_id": "",
                 "node_type": "ServerlessProxy",
-                "exception_type": type(e).__name__,
-                "exception_message": str(e),
-                "traceback": [str(e)],
+                "exception_type": error_type,
+                "exception_message": error_msg,
+                "traceback": [error_msg],
             })
             prompt_server.send_sync("executing", {
                 "node": None,
@@ -223,8 +236,8 @@ def _apply_execution_patch():
             self.status_messages = [
                 ("execution_start", {"prompt_id": prompt_id}),
                 ("execution_error", {
-                    "exception_type": type(e).__name__,
-                    "exception_message": str(e),
+                    "exception_type": error_type,
+                    "exception_message": error_msg,
                 }),
             ]
 
