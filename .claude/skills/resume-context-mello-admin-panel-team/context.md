@@ -16,7 +16,6 @@ See CLAUDE.md "Production Safety — State File Isolation" for details.
 
 **We are the Mello Admin Panel Team.**
 - **Team branch:** `testing-mello-admin-panel-team`
-- **Feature branch:** `testing-mello-admin-panel-team-new-testing-instance` (current)
 
 **Production:** aiworkshop.art on Verda (quiet-city, 65.108.33.101), NOT Mello.
 **Testing:** anegg.app on Verda (intelligent-rain-shrinks, 65.108.33.80).
@@ -26,6 +25,21 @@ See CLAUDE.md "Production Safety — State File Isolation" for details.
 
 **Debugging reference:** `docs/comfyui-debugging.md` — check BEFORE investigating any ComfyUI issue.
 **Learnings from testing-009:** `docs/learnings-testing-instance-009.md` — gotchas, root causes, fixes.
+
+---
+
+## TESTING-009 DEPLOYMENT (CRITICAL)
+
+**testing-009 runs the `testing-009` branch ONLY.**
+- NEVER `git checkout <team-branch>` on the server — wipes other team's code
+- Merge your team branch into `testing-009`, then `git pull` on the server
+- See CLAUDE.md "Deploying to Testing-009" for full workflow
+
+**Workflow:**
+1. Push changes to `testing-mello-admin-panel-team`
+2. Merge into `testing-009` (PR or local merge + push)
+3. On server: `cd /home/dev/comfyume-v1 && git pull origin testing-009`
+4. Rebuild/restart as needed
 
 ---
 
@@ -44,26 +58,20 @@ See CLAUDE.md "Production Safety — State File Isolation" for details.
 - OpenTofu v1.11.5 installed on testing-009, state in `/home/dev/comfyume-v1/infrastructure/`
 - Production deployments (`comfyume-vca-ftv-*`) completely untouched
 
-### What Was Fixed This Session
-- `infrastructure/`: `environment` variable added — `prod` unchanged, `test` creates `comfyume-test-*`
-- `.gitignore`: Added tfstate/tfvars exclusions across all 7 repos on Mello
-- `CLAUDE.md`: Production safety verification table (state file isolation)
-- `docs/learnings`: permissions 777→1777 (sticky bit), CORS comment, --verbose note
-- htpasswd: restored correct per-user strong passwords (was incorrectly "workshop")
+### Mello Team One Fixes (deployed 2026-02-22)
+- serverless_proxy error handling — malformed execution_error fixed (#73)
+- Early bail on LB routing miss — ~120s instead of 600s timeout (#73)
+- GPU overlay extension — modular progress banner (admin/user modes, #44)
+- status_banner extension — reusable UI component (window.comfyumeStatus API)
+- Inference verified on testing-009 — 31s warm, Flux Klein 4B
 
 ---
 
 ## NEXT STEPS
 
-### Immediate — Test Inference (#72 step 8)
-- [ ] Submit Flux2 Klein generation from anegg.app/user001/
-- [ ] Verify the generated image appears (not the stale hedgehog from Feb 17)
-- [ ] Check QM logs for `SFS image:` (Strategy 1 — direct SFS read should now work)
-- [ ] If CLIP model error appears (`clip input is invalid: None`), investigate text encoder path on CLONE_SFS
-
-### After Inference Verified
+### Immediate
+- [ ] Test inference on anegg.app — verify image delivery via CLONE_SFS
 - [ ] Test with multiple users simultaneously (user001 + user002)
-- [ ] Test LTX-2 video workflow (heavier, longer inference)
 - [ ] Close #72 once E2E verified
 
 ### Architecture (#66) — SFS-Based Result Delivery (Production)
@@ -73,27 +81,26 @@ For production with 20 concurrent users, the full SFS-based architecture is stil
 - Challenge: Matching output files to jobs (filename doesn't contain prompt_id)
 
 ### Lower Priority
-- [ ] **#44** — GPU progress banner for serverless mode
+- [ ] **#44** — GPU progress banner — DONE (status_banner + gpu_overlay extensions)
 - [ ] **#45** — Cookie-based auth persistence
 - [ ] **#46** — Cold start silent failure UX
-- [ ] Create PR from feature branch to team branch
 
 ---
 
 ## GITHUB ISSUES
 
 - **#72** — Apply environment-isolated serverless on testing-009. Steps 1-7 done. Step 8 (test inference) remaining.
-- **#71** — SFS volume mismatch diagnosis. Resolved via environment isolation. Comment posted.
-- **#69** — PR covering all work on this branch (9 commits). Updated title/description.
-- **#70** — Testing instance 009 restored. Can close.
+- **#73** — Serverless proxy error handling — FIXED by Mello Team One
+- **#74** — Cold-start inference failure — LB routing issue, needs #66
+- **#71** — SFS volume mismatch diagnosis. Resolved via environment isolation.
+- **#69** — PR covering environment isolation work.
 - **#66** — SFS-based result delivery architecture. Still needed for production.
-- **#54** — OpenTofu IaC. `--output-directory` applied via tofu on testing-009.
 
 ---
 
 ## SESSION START CHECKLIST
 
-- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (Report 17)
+- [ ] Read `.claude/agent_docs/progress-mello-admin-panel-team-dev.md` (latest report)
 - [ ] Verify testing-009 is running: `ssh root@65.108.33.80 'docker ps --format "{{.Names}}\t{{.Status}}" | sort'`
 - [ ] If containers down: `cd /home/dev/comfyume-v1 && docker compose --profile container-nginx up -d`
 - [ ] Test inference on anegg.app — verify image delivery via CLONE_SFS

@@ -166,6 +166,27 @@
 
 ---
 
+## Progress Report 56 - 2026-02-22 - Shared testing-009 branch, deployment fix
+
+**Date:** 2026-02-22 | **Branch:** testing-mello-team-one-new-testing-instance
+
+### Branch Collision Fix
+- **Problem:** testing-009 was on `testing-mello-admin-panel-team-2026-02-22` — none of our 6 commits from last session were deployed. User saw 250s+ polling with no early bail.
+- **Root cause:** Both teams doing `git checkout <team-branch>` on the same server, wiping each other's code.
+- **Solution:** Created shared `testing-009` deployment branch. All teams merge into it before deploying. Instance ONLY ever runs this branch.
+
+### Documentation Updated
+- CLAUDE.md: Added `testing-009` to branch strategy, added "Deploying to Testing-009" section with workflow
+- All 5 resume-context files updated with testing-009 deployment rules
+- progress-all-teams.md updated
+
+### Deployed to testing-009
+- Switched server to our branch, rebuilt QM with early bail code, copied all extensions to 5 user dirs
+- Verified early bail code in running QM container (lines 191-265)
+- Restarted QM + user001
+
+---
+
 ## Progress Report 55 - 2026-02-22 - Error handling, GPU overlay, inference verified (#73, #74, #44)
 
 **Date:** 2026-02-22 | **Issues:** #73, #74, #44 | **Branch:** testing-mello-team-one-new-testing-instance

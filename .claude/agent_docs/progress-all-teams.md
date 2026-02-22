@@ -17,6 +17,9 @@ Newest at top. One line per commit. No fluff. Link issues.
 
 ## 2026-02-22
 
+- [ALL-TEAMS] docs: add testing-009 shared deployment branch to CLAUDE.md + all resume-context files
+- [MELLO-ONE-TEAM] Deployed fixes to testing-009 — QM rebuilt, extensions copied, early bail verified in container
+- [MELLO-ONE-TEAM] Diagnosed branch collision: testing-009 was on admin team's branch, our fixes not deployed
 - [MELLO-ONE-TEAM] 4e10bd3 feat: gpu_overlay admin/user modes + comfyume_progress events (#44, #73)
 - [MELLO-ONE-TEAM] 2b5cc87 refactor: extract status_banner as reusable extension (#73, #44)
 - [MELLO-ONE-TEAM] abc8e2d feat: gpu_overlay extension — modular progress banner (#73, #44)

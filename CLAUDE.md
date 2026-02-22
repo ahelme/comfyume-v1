@@ -4,7 +4,7 @@
 **OLDER Project Repository:** https://github.com/ahelme/comfyume
 **NOTE:** The older repo is more advanced, but is broken. This repo will revert to a stable state (by rsync from older OS drive) then we will cherry pick from the advanced yet broken older repo.
 **Domain:** aiworkshop.art (production) · staging.aiworkshop.art · testing.aiworkshop.art
-**Doc Updated:** 2026-02-16
+**Doc Updated:** 2026-02-22
 
 ---
 
@@ -222,6 +222,26 @@ Four teams (or more) work on this project:
 | `production-main` | comfyume-v1 | `main` | Production code |
 | `production-scripts` | comfymulti-scripts | `main` | Proven scripts ONLY |
 
+### Deploying to Testing-009 (anegg.app)
+
+**CRITICAL: testing-009 runs the `testing-009` branch ONLY.** Multiple teams share this instance. Direct `git checkout <team-branch>` on the server wipes the other team's deployed code.
+
+**Workflow to deploy your changes to testing-009:**
+1. Push your changes to your team branch (e.g. `testing-mello-team-one`)
+2. Create a PR from your team branch → `testing-009`
+3. Merge the PR (or: `git checkout testing-009 && git merge <your-branch> && git push`)
+4. On testing-009 server: `git pull origin testing-009` — safe, no branch switching
+5. Rebuild/restart containers as needed
+
+**On the server (root@65.108.33.80):**
+```bash
+cd /home/dev/comfyume-v1
+git pull origin testing-009          # ONLY this — never git checkout
+docker compose build queue-manager   # if QM code changed
+# Copy extensions to user dirs if extension code changed
+docker restart comfy-user001         # restart affected containers
+```
+
 ### Session Checklist
 
 Before each session ends:
@@ -242,6 +262,7 @@ Before each session ends:
 - **Branch Strategy:**
   - `main` — production-ready code (maps to `production-main/`)
   - `staging` — validated, pre-production (maps to `staging-main/`)
+  - `testing-009` — **shared deployment branch** for testing instance (anegg.app). All teams merge here before deploying. The instance ONLY ever runs this branch. NEVER `git checkout <team-branch>` on testing-009.
   - Team branches — active development (e.g. `testing-mello-team-one`, `testing-mello-admin-panel-team`)
   - Feature branches — branched off team branches (e.g. `testing-mello-team-one-gpu-overlay`)
   - **NEVER push directly to main** -- ALWAYS use team branches or feature branches + PRs (BOTH repos!)
