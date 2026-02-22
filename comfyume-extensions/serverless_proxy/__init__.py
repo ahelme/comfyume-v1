@@ -52,8 +52,15 @@ def _apply_execution_patch():
         """
         prompt_server = server.PromptServer.instance
 
-        # Notify frontend: execution starting
+        # Notify frontend: execution starting (comfyume_progress for admin overlay)
         prompt_server.send_sync("execution_start", {"prompt_id": prompt_id})
+        prompt_server.send_sync("comfyume_progress", {
+            "prompt_id": prompt_id,
+            "phase": "submitting",
+            "user_id": USER_ID,
+            "node_count": len(prompt),
+            "qm_url": QUEUE_MANAGER_URL,
+        })
 
         # Send "executing" for the first node (UI shows activity)
         node_ids = list(prompt.keys())
@@ -73,11 +80,17 @@ def _apply_execution_patch():
             while heartbeat_active.is_set():
                 time.sleep(5)
                 if heartbeat_active.is_set() and node_ids:
+                    idx += 1
                     prompt_server.send_sync("executing", {
                         "node": node_ids[idx % len(node_ids)],
                         "prompt_id": prompt_id,
                     })
-                    idx += 1
+                    prompt_server.send_sync("comfyume_progress", {
+                        "prompt_id": prompt_id,
+                        "phase": "polling",
+                        "heartbeat": idx,
+                        "elapsed": idx * 5,
+                    })
 
         heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
         heartbeat_thread.start()
@@ -116,6 +129,38 @@ def _apply_execution_patch():
             # Extract outputs from QM response
             # QM returns JobResponse with result.outputs containing saved image metadata
             qm_result = result.get("result", {})
+
+            # Check for execution errors from QM (serverless worker failed)
+            if isinstance(qm_result, dict) and qm_result.get("execution_error"):
+                error_messages = qm_result["execution_error"]
+                error_str = str(error_messages)[:500]
+                logger.error(f"Serverless execution error for {prompt_id}: {error_str}")
+
+                prompt_server.send_sync("execution_error", {
+                    "prompt_id": prompt_id,
+                    "node_id": "",
+                    "node_type": "ServerlessWorker",
+                    "exception_type": "ServerlessExecutionError",
+                    "exception_message": f"GPU worker failed: {error_str}",
+                    "traceback": [f"GPU worker execution error: {error_str}"],
+                })
+                prompt_server.send_sync("executing", {
+                    "node": None,
+                    "prompt_id": prompt_id,
+                })
+
+                self.outputs_ui = {}
+                self.history_result = {"outputs": {}, "meta": {}}
+                self.success = False
+                self.status_messages = [
+                    ("execution_start", {"prompt_id": prompt_id}),
+                    ("execution_error", {
+                        "exception_type": "ServerlessExecutionError",
+                        "exception_message": error_str,
+                    }),
+                ]
+                return
+
             outputs = {}
             if isinstance(qm_result, dict):
                 outputs = qm_result.get("outputs", {})
@@ -144,6 +189,15 @@ def _apply_execution_patch():
                 ("execution_complete", {}),
             ]
 
+            # Admin progress: completion details
+            output_summary = {nid: len(nout.get("images", [])) for nid, nout in outputs.items()}
+            prompt_server.send_sync("comfyume_progress", {
+                "prompt_id": prompt_id,
+                "phase": "complete",
+                "output_nodes": output_summary,
+                "status": result.get("status"),
+            })
+
             logger.info(f"Proxy execution complete: {prompt_id}, {len(outputs)} output node(s)")
 
         except Exception as e:
@@ -152,8 +206,11 @@ def _apply_execution_patch():
 
             prompt_server.send_sync("execution_error", {
                 "prompt_id": prompt_id,
+                "node_id": "",
+                "node_type": "ServerlessProxy",
                 "exception_type": type(e).__name__,
                 "exception_message": str(e),
+                "traceback": [str(e)],
             })
             prompt_server.send_sync("executing", {
                 "node": None,

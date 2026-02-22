@@ -42,3 +42,9 @@ temp/
 # Claude Code local/session files (Ralph Loop state, hooks, etc.)
 .claude/*.local.md
 *.env.bak*
+
+# OpenTofu / Terraform — state contains secrets + resource IDs
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars

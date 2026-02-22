@@ -3,7 +3,7 @@
 **Repository:** github.com/ahelme/comfyume
 **Domain:** comfy.ahelme.net (staging) / aiworkshop.art (production)
 **Doc Created:** 2026-02-06
-**Doc Updated:** 2026-02-17
+**Doc Updated:** 2026-02-22
 
 ---
 # Project Progress Tracker
@@ -42,6 +42,32 @@
       - decisions made
 ---
 ## 1. PRIORITY TASKS
+
+⏳ **(IN PROGRESS) - comfyume-v1 #72 - Apply environment-isolated serverless on testing-009**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - Steps 1-7 COMPLETE: tofu apply done, `comfyume-test-vca-ftv-h200-spot` created
+    - QM pointing to testing endpoint, CLONE_SFS mounted
+    - Credentials restored (correct per-user strong passwords)
+    - **REMAINING: Step 8 — test inference to verify image delivery works E2E**
+    - Related: #71, #54, #69
+
+✅ **(COMPLETE) - comfyume-v1 #71 - SFS volume mismatch — environment-isolated serverless**
+    - Created: 2026-02-22 | Updated: 2026-02-22
+    - Diagnosed: serverless mounts PROD_SFS, testing mounts CLONE_SFS → images invisible
+    - Fix: IaC `environment` variable namespaces deployments per-environment
+    - `environment=prod` → unchanged names, `environment=test` → `comfyume-test-*`
+    - .gitignore fixed across all 7 repos (tfstate, terraform.tfvars)
+    - Production safety docs added to CLAUDE.md
+    - mello-team-one review: permissions 777→1777, CORS comment, --verbose note
+    - Related: #70, #54, #66, #69
+
+✅ **(COMPLETE) - comfyume-v1 #70 - Restore testing instance 009 + fix E2E inference**
+    - Created: 2026-02-17 | Updated: 2026-02-17
+    - Testing instance 009 (anegg.app) fully operational with E2E inference
+    - Flux Klein 4B: 18s warm, 307s cold (model loading)
+    - HTTP polling works when container is warm (LB stabilizes)
+    - SFS volume mismatch: serverless uses PROD_SFS, testing uses CLONE_SFS
+    - Related: #66, #54, #101, #48, #22
 
 ✅ **(COMPLETE) - comfyume #65 - Admin Dashboard Phase 1: Core Dashboard MVP**
     - Created: 2026-02-06 | Updated: 2026-02-06
@@ -158,6 +184,98 @@
 ---
 
 # Progress Reports
+
+---
+## Progress Report 17 - 2026-02-22 - Environment-isolated serverless deployed, SFS fix (#71, #72)
+
+**Date:** 2026-02-22 | **Issues:** #71, #72, #54, #69
+
+**Done:**
+- Diagnosed SFS volume mismatch: serverless mounts PROD_SFS, testing mounts CLONE_SFS → images invisible to testing instance
+- Created GH #71 (diagnosis) and #72 (apply steps)
+- Added `environment` variable to IaC: `prod` → unchanged names, `test` → `comfyume-test-*` deployments
+- Fixed .gitignore across ALL 7 repos on Mello (tfstate, terraform.tfvars — were NOT excluded)
+- Added production safety verification to CLAUDE.md (state file isolation table)
+- Addressed mello-team-one review: permissions 777→1777, CORS comment, --verbose note
+- Installed OpenTofu v1.11.5 on testing-009
+- `tofu plan` → 1 to add, 0 to change, 0 to destroy (production untouched)
+- `tofu apply` → `comfyume-test-vca-ftv-h200-spot` created, mounting CLONE_SFS
+- Updated testing-009 `.env` with testing endpoint, recreated QM container
+- Restored htpasswd to correct per-user strong passwords (was incorrectly set to "workshop")
+- Scrubbed docs of "workshop" password references
+- Updated PR #69 title/description to cover all work on this branch
+
+**Key learnings:**
+- `docker restart` does NOT reload `.env` changes — must use `docker compose up -d`
+- OpenTofu state is per-machine — fresh state on testing-009 cannot affect production
+- `environment = "prod"` → empty prefix → deployment names byte-identical to production (backward compatible)
+
+**Commits:**
+- `6588f93` fix: add OpenTofu state files to .gitignore + production safety docs (#71, #54)
+- `0c10d41` feat: add environment variable for isolated serverless deployments (#71)
+- `5a4cc05` fix: address mello-team-one review — permissions, CORS, verbose (#71)
+- `4ab61c6` fix: restore correct per-user credentials on testing-009, remove "workshop" refs
+
+**Remaining:**
+- Test inference on anegg.app → verify images appear via CLONE_SFS (not stale hedgehog)
+- CLIP model error on cold start needs investigation (Feb 18 logs showed `clip input is invalid: None`)
+
+---
+## Progress Report 16 - 2026-02-17 - Testing instance 009 restored, E2E inference working (#70)
+
+**Date:** 2026-02-17 | **Issues:** #70, #54, #66
+
+**Done:**
+- Created GH #70: infra: restore testing instance 009 (anegg.app) + fix E2E inference
+- Phase 0: Created learnings doc `docs/learnings-testing-instance-009.md`
+- Phase 1: SSH to instance, updated OS (`apt upgrade`), mounted CLONE_SFS + scratch disk
+- Phase 2: Created testing variant of restore script (`-testing.sh`):
+  - Changed hostname/IP/instance-ID to 009 (intelligent-rain-shrinks)
+  - Domain: anegg.app (SSL cert obtained via certbot webroot)
+  - SSH keys: switched from production to testing identity
+  - Removed old PUB_KEY_VERDA (production host key)
+- Phase 3: Restore completed. Fixed post-restore issues:
+  - Wrong git remote (comfy-multi → comfyume-v1), switched to feature branch
+  - .env was bare-bones — wrote comprehensive testing .env with all serverless config
+  - USE_HOST_NGINX=false (containerized), stopped host nginx
+  - nginx/.htpasswd was directory (Docker auto-created) — removed + recreated as file
+  - Frontend image rebuilt from correct branch (old image missing `requests` module)
+  - Generated docker-compose.users.yml for 5 users
+  - nginx CORS: changed hardcoded `aiworkshop.art` to `$http_origin`
+- Phase 4: All containers healthy (nginx, redis, QM, admin, user001-005)
+  - 24 models visible, no Missing Models popup
+  - SSL cert valid until 2026-05-18
+  - QM: serverless mode, H200-SPOT active
+- Phase 5: Fixed --output-directory in containers.tf (all 4 deployments)
+  - Added anegg.app to QM CORS allow_origins
+  - First inference attempt: 307s cold start, execution success, but `/outputs/user001` permission denied
+  - Fixed permissions: `chmod -R 777 /mnt/scratch/outputs/`
+  - Second inference: 18s warm, image generated + saved + displayed in ComfyUI
+  - **E2E inference confirmed working**
+
+**Key findings:**
+- LB routing issue (#66) mitigated by warm containers — history poll succeeds after model loading
+- SFS volume mismatch: serverless containers mount PROD_SFS, testing mounts CLONE_SFS
+- SFS image delivery won't work cross-environment, but HTTP /view fallback works
+- Restore script clones wrong repo (comfy-multi), needs manual remote URL fix
+- Cold start ~5 min (model loading), warm inference ~18s
+
+**Commits:**
+- `eab1a1b` fix: add --output-directory to all serverless deployments + CORS for anegg.app (#70, #54)
+- `2a81358` docs: update learnings from testing instance 009 — E2E inference confirmed (#70)
+
+---
+## Progress Report 15 - 2026-02-17 - anegg.app testing domain, branch strategy
+
+**Date:** 2026-02-17 | **Issues:** #68
+
+**Done:**
+- User set up `anegg.app` domain pointing to testing instance 009 (65.108.33.80)
+- Updated infrastructure-registry.md (private scripts) with domain field (I-16)
+- Updated infrastructure.md (agent_docs) machines + environments tables
+- Created PR #68 for comfyume-v1
+- Decision: continue with branches (not fork) for #66 architecture work
+- Created feature branch `testing-mello-admin-panel-team-new-testing-instance`
 
 ---
 ## Progress Report 14 - 2026-02-17 - nginx .htpasswd fix, session resume (#61)

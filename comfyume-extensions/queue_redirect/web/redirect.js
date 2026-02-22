@@ -2,44 +2,14 @@
  * Queue Redirect Extension - ComfyUI v0.11.0
  * Intercepts job submission and redirects to queue-manager
  *
+ * Only active in non-serverless modes (local/redis).
+ * In serverless mode, server-side serverless_proxy handles execution.
+ * GPU progress banner is handled by the separate gpu_overlay extension.
+ *
  * v0.11.0 uses Vite-built frontend — app must be imported via shim.
  * The shim at /scripts/app.js reads from window.comfyAPI.app.app
  */
 import { app } from "../../scripts/app.js";
-
-// Status banner — shows serverless inference progress in a floating overlay.
-// ComfyUI's native progress bar only works with its WebSocket-based local queue,
-// which we bypass entirely. This gives the user visual feedback during the
-// 1-4 minute serverless inference wait.
-function createStatusBanner() {
-    const banner = document.createElement('div');
-    banner.id = 'comfyume-status-banner';
-    banner.style.cssText = `
-        position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-        z-index: 99999; padding: 10px 20px; border-radius: 8px;
-        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-        font-size: 14px; font-weight: 500; color: #fff;
-        background: #1a1a2e; border: 1px solid #333;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        display: none; transition: opacity 0.3s;
-    `;
-    document.body.appendChild(banner);
-    return banner;
-}
-
-function showStatus(banner, message, color = '#4fc3f7') {
-    banner.textContent = message;
-    banner.style.borderColor = color;
-    banner.style.display = 'block';
-    banner.style.opacity = '1';
-}
-
-function hideStatus(banner, delay = 3000) {
-    setTimeout(() => {
-        banner.style.opacity = '0';
-        setTimeout(() => { banner.style.display = 'none'; }, 300);
-    }, delay);
-}
 
 app.registerExtension({
     name: "comfy.queueRedirect",
@@ -67,7 +37,6 @@ app.registerExtension({
         }
 
         // Non-serverless mode: intercept queuePrompt and route to QM
-        const banner = createStatusBanner();
 
         // Extract user ID from URL path (e.g. /user001/ → user001)
         // Falls back to window.USER_ID or 'unknown'
@@ -84,22 +53,11 @@ app.registerExtension({
         app.queuePrompt = async function(number, batchCount = 1) {
             console.log(`[QueueRedirect] Intercepting job submission (${batchCount} jobs)`);
 
-            const startTime = Date.now();
-            showStatus(banner, 'Sending to GPU...', '#4fc3f7');
-
-            // Update elapsed time every second during inference
-            const timer = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                showStatus(banner, `Processing on GPU... ${elapsed}s`, '#ffb74d');
-            }, 1000);
-
             try {
                 // Convert graph to ComfyUI API prompt format
                 // graphToPrompt() returns { output: {nodeId: config}, workflow: graphData }
                 // ComfyUI /prompt endpoint expects the "output" dict
                 const { output } = await app.graphToPrompt();
-
-                showStatus(banner, 'Submitting to serverless GPU...', '#4fc3f7');
 
                 // Submit each batch item as a separate job
                 let lastResult = null;
@@ -124,24 +82,13 @@ app.registerExtension({
 
                     lastResult = await response.json();
                     console.log(`[QueueRedirect] Job ${i+1}/${batchCount} submitted:`, lastResult);
-                    console.log(`[QueueRedirect] Full result:`, JSON.stringify(lastResult, null, 2));
                 }
-
-                clearInterval(timer);
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                showStatus(banner, `Inference complete! (${elapsed}s)`, '#66bb6a');
-                hideStatus(banner, 4000);
 
                 console.log(`[QueueRedirect] All ${batchCount} job(s) submitted`);
                 return lastResult;
 
             } catch (error) {
-                clearInterval(timer);
                 console.error("[QueueRedirect] Failed to submit job:", error);
-
-                showStatus(banner, `Error: ${error.message}`, '#ef5350');
-                hideStatus(banner, 8000);
-
                 throw error;
             }
         };

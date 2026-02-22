@@ -4,7 +4,7 @@
 **OLDER Project Repository:** https://github.com/ahelme/comfyume
 **NOTE:** The older repo is more advanced, but is broken. This repo will revert to a stable state (by rsync from older OS drive) then we will cherry pick from the advanced yet broken older repo.
 **Domain:** aiworkshop.art (production) · staging.aiworkshop.art · testing.aiworkshop.art
-**Doc Updated:** 2026-02-16
+**Doc Updated:** 2026-02-22
 
 ---
 
@@ -100,6 +100,19 @@ If `tofu plan` shows unexpected changes → something was modified outside of Ia
 - State file is sensitive (contains secrets) — NEVER commit to git
 - All `.tf` changes go through normal git flow (branch → PR → merge)
 - First test changes on TESTING server, not production
+
+**Production Safety — State File Isolation:**
+
+| Machine | `.tfstate` exists? | What it knows about |
+|---|---|---|
+| **Mello** (dev) | YES — 4 production deployments imported | `comfyume-vca-ftv-h200-spot`, `h200-on-demand`, `b300-spot`, `b300-on-demand` |
+| **Testing-009** | NO — completely clean | Nothing. Only `.terraform.lock.hcl` (provider version list) |
+
+Why `tofu plan` on testing-009 is safe:
+1. **No state = no knowledge of production.** OpenTofu only manages resources in its state file. No state → no existing resources → cannot modify, destroy, or interfere with production.
+2. **`tofu plan` is read-only.** Only shows what would happen. `tofu apply` would only CREATE new resources.
+3. **Different deployment names.** With `environment = "test"`, names are `comfyume-test-vca-ftv-*` — distinct from production's `comfyume-vca-ftv-*`.
+4. **State is local, not shared.** Each machine's state is independent. Mello's and testing-009's states never interact.
 
 ---
 
@@ -209,6 +222,26 @@ Four teams (or more) work on this project:
 | `production-main` | comfyume-v1 | `main` | Production code |
 | `production-scripts` | comfymulti-scripts | `main` | Proven scripts ONLY |
 
+### Deploying to Testing-009 (anegg.app)
+
+**CRITICAL: testing-009 runs the `testing-009` branch ONLY.** Multiple teams share this instance. Direct `git checkout <team-branch>` on the server wipes the other team's deployed code.
+
+**Workflow to deploy your changes to testing-009:**
+1. Push your changes to your team branch (e.g. `testing-mello-team-one`)
+2. Create a PR from your team branch → `testing-009`
+3. Merge the PR (or: `git checkout testing-009 && git merge <your-branch> && git push`)
+4. On testing-009 server: `git pull origin testing-009` — safe, no branch switching
+5. Rebuild/restart containers as needed
+
+**On the server (root@65.108.33.80):**
+```bash
+cd /home/dev/comfyume-v1
+git pull origin testing-009          # ONLY this — never git checkout
+docker compose build queue-manager   # if QM code changed
+# Copy extensions to user dirs if extension code changed
+docker restart comfy-user001         # restart affected containers
+```
+
 ### Session Checklist
 
 Before each session ends:
@@ -229,6 +262,7 @@ Before each session ends:
 - **Branch Strategy:**
   - `main` — production-ready code (maps to `production-main/`)
   - `staging` — validated, pre-production (maps to `staging-main/`)
+  - `testing-009` — **shared deployment branch** for testing instance (anegg.app). All teams merge here before deploying. The instance ONLY ever runs this branch. NEVER `git checkout <team-branch>` on testing-009.
   - Team branches — active development (e.g. `testing-mello-team-one`, `testing-mello-admin-panel-team`)
   - Feature branches — branched off team branches (e.g. `testing-mello-team-one-gpu-overlay`)
   - **NEVER push directly to main** -- ALWAYS use team branches or feature branches + PRs (BOTH repos!)
